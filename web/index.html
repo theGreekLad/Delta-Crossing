@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delta Crossings — Interactive Plat Map</title>
+    <link rel="stylesheet" href="css/app.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="toolbar">
+        <div class="brand">
+          <h1>Delta Crossings</h1>
+          <p>Interactive Plat Map</p>
+        </div>
+
+        <div class="sheet-tabs" id="sheet-tabs" role="tablist" aria-label="Map sheets"></div>
+
+        <div class="toolbar-actions">
+          <label class="search-box">
+            <span class="sr-only">Find lot</span>
+            <input id="lot-search" type="search" placeholder="Find lot #..." autocomplete="off" />
+          </label>
+          <button type="button" id="btn-zoom-in" title="Zoom in">+</button>
+          <button type="button" id="btn-zoom-out" title="Zoom out">−</button>
+          <button type="button" id="btn-reset" title="Reset view">Reset</button>
+          <button type="button" id="btn-rotate-left" title="Rotate left">↺</button>
+          <button type="button" id="btn-rotate-right" title="Rotate right">↻</button>
+          <button type="button" id="btn-fullscreen" title="Fullscreen">⛶</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="viewer-shell">
+          <div id="viewer" aria-label="Plat map viewer"></div>
+          <div id="loading" class="loading">Loading map...</div>
+        </section>
+
+        <aside class="info-panel" id="info-panel">
+          <div class="info-empty" id="info-empty">
+            <h2>Select a lot</h2>
+            <p>
+              Click any lot boundary on the map to inspect it. This viewer is structured so
+              each lot can later display a 3D mock-up rendering.
+            </p>
+          </div>
+
+          <div class="info-content hidden" id="info-content">
+            <p class="info-kicker">Selected lot</p>
+            <h2 id="info-title">Lot 0</h2>
+            <dl class="info-grid">
+              <div>
+                <dt>Lot number</dt>
+                <dd id="info-lot-number">—</dd>
+              </div>
+              <div>
+                <dt>Sheet</dt>
+                <dd id="info-sheet">—</dd>
+              </div>
+              <div>
+                <dt>Centroid</dt>
+                <dd id="info-centroid">—</dd>
+              </div>
+              <div>
+                <dt>Bounds</dt>
+                <dd id="info-bounds">—</dd>
+              </div>
+            </dl>
+
+            <section class="future-render">
+              <h3>Future development preview</h3>
+              <div class="render-placeholder" id="render-placeholder">
+                3D vertical mock-up rendering will appear here once assets are added for this lot.
+              </div>
+            </section>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script src="js/vendor/openseadragon.min.js"></script>
+    <script src="js/viewer.js"></script>
+  </body>
+</html>

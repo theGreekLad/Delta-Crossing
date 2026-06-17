@@ -1,0 +1,155 @@
+{
+  "project": "Delta Crossings",
+  "sourcePdf": "2023.7.12 Delta Crossings Prelim.pdf",
+  "renderScale": 3,
+  "coordinateSpace": "imagePixels",
+  "sheets": [
+    {
+      "id": "sheet1",
+      "title": "Plat Map",
+      "sheetNumber": 1,
+      "width": 2592.0,
+      "height": 1728.0,
+      "pageRotation": 270,
+      "pixelWidth": 7776,
+      "pixelHeight": 5184,
+      "coordinateSpace": "imagePixels",
+      "tileSource": "tiles/sheet1.dzi",
+      "lotsFile": "data/sheet1-lots.json",
+      "roads": [
+        {
+          "name": "U.S. HWY 6",
+          "x": 5041.5,
+          "y": 4224.0
+        },
+        {
+          "name": "460 NORTH ST.",
+          "x": 5574.0,
+          "y": 2970.0
+        },
+        {
+          "name": "SUNSET STREET",
+          "x": 3451.5,
+          "y": 4384.5
+        },
+        {
+          "name": "750 NORTH ST.",
+          "x": 3972.0,
+          "y": 508.5
+        },
+        {
+          "name": "450 NORTH ST.",
+          "x": 1255.5,
+          "y": 3444.0
+        },
+        {
+          "name": "530 EAST ST.",
+          "x": 1282.5,
+          "y": 3813.0
+        },
+        {
+          "name": "DAYS AVE.",
+          "x": 2218.5,
+          "y": 4291.5
+        },
+        {
+          "name": "MOONSTONE DRIVE",
+          "x": 2814.0,
+          "y": 1662.0
+        },
+        {
+          "name": "EMERALD WAY",
+          "x": 3354.0,
+          "y": 1996.5
+        },
+        {
+          "name": "JASPER DRIVE",
+          "x": 5623.5,
+          "y": 1945.5
+        },
+        {
+          "name": "TOTAL RESIDENTIAL ON-STREET PARKING:   28 STALLS",
+          "x": 6450.0,
+          "y": 4680.0
+        }
+      ],
+      "lotCount": 120
+    },
+    {
+      "id": "sheet2",
+      "title": "Utilities Plan",
+      "sheetNumber": 2,
+      "width": 2592.0,
+      "height": 1728.0,
+      "pageRotation": 270,
+      "pixelWidth": 7776,
+      "pixelHeight": 5184,
+      "coordinateSpace": "imagePixels",
+      "tileSource": "tiles/sheet2.dzi",
+      "lotsFile": "data/sheet2-lots.json",
+      "roads": [
+        {
+          "name": "U.S. HWY 6",
+          "x": 4546.5,
+          "y": 4260.0
+        },
+        {
+          "name": "460 NORTH ST.",
+          "x": 5079.0,
+          "y": 3007.5
+        },
+        {
+          "name": "SUNSET STREET",
+          "x": 2956.5,
+          "y": 4422.0
+        },
+        {
+          "name": "750 NORTH ST.",
+          "x": 3477.0,
+          "y": 547.5
+        },
+        {
+          "name": "450 NORTH ST.",
+          "x": 760.5,
+          "y": 3480.0
+        },
+        {
+          "name": "530 EAST ST.",
+          "x": 787.5,
+          "y": 3849.0
+        },
+        {
+          "name": "DAYS AVE.",
+          "x": 1723.5,
+          "y": 4327.5
+        },
+        {
+          "name": "MOONSTONE DRIVE",
+          "x": 2319.0,
+          "y": 1701.0
+        },
+        {
+          "name": "EMERALD WAY",
+          "x": 2859.0,
+          "y": 2034.0
+        },
+        {
+          "name": "JASPER DRIVE",
+          "x": 5128.5,
+          "y": 1983.0
+        },
+        {
+          "name": "%%UStreet Section (60' R.O.W.)",
+          "x": 6015.0,
+          "y": 4761.0
+        },
+        {
+          "name": "= PROPOSED STREET LIGHT",
+          "x": 6240.0,
+          "y": 3856.5
+        }
+      ],
+      "lotCount": 120
+    }
+  ]
+}
