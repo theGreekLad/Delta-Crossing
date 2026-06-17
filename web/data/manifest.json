@@ -73,6 +73,8 @@
           "y": 4680.0
         }
       ],
+      "siteAreasFile": "data/sheet1-site-areas.json",
+      "siteAreaCount": 13,
       "lotCount": 215,
       "commercialFile": "data/sheet1-commercial.json",
       "commercialCount": 5,
@@ -152,6 +154,8 @@
           "y": 3856.5
         }
       ],
+      "siteAreasFile": "data/sheet2-site-areas.json",
+      "siteAreaCount": 96,
       "lotCount": 215
     }
   ]

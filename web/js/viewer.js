@@ -389,6 +389,10 @@
     params.set("sheet", state.activeSheetId);
     const next = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, "", next);
+    const link3d = document.getElementById("link-3d");
+    if (link3d) {
+      link3d.href = `3d.html?${params.toString()}`;
+    }
   }
 
   function showLoading(isLoading) {

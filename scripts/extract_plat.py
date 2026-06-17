@@ -72,6 +72,36 @@ SQUARE_FOOTAGE_PATTERN = re.compile(r"^([\d,]+)\s*S\.?\s*F\.?$", re.IGNORECASE)
 SQUARE_FOOTAGE_MATCH_RADIUS = 80.0
 LOT_TYPE_SINGLE_FAMILY = "single-family"
 LOT_TYPE_TOWNHOME = "townhome"
+SITE_AREA_LABEL_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"^PICKELBALL$", re.I), "pickleball"),
+    (re.compile(r"^POOL$", re.I), "pool"),
+    (re.compile(r"PARK/TOT\s+LOT", re.I), "park"),
+    (re.compile(r"MELVILLE\s+EAST\s+CANAL", re.I), "canal"),
+    (re.compile(r"OPEN\s*SPACE\s*/\s*RETENTION", re.I), "open-space"),
+    (re.compile(r"^OPESPACE$", re.I), "open-space"),
+    (re.compile(r"FUTURE\s+DEVELOPMENT", re.I), "future-development"),
+    (re.compile(r"FUTURE\s+DEV\.?", re.I), "future-development"),
+]
+MIN_SITE_AREA = 1500
+MIN_ROAD_AREA = 2500
+MAP_PIXEL_X_MAX = MAP_X_MAX * RENDER_SCALE
+SITE_AREA_MATCH_RADIUS = {
+    "pickleball": 220.0,
+    "pool": 200.0,
+    "park": 260.0,
+    "future-development": 420.0,
+    "open-space": 520.0,
+    "canal": 650.0,
+}
+MAX_SITE_AREA = {
+    "pickleball": 120_000,
+    "pool": 120_000,
+    "park": 250_000,
+    "future-development": 900_000,
+    "open-space": 900_000,
+    "canal": 1_500_000,
+    "road": 50_000_000,
+}
 
 
 def pdf_to_image_pixel(
@@ -127,6 +157,256 @@ def extract_road_labels(page: fitz.Page) -> list[dict]:
         image_x, image_y = pdf_to_image_pixel(page, (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2)
         roads.append({"name": content, "x": round(image_x, 2), "y": round(image_y, 2)})
     return roads
+
+
+def classify_site_area_label(content: str) -> str | None:
+    for pattern, area_type in SITE_AREA_LABEL_RULES:
+        if pattern.search(content):
+            return area_type
+    return None
+
+
+def extract_site_area_seeds(page: fitz.Page) -> list[dict]:
+    seeds: list[dict] = []
+    seen: set[tuple[str, int, int]] = set()
+
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        area_type = classify_site_area_label(content)
+        if not area_type:
+            continue
+        rect = annot.rect
+        if rect.x0 > MAP_X_MAX:
+            continue
+        image_x, image_y = pdf_to_image_pixel(page, (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2)
+        key = (area_type, int(image_x // 8), int(image_y // 8))
+        if key in seen:
+            continue
+        seen.add(key)
+        seeds.append(
+            {
+                "type": area_type,
+                "label": content,
+                "x": round(image_x, 2),
+                "y": round(image_y, 2),
+            }
+        )
+
+    return seeds
+
+
+def fill_polygons_mask(mask: np.ndarray, polygons: list[list[list[float]]], value: int = 255) -> None:
+    for polygon in polygons:
+        if len(polygon) < 4:
+            continue
+        points = np.array(
+            [[int(round(point[0])), int(round(point[1]))] for point in polygon[:-1]],
+            dtype=np.int32,
+        )
+        cv2.fillPoly(mask, [points], value)
+
+
+def mask_to_site_area_record(
+    area_type: str,
+    label: str | None,
+    region_mask: np.ndarray,
+    area_id: str,
+) -> dict | None:
+    area = int(np.count_nonzero(region_mask))
+    if area < MIN_SITE_AREA:
+        return None
+
+    contours, _ = cv2.findContours(
+        region_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    if not contours:
+        return None
+
+    contour = max(contours, key=cv2.contourArea)
+    polygon = contour_to_polygon(contour)
+    if len(polygon) < 4:
+        return None
+
+    xs = [point[0] for point in polygon]
+    ys = [point[1] for point in polygon]
+    if sum(xs) / len(xs) > MAP_PIXEL_X_MAX:
+        return None
+
+    return {
+        "id": area_id,
+        "type": area_type,
+        "label": label,
+        "centroid": [round(sum(xs) / len(xs), 2), round(sum(ys) / len(ys), 2)],
+        "bounds": [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)],
+        "polygon": polygon,
+        "areaPx": area,
+    }
+
+
+def flood_fill_region(
+    free_space: np.ndarray,
+    seed: tuple[int, int],
+    fill_value: int = 64,
+) -> np.ndarray | None:
+    height, width = free_space.shape
+    if not (0 <= seed[0] < width and 0 <= seed[1] < height):
+        return None
+    if free_space[seed[1], seed[0]] <= 128:
+        return None
+
+    work = free_space.copy()
+    flood_mask = np.zeros((height + 2, width + 2), np.uint8)
+    cv2.floodFill(work, flood_mask, seed, fill_value, loDiff=0, upDiff=0)
+    region = work == fill_value
+    if not np.any(region):
+        return None
+    return region
+
+
+def flood_fill_limited_region(
+    free_space: np.ndarray,
+    assigned: np.ndarray,
+    seed_x: float,
+    seed_y: float,
+    max_radius: float,
+) -> np.ndarray | None:
+    point = find_seed_point(free_space, int(seed_x), int(seed_y))
+    if point is None:
+        return None
+
+    work = free_space.copy()
+    work[assigned > 0] = 0
+    region = flood_fill_region(work, point)
+    if region is None:
+        return None
+
+    ys, xs = np.where(region)
+    radius_sq = max_radius * max_radius
+    keep = (xs - seed_x) ** 2 + (ys - seed_y) ** 2 <= radius_sq
+    region[ys[~keep], xs[~keep]] = False
+    region[assigned > 0] = False
+    if not np.any(region):
+        return None
+    return region
+
+
+MIN_AREA_BY_TYPE = {
+    "pickleball": 350,
+    "pool": 350,
+    "park": 800,
+    "canal": 1500,
+    "open-space": 1500,
+    "future-development": 1500,
+    "road": MIN_ROAD_AREA,
+}
+
+
+def contour_to_site_area(
+    contour: np.ndarray,
+    area_type: str,
+    label: str | None,
+    area_id: str,
+) -> dict | None:
+    area = cv2.contourArea(contour)
+    min_area = MIN_AREA_BY_TYPE.get(area_type, MIN_SITE_AREA)
+    if area < min_area:
+        return None
+
+    polygon = contour_to_polygon(contour)
+    if len(polygon) < 4:
+        return None
+
+    xs = [point[0] for point in polygon]
+    ys = [point[1] for point in polygon]
+    centroid_x = sum(xs) / len(xs)
+    centroid_y = sum(ys) / len(ys)
+    if centroid_x > MAP_PIXEL_X_MAX:
+        return None
+
+    max_area = MAX_SITE_AREA.get(area_type, 50_000_000)
+    if area > max_area:
+        return None
+
+    return {
+        "id": area_id,
+        "type": area_type,
+        "label": label,
+        "centroid": [round(centroid_x, 2), round(centroid_y, 2)],
+        "bounds": [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)],
+        "polygon": polygon,
+        "areaPx": int(area),
+    }
+
+
+def extract_site_areas(page: fitz.Page, lots: list[dict], commercial: list[dict]) -> list[dict]:
+    page_width = int(page.rect.width * RENDER_SCALE)
+    page_height = int(page.rect.height * RENDER_SCALE)
+    free_space = build_linework_mask(page, page_width, page_height)
+
+    claimed = np.zeros((page_height, page_width), np.uint8)
+    lot_polygons = [lot["polygon"] for lot in lots if lot.get("polygon")]
+    commercial_polygons = [unit["polygon"] for unit in commercial if unit.get("polygon")]
+    fill_polygons_mask(claimed, lot_polygons)
+    fill_polygons_mask(claimed, commercial_polygons)
+    free_space[claimed > 0] = 0
+
+    assigned = np.zeros((page_height, page_width), np.uint8)
+    seeds = extract_site_area_seeds(page)
+    seed_priority = ["pickleball", "pool", "park", "open-space", "future-development", "canal"]
+    ordered_seeds = sorted(
+        seeds,
+        key=lambda seed: (
+            seed_priority.index(seed["type"]) if seed["type"] in seed_priority else len(seed_priority),
+            seed["y"],
+            seed["x"],
+        ),
+    )
+
+    areas: list[dict] = []
+    type_counters: dict[str, int] = {}
+
+    for seed in ordered_seeds:
+        radius = SITE_AREA_MATCH_RADIUS.get(seed["type"], 400.0)
+        region = flood_fill_limited_region(free_space, assigned, seed["x"], seed["y"], radius)
+        if region is None:
+            continue
+
+        type_counters[seed["type"]] = type_counters.get(seed["type"], 0) + 1
+        region_mask = region.astype(np.uint8) * 255
+        contours, _ = cv2.findContours(region_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            continue
+
+        contour = max(contours, key=cv2.contourArea)
+        record = contour_to_site_area(
+            contour,
+            seed["type"],
+            seed["label"],
+            f"site-{seed['type']}-{type_counters[seed['type']]}",
+        )
+        if record:
+            areas.append(record)
+            assigned[region] = 255
+
+    road_mask = ((free_space > 128) & (assigned == 0)).astype(np.uint8) * 255
+    contours, _ = cv2.findContours(road_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < MIN_ROAD_AREA or area > 750_000:
+            continue
+
+        type_counters["road"] = type_counters.get("road", 0) + 1
+        record = contour_to_site_area(
+            contour,
+            "road",
+            None,
+            f"site-road-{type_counters['road']}",
+        )
+        if record:
+            areas.append(record)
+
+    areas.sort(key=lambda entry: (-entry["areaPx"], entry["type"], entry["id"]))
+    return areas
 
 
 def build_linework_mask(page: fitz.Page, width: int, height: int) -> np.ndarray:
@@ -618,6 +898,7 @@ def process_sheet(
     commercial_path = DATA_DIR / f"{sheet_id}-commercial.json"
     if sheet_number == 1:
         commercial_units = extract_commercial_units(page)
+    site_areas = extract_site_areas(page, lots, commercial_units)
     if skip_tiles:
         pixel_width = int(page.rect.width * RENDER_SCALE)
         pixel_height = int(page.rect.height * RENDER_SCALE)
@@ -628,11 +909,13 @@ def process_sheet(
     lots_path.write_text(json.dumps(lots, indent=2), encoding="utf-8")
     if sheet_number == 1:
         commercial_path.write_text(json.dumps(commercial_units, indent=2), encoding="utf-8")
+    site_areas_path = DATA_DIR / f"{sheet_id}-site-areas.json"
+    site_areas_path.write_text(json.dumps(site_areas, indent=2), encoding="utf-8")
 
     print(
         f"  kept {len(preserved_lots)} legacy lots, extracted {len(new_lots)} townhome lots, "
         f"{len(commercial_units)} phase {COMMERCIAL_PHASE} commercial units, "
-        f"{len(roads)} road labels"
+        f"{len(roads)} road labels, {len(site_areas)} site areas"
     )
     sheet_meta = {
         "id": sheet_id,
@@ -647,6 +930,8 @@ def process_sheet(
         "tileSource": f"tiles/{sheet_id}.dzi",
         "lotsFile": f"data/{sheet_id}-lots.json",
         "roads": roads,
+        "siteAreasFile": f"data/{sheet_id}-site-areas.json",
+        "siteAreaCount": len(site_areas),
         "lotCount": len(lots),
     }
     if sheet_number == 1:
