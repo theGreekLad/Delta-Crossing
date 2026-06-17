@@ -11,6 +11,10 @@
   --lot-fill-hover: rgba(15, 107, 220, 0.22);
   --lot-fill-active: rgba(15, 107, 220, 0.34);
   --lot-stroke: rgba(15, 107, 220, 0.85);
+  --commercial-fill: rgba(180, 83, 9, 0.1);
+  --commercial-fill-hover: rgba(180, 83, 9, 0.24);
+  --commercial-fill-active: rgba(180, 83, 9, 0.36);
+  --commercial-stroke: rgba(180, 83, 9, 0.9);
   --shadow: 0 10px 30px rgba(21, 32, 43, 0.08);
 }
 
@@ -161,6 +165,28 @@ input {
 .lot-overlay .lot-shape.selected,
 .lot-shape.selected {
   fill: var(--lot-fill-active);
+  stroke-width: 2.5;
+}
+
+.lot-overlay .commercial-shape,
+.commercial-shape {
+  fill: var(--commercial-fill);
+  stroke: var(--commercial-stroke);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: visiblePainted;
+  cursor: pointer;
+  transition: fill 120ms ease;
+}
+
+.lot-overlay .commercial-shape:hover,
+.commercial-shape:hover {
+  fill: var(--commercial-fill-hover);
+}
+
+.lot-overlay .commercial-shape.selected,
+.commercial-shape.selected {
+  fill: var(--commercial-fill-active);
   stroke-width: 2.5;
 }
 

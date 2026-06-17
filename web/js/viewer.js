@@ -7,7 +7,8 @@
     overlay: null,
     lotGroup: null,
     lots: [],
-    selectedLotId: null,
+    commercial: [],
+    selectedParcelId: null,
   };
 
   const els = {
@@ -19,6 +20,7 @@
     infoContent: document.getElementById("info-content"),
     infoTitle: document.getElementById("info-title"),
     infoLotNumber: document.getElementById("info-lot-number"),
+    infoPhase: document.getElementById("info-phase"),
     infoSheet: document.getElementById("info-sheet"),
     infoCentroid: document.getElementById("info-centroid"),
     infoBounds: document.getElementById("info-bounds"),
@@ -71,17 +73,19 @@
     if (!sheet) return;
 
     state.activeSheetId = sheetId;
-    state.selectedLotId = null;
+    state.selectedParcelId = null;
     updateSheetTabs();
     showLoading(true);
     clearInfoPanel();
 
     if (!state.sheets[sheetId]) {
       const lots = await fetchJson(sheet.lotsFile);
-      state.sheets[sheetId] = { sheet, lots };
+      const commercial = sheet.commercialFile ? await fetchJson(sheet.commercialFile) : [];
+      state.sheets[sheetId] = { sheet, lots, commercial };
     }
 
     state.lots = state.sheets[sheetId].lots;
+    state.commercial = state.sheets[sheetId].commercial;
     destroyViewer();
     state.viewer = OpenSeadragon({
       element: els.viewer,
@@ -129,6 +133,33 @@
     }
     state.overlay = null;
     state.lotGroup = null;
+    state.commercialGroup = null;
+  }
+
+  function polygonToPathData(polygon) {
+    return (
+      polygon
+        .slice(0, -1)
+        .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
+        .join(" ") + " Z"
+    );
+  }
+
+  function mountParcelPaths(group, parcels, className) {
+    const svgNS = "http://www.w3.org/2000/svg";
+
+    parcels.forEach((parcel) => {
+      const path = document.createElementNS(svgNS, "path");
+      path.dataset.parcelId = parcel.id;
+      path.setAttribute("class", className);
+      path.setAttribute("vector-effect", "non-scaling-stroke");
+      path.setAttribute("d", polygonToPathData(parcel.polygon));
+      path.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectParcel(parcel.id, { zoom: false });
+      });
+      group.appendChild(path);
+    });
   }
 
   function mountLotOverlay() {
@@ -146,32 +177,19 @@
 
     const group = document.createElementNS(svgNS, "g");
     group.setAttribute("id", "lot-shapes");
+    mountParcelPaths(group, state.lots, "lot-shape");
 
-    state.lots.forEach((lot) => {
-      const path = document.createElementNS(svgNS, "path");
-      path.dataset.lotId = lot.id;
-      path.setAttribute("class", "lot-shape");
-      path.setAttribute("vector-effect", "non-scaling-stroke");
-
-      const pathData =
-        lot.polygon
-          .slice(0, -1)
-          .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`)
-          .join(" ") + " Z";
-
-      path.setAttribute("d", pathData);
-      path.addEventListener("click", (event) => {
-        event.stopPropagation();
-        selectLot(lot.id, { zoom: false });
-      });
-      group.appendChild(path);
-    });
+    const commercialGroup = document.createElementNS(svgNS, "g");
+    commercialGroup.setAttribute("id", "commercial-shapes");
+    mountParcelPaths(commercialGroup, state.commercial, "commercial-shape");
 
     overlay.appendChild(group);
+    overlay.appendChild(commercialGroup);
     state.viewer.element.appendChild(overlay);
     state.overlay = overlay;
     state.lotGroup = group;
-    updateLotSelectionStyles();
+    state.commercialGroup = commercialGroup;
+    updateSelectionStyles();
   }
 
   function updateOverlayTransform() {
@@ -197,44 +215,77 @@
     ];
 
     state.lotGroup.setAttribute("transform", `matrix(${matrix.join(" ")})`);
-  }
-
-  function updateLotSelectionStyles() {
-    if (!state.lotGroup) return;
-    state.lotGroup.querySelectorAll(".lot-shape").forEach((path) => {
-      path.classList.toggle("selected", path.dataset.lotId === state.selectedLotId);
-    });
-  }
-
-  function selectLot(lotId, options = { zoom: true }) {
-    const lot = state.lots.find((entry) => entry.id === lotId);
-    if (!lot) return;
-
-    state.selectedLotId = lotId;
-    updateLotSelectionStyles();
-    updateInfoPanel(lot);
-    updateDeepLink(lot.lotNumber);
-
-    if (options.zoom) {
-      zoomToLot(lot);
+    if (state.commercialGroup) {
+      state.commercialGroup.setAttribute("transform", `matrix(${matrix.join(" ")})`);
     }
   }
 
-  function updateInfoPanel(lot) {
+  function updateSelectionStyles() {
+    [state.lotGroup, state.commercialGroup].forEach((group) => {
+      if (!group) return;
+      group.querySelectorAll("path").forEach((path) => {
+        path.classList.toggle("selected", path.dataset.parcelId === state.selectedParcelId);
+      });
+    });
+  }
+
+  function findParcel(parcelId) {
+    return (
+      state.lots.find((entry) => entry.id === parcelId) ||
+      state.commercial.find((entry) => entry.id === parcelId)
+    );
+  }
+
+  function getParcelNumber(parcel) {
+    return parcel.lotNumber ?? parcel.blockNumber;
+  }
+
+  function getParcelSearchLabel(parcel) {
+    if (parcel.type === "commercial") {
+      return `Commercial Units ${parcel.blockNumber}`;
+    }
+    return `Lot ${parcel.lotNumber}`;
+  }
+
+  function selectParcel(parcelId, options = { zoom: true }) {
+    const parcel = findParcel(parcelId);
+    if (!parcel) return;
+
+    state.selectedParcelId = parcelId;
+    updateSelectionStyles();
+    updateInfoPanel(parcel);
+    updateDeepLink(getParcelNumber(parcel));
+
+    if (options.zoom) {
+      zoomToParcel(parcel);
+    }
+  }
+
+  function updateInfoPanel(parcel) {
     const sheet = getActiveSheet();
+    const isCommercial = parcel.type === "commercial";
     els.infoEmpty.classList.add("hidden");
     els.infoContent.classList.remove("hidden");
-    els.infoTitle.textContent = `Lot ${lot.lotNumber}`;
-    els.infoLotNumber.textContent = lot.lotNumber;
+    els.infoTitle.textContent = isCommercial
+      ? `${parcel.label} ${parcel.blockNumber}`
+      : `Lot ${parcel.lotNumber}`;
+    els.infoLotNumber.textContent = isCommercial
+      ? `Block ${parcel.blockNumber}`
+      : parcel.lotNumber;
+    els.infoPhase.textContent = parcel.phase ? `Phase ${parcel.phase}` : "—";
     els.infoSheet.textContent = sheet ? sheet.title : state.activeSheetId;
-    els.infoCentroid.textContent = `${lot.centroid[0]}, ${lot.centroid[1]}`;
-    els.infoBounds.textContent = lot.bounds.join(", ");
+    els.infoCentroid.textContent = `${parcel.centroid[0]}, ${parcel.centroid[1]}`;
+    els.infoBounds.textContent = parcel.bounds.join(", ");
 
-    if (lot.rendering) {
-      els.renderPlaceholder.innerHTML = `<img src="${lot.rendering}" alt="Lot ${lot.lotNumber} rendering" style="max-width:100%;border-radius:0.6rem;" />`;
+    if (parcel.rendering) {
+      const label = isCommercial
+        ? `${parcel.label} ${parcel.blockNumber}`
+        : `Lot ${parcel.lotNumber}`;
+      els.renderPlaceholder.innerHTML = `<img src="${parcel.rendering}" alt="${label} rendering" style="max-width:100%;border-radius:0.6rem;" />`;
     } else {
-      els.renderPlaceholder.textContent =
-        "3D vertical mock-up rendering will appear here once assets are added for this lot.";
+      els.renderPlaceholder.textContent = isCommercial
+        ? "Commercial unit details and renderings can be added here later."
+        : "3D vertical mock-up rendering will appear here once assets are added for this lot.";
     }
   }
 
@@ -243,8 +294,8 @@
     els.infoContent.classList.add("hidden");
   }
 
-  function zoomToLot(lot) {
-    const [minX, minY, maxX, maxY] = lot.bounds;
+  function zoomToParcel(parcel) {
+    const [minX, minY, maxX, maxY] = parcel.bounds;
     const padding = 40;
     const rect = state.viewer.viewport.imageToViewportRectangle(
       new OpenSeadragon.Rect(minX - padding, minY - padding, maxX - minX + padding * 2, maxY - minY + padding * 2)
@@ -253,14 +304,31 @@
   }
 
   function focusLotSearch(rawValue) {
-    const lotNumber = parseInt(String(rawValue).trim(), 10);
-    if (!Number.isFinite(lotNumber)) return;
-    const lot = state.lots.find((entry) => entry.lotNumber === lotNumber);
-    if (!lot) {
-      window.alert(`Lot ${lotNumber} was not found on this sheet.`);
+    const query = String(rawValue).trim();
+    if (!query) return;
+
+    const commercialMatch = query.match(/^c(?:u|ommercial)?[\s-]*(\d+)$/i);
+    if (commercialMatch) {
+      const blockNumber = parseInt(commercialMatch[1], 10);
+      const unit = state.commercial.find((entry) => entry.blockNumber === blockNumber);
+      if (unit) {
+        selectParcel(unit.id, { zoom: true });
+        return;
+      }
+      window.alert(`Commercial block ${blockNumber} was not found on this sheet.`);
       return;
     }
-    selectLot(lot.id, { zoom: true });
+
+    const number = parseInt(query, 10);
+    if (!Number.isFinite(number)) return;
+
+    const lot = state.lots.find((entry) => entry.lotNumber === number);
+    if (lot) {
+      selectParcel(lot.id, { zoom: true });
+      return;
+    }
+
+    window.alert(`Lot or unit ${query} was not found on this sheet.`);
   }
 
   function resetView() {

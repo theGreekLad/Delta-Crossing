@@ -40,6 +40,34 @@ MAX_LOT_NUMBER = 215
 LEGACY_LOT_MAX = 120
 MIN_LOT_AREA = 500
 MAX_LOT_AREA = 250000
+COMMERCIAL_PHASE = 2
+COMMERCIAL_LABEL = "COMMERCIAL UNITS"
+COMMERCIAL_DIVIDER_A = (380.0, 1238.0)
+COMMERCIAL_DIVIDER_B = (842.0, 1747.0)
+MIN_COMMERCIAL_AREA = 10_000
+MAX_COMMERCIAL_AREA = 500_000
+PHASE_LEGEND_PAGE_INDEX = 1
+PHASE_RGB = {
+    1: (197, 220, 175),
+    2: (239, 255, 192),
+    3: (204, 188, 141),
+    4: (255, 239, 192),
+    5: (234, 227, 205),
+    6: (238, 210, 183),
+    7: (238, 238, 183),
+}
+PHASE_SAMPLE_OFFSETS = (
+    (0, 12),
+    (12, 0),
+    (-12, 0),
+    (0, -12),
+    (15, 0),
+    (0, 15),
+    (-15, 0),
+    (0, -15),
+    (10, 10),
+    (-10, 10),
+)
 
 
 def pdf_to_image_pixel(
@@ -218,6 +246,183 @@ def extract_lot_polygons(page: fitz.Page, labels: dict[int, tuple[float, float]]
     return lots
 
 
+def extract_commercial_block_labels(page: fitz.Page) -> list[dict[str, float]]:
+    blocks: list[dict[str, float]] = []
+
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        if content != COMMERCIAL_LABEL:
+            continue
+        rect = annot.rect
+        if rect.x0 > MAP_X_MAX:
+            continue
+        label_x = (rect.x0 + rect.x1) / 2
+        label_y = (rect.y0 + rect.y1) / 2
+        label_px = pdf_to_image_pixel(page, label_x, label_y)
+        blocks.append(
+            {
+                "labelX": label_x,
+                "labelY": label_y,
+                "labelPxX": label_px[0],
+                "labelPxY": label_px[1],
+            }
+        )
+
+    blocks.sort(key=lambda block: (block["labelY"], block["labelX"]))
+    return blocks
+
+
+def build_commercial_clip_mask(page: fitz.Page, width: int, height: int) -> np.ndarray:
+    """Keep the commercial side of the divider line opposite the 149-164 row."""
+    start = pdf_to_image_pixel(page, *COMMERCIAL_DIVIDER_A)
+    end = pdf_to_image_pixel(page, *COMMERCIAL_DIVIDER_B)
+    ax, ay = start
+    bx, by = end
+
+    xx, yy = np.meshgrid(np.arange(width), np.arange(height))
+    side = (bx - ax) * (yy - ay) - (by - ay) * (xx - ax) > 0
+    return side.astype(np.uint8) * 255
+
+
+def mask_to_unit_record(
+    page: fitz.Page,
+    block_number: int,
+    block: dict[str, float],
+    unit_mask: np.ndarray,
+) -> dict | None:
+    area = int(np.count_nonzero(unit_mask))
+    if area < MIN_COMMERCIAL_AREA or area > MAX_COMMERCIAL_AREA:
+        print(
+            f"  warning: commercial block {block_number} area {area}px outside expected bounds",
+            file=sys.stderr,
+        )
+        return None
+
+    contours, _ = cv2.findContours(unit_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+
+    contour = max(contours, key=cv2.contourArea)
+    polygon = contour_to_polygon(contour)
+    if len(polygon) < 4:
+        return None
+
+    xs = [point[0] for point in polygon]
+    ys = [point[1] for point in polygon]
+
+    return {
+        "id": f"commercial-{block_number}",
+        "type": "commercial",
+        "blockNumber": block_number,
+        "phase": COMMERCIAL_PHASE,
+        "label": COMMERCIAL_LABEL,
+        "labelPosition": [round(block["labelPxX"], 2), round(block["labelPxY"], 2)],
+        "centroid": [round(sum(xs) / len(xs), 2), round(sum(ys) / len(ys), 2)],
+        "bounds": [round(min(xs), 2), round(min(ys), 2), round(max(xs), 2), round(max(ys), 2)],
+        "polygon": polygon,
+        "areaPx": area,
+        "rendering": None,
+    }
+
+
+def extract_commercial_units(page: fitz.Page) -> list[dict]:
+    blocks = extract_commercial_block_labels(page)
+    if not blocks:
+        return []
+
+    page_width = int(page.rect.width * RENDER_SCALE)
+    page_height = int(page.rect.height * RENDER_SCALE)
+    clip_mask = build_commercial_clip_mask(page, page_width, page_height)
+    free_space = cv2.bitwise_and(build_linework_mask(page, page_width, page_height), clip_mask)
+
+    seed = find_seed_point(free_space, int(blocks[0]["labelPxX"]), int(blocks[0]["labelPxY"]))
+    if seed is None:
+        print("  warning: could not locate commercial envelope", file=sys.stderr)
+        return []
+
+    work = free_space.copy()
+    flood_mask = np.zeros((page_height + 2, page_width + 2), np.uint8)
+    cv2.floodFill(work, flood_mask, seed, 64, loDiff=0, upDiff=0)
+    envelope = work == 64
+
+    ys_idx, xs_idx = np.where(envelope)
+    if len(xs_idx) == 0:
+        print("  warning: commercial envelope was empty", file=sys.stderr)
+        return []
+
+    points = np.array([[block["labelPxX"], block["labelPxY"]] for block in blocks], dtype=np.float32)
+    pixels = np.stack([xs_idx, ys_idx], axis=1).astype(np.float32)
+    assignments = np.argmin(np.linalg.norm(pixels[:, None, :] - points[None, :, :], axis=2), axis=1)
+
+    units: list[dict] = []
+    for index, block in enumerate(blocks, start=1):
+        unit_mask = np.zeros((page_height, page_width), np.uint8)
+        selected = assignments == (index - 1)
+        unit_mask[ys_idx[selected], xs_idx[selected]] = 255
+        record = mask_to_unit_record(page, index, block, unit_mask)
+        if record:
+            units.append(record)
+
+    return units
+
+
+def nearest_phase_for_rgb(rgb: tuple[int, int, int]) -> int:
+    return min(
+        PHASE_RGB,
+        key=lambda phase: math.sqrt(sum((rgb[index] - PHASE_RGB[phase][index]) ** 2 for index in range(3))),
+    )
+
+
+def sample_map_rgb(page: fitz.Page, pixmap: fitz.Pixmap, pdf_x: float, pdf_y: float) -> tuple[int, int, int]:
+    pixel_x, pixel_y = pdf_to_image_pixel(page, pdf_x, pdf_y)
+    image_x, image_y = int(pixel_x), int(pixel_y)
+    if not (0 <= image_x < pixmap.width and 0 <= image_y < pixmap.height):
+        return (255, 255, 255)
+    index = (image_y * pixmap.width + image_x) * 3
+    return pixmap.samples[index], pixmap.samples[index + 1], pixmap.samples[index + 2]
+
+
+def sample_lot_phase_rgb(page: fitz.Page, pixmap: fitz.Pixmap, pdf_x: float, pdf_y: float) -> tuple[int, int, int]:
+    for offset_x, offset_y in PHASE_SAMPLE_OFFSETS:
+        rgb = sample_map_rgb(page, pixmap, pdf_x + offset_x, pdf_y + offset_y)
+        if sum(rgb) > 90 and rgb != (255, 255, 255):
+            return rgb
+    return sample_map_rgb(page, pixmap, pdf_x, pdf_y)
+
+
+def assign_lot_phases(doc: fitz.Document, lots: list[dict]) -> None:
+    """Assign each lot a phase using the page 2 phasing legend color fills."""
+    if not lots:
+        return
+
+    page = doc[PHASE_LEGEND_PAGE_INDEX]
+    matrix = fitz.Matrix(RENDER_SCALE, RENDER_SCALE)
+    pixmap = page.get_pixmap(matrix=matrix, alpha=False)
+
+    label_positions: dict[int, tuple[float, float]] = {}
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        if not re.fullmatch(r"\d+", content):
+            continue
+        lot_number = int(content)
+        if not MIN_LOT_NUMBER <= lot_number <= MAX_LOT_NUMBER:
+            continue
+        if annot.rect.x0 > MAP_X_MAX:
+            continue
+        if lot_number in label_positions:
+            continue
+        rect = annot.rect
+        label_positions[lot_number] = ((rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2)
+
+    for lot in lots:
+        lot_number = lot.get("lotNumber")
+        if lot_number not in label_positions:
+            continue
+        label_x, label_y = label_positions[lot_number]
+        rgb = sample_lot_phase_rgb(page, pixmap, label_x, label_y)
+        lot["phase"] = nearest_phase_for_rgb(rgb)
+
+
 def load_preserved_lots(lots_path: Path) -> list[dict]:
     """Keep the original 1-120 extraction when refreshing townhome lots."""
     if not lots_path.exists():
@@ -302,7 +507,12 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
     new_lots = extract_lot_polygons(page, townhome_labels)
     lots = preserved_lots + new_lots
     lots.sort(key=lambda lot: lot["lotNumber"])
+    assign_lot_phases(doc, lots)
     roads = extract_road_labels(page)
+    commercial_units: list[dict] = []
+    commercial_path = DATA_DIR / f"{sheet_id}-commercial.json"
+    if sheet_number == 1:
+        commercial_units = extract_commercial_units(page)
     if skip_tiles:
         pixel_width = int(page.rect.width * RENDER_SCALE)
         pixel_height = int(page.rect.height * RENDER_SCALE)
@@ -311,12 +521,15 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     lots_path.write_text(json.dumps(lots, indent=2), encoding="utf-8")
+    if sheet_number == 1:
+        commercial_path.write_text(json.dumps(commercial_units, indent=2), encoding="utf-8")
 
     print(
         f"  kept {len(preserved_lots)} legacy lots, extracted {len(new_lots)} townhome lots, "
+        f"{len(commercial_units)} phase {COMMERCIAL_PHASE} commercial units, "
         f"{len(roads)} road labels"
     )
-    return {
+    sheet_meta = {
         "id": sheet_id,
         "title": "Plat Map" if sheet_number == 1 else "Utilities Plan",
         "sheetNumber": sheet_number,
@@ -331,6 +544,11 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
         "roads": roads,
         "lotCount": len(lots),
     }
+    if sheet_number == 1:
+        sheet_meta["commercialFile"] = f"data/{sheet_id}-commercial.json"
+        sheet_meta["commercialCount"] = len(commercial_units)
+        sheet_meta["commercialPhase"] = COMMERCIAL_PHASE
+    return sheet_meta
 
 
 def main() -> None:

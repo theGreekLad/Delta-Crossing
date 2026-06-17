@@ -73,7 +73,10 @@
           "y": 4680.0
         }
       ],
-      "lotCount": 215
+      "lotCount": 215,
+      "commercialFile": "data/sheet1-commercial.json",
+      "commercialCount": 5,
+      "commercialPhase": 2
     },
     {
       "id": "sheet2",

@@ -52,7 +52,8 @@
       ]
     ],
     "areaPx": 35094,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-2",
@@ -119,7 +120,8 @@
       ]
     ],
     "areaPx": 35137,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-3",
@@ -186,7 +188,8 @@
       ]
     ],
     "areaPx": 35255,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-4",
@@ -241,7 +244,8 @@
       ]
     ],
     "areaPx": 35126,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-5",
@@ -296,7 +300,8 @@
       ]
     ],
     "areaPx": 35207,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-6",
@@ -363,7 +368,8 @@
       ]
     ],
     "areaPx": 35187,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-7",
@@ -418,7 +424,8 @@
       ]
     ],
     "areaPx": 35199,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-8",
@@ -485,7 +492,8 @@
       ]
     ],
     "areaPx": 35303,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-9",
@@ -540,7 +548,8 @@
       ]
     ],
     "areaPx": 35229,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-10",
@@ -595,7 +604,8 @@
       ]
     ],
     "areaPx": 35482,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-11",
@@ -650,7 +660,8 @@
       ]
     ],
     "areaPx": 35278,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-12",
@@ -717,7 +728,8 @@
       ]
     ],
     "areaPx": 35289,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-13",
@@ -772,7 +784,8 @@
       ]
     ],
     "areaPx": 35402,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-14",
@@ -827,7 +840,8 @@
       ]
     ],
     "areaPx": 35297,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-15",
@@ -894,7 +908,8 @@
       ]
     ],
     "areaPx": 35396,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-16",
@@ -949,7 +964,8 @@
       ]
     ],
     "areaPx": 37792,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-17",
@@ -1028,7 +1044,8 @@
       ]
     ],
     "areaPx": 42829,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-18",
@@ -1107,7 +1124,8 @@
       ]
     ],
     "areaPx": 43493,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-19",
@@ -1186,7 +1204,8 @@
       ]
     ],
     "areaPx": 49953,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-20",
@@ -1253,7 +1272,8 @@
       ]
     ],
     "areaPx": 36218,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-21",
@@ -1320,7 +1340,8 @@
       ]
     ],
     "areaPx": 33853,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-22",
@@ -1375,7 +1396,8 @@
       ]
     ],
     "areaPx": 33915,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-23",
@@ -1430,7 +1452,8 @@
       ]
     ],
     "areaPx": 33708,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-24",
@@ -1497,7 +1520,8 @@
       ]
     ],
     "areaPx": 33763,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-25",
@@ -1552,7 +1576,8 @@
       ]
     ],
     "areaPx": 33714,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-26",
@@ -1607,7 +1632,8 @@
       ]
     ],
     "areaPx": 33693,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-27",
@@ -1662,7 +1688,8 @@
       ]
     ],
     "areaPx": 33888,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-28",
@@ -1729,7 +1756,8 @@
       ]
     ],
     "areaPx": 33702,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-29",
@@ -1784,7 +1812,8 @@
       ]
     ],
     "areaPx": 33720,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-30",
@@ -1851,7 +1880,8 @@
       ]
     ],
     "areaPx": 33829,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-31",
@@ -1906,7 +1936,8 @@
       ]
     ],
     "areaPx": 33652,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-32",
@@ -1973,7 +2004,8 @@
       ]
     ],
     "areaPx": 46395,
-    "rendering": null
+    "rendering": null,
+    "phase": 7
   },
   {
     "id": "lot-33",
@@ -2040,7 +2072,8 @@
       ]
     ],
     "areaPx": 38167,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-34",
@@ -2099,7 +2132,8 @@
       ]
     ],
     "areaPx": 38489,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-35",
@@ -2182,7 +2216,8 @@
       ]
     ],
     "areaPx": 38553,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-36",
@@ -2253,7 +2288,8 @@
       ]
     ],
     "areaPx": 44350,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-37",
@@ -2320,7 +2356,8 @@
       ]
     ],
     "areaPx": 33834,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-38",
@@ -2375,7 +2412,8 @@
       ]
     ],
     "areaPx": 33890,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-39",
@@ -2442,7 +2480,8 @@
       ]
     ],
     "areaPx": 34026,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-40",
@@ -2497,7 +2536,8 @@
       ]
     ],
     "areaPx": 33826,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-41",
@@ -2552,7 +2592,8 @@
       ]
     ],
     "areaPx": 33855,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-42",
@@ -2619,7 +2660,8 @@
       ]
     ],
     "areaPx": 33827,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-43",
@@ -2674,7 +2716,8 @@
       ]
     ],
     "areaPx": 33800,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-44",
@@ -2729,7 +2772,8 @@
       ]
     ],
     "areaPx": 33938,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-45",
@@ -2784,7 +2828,8 @@
       ]
     ],
     "areaPx": 33742,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-46",
@@ -2851,7 +2896,8 @@
       ]
     ],
     "areaPx": 33818,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-47",
@@ -2906,7 +2952,8 @@
       ]
     ],
     "areaPx": 33761,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-48",
@@ -2973,7 +3020,8 @@
       ]
     ],
     "areaPx": 36238,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-49",
@@ -3040,7 +3088,8 @@
       ]
     ],
     "areaPx": 36385,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-50",
@@ -3095,7 +3144,8 @@
       ]
     ],
     "areaPx": 33882,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-51",
@@ -3162,7 +3212,8 @@
       ]
     ],
     "areaPx": 33923,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-52",
@@ -3217,7 +3268,8 @@
       ]
     ],
     "areaPx": 34054,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-53",
@@ -3272,7 +3324,8 @@
       ]
     ],
     "areaPx": 33852,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-54",
@@ -3335,7 +3388,8 @@
       ]
     ],
     "areaPx": 33887,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-55",
@@ -3402,7 +3456,8 @@
       ]
     ],
     "areaPx": 33879,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-56",
@@ -3457,7 +3512,8 @@
       ]
     ],
     "areaPx": 33891,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-57",
@@ -3512,7 +3568,8 @@
       ]
     ],
     "areaPx": 34048,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-58",
@@ -3579,7 +3636,8 @@
       ]
     ],
     "areaPx": 33875,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-59",
@@ -3646,7 +3704,8 @@
       ]
     ],
     "areaPx": 38814,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-60",
@@ -3721,7 +3780,8 @@
       ]
     ],
     "areaPx": 46250,
-    "rendering": null
+    "rendering": null,
+    "phase": 6
   },
   {
     "id": "lot-61",
@@ -3788,7 +3848,8 @@
       ]
     ],
     "areaPx": 39975,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-62",
@@ -3863,7 +3924,8 @@
       ]
     ],
     "areaPx": 33910,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-63",
@@ -3926,7 +3988,8 @@
       ]
     ],
     "areaPx": 36490,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-64",
@@ -4005,7 +4068,8 @@
       ]
     ],
     "areaPx": 38814,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-65",
@@ -4072,7 +4136,8 @@
       ]
     ],
     "areaPx": 33807,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-66",
@@ -4139,7 +4204,8 @@
       ]
     ],
     "areaPx": 33762,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-67",
@@ -4194,7 +4260,8 @@
       ]
     ],
     "areaPx": 33794,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-68",
@@ -4249,7 +4316,8 @@
       ]
     ],
     "areaPx": 33907,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-69",
@@ -4304,7 +4372,8 @@
       ]
     ],
     "areaPx": 33727,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-70",
@@ -4371,7 +4440,8 @@
       ]
     ],
     "areaPx": 33735,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-71",
@@ -4426,7 +4496,8 @@
       ]
     ],
     "areaPx": 33729,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-72",
@@ -4493,7 +4564,8 @@
       ]
     ],
     "areaPx": 33735,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-73",
@@ -4548,7 +4620,8 @@
       ]
     ],
     "areaPx": 33909,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-74",
@@ -4615,7 +4688,8 @@
       ]
     ],
     "areaPx": 33744,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-75",
@@ -4682,7 +4756,8 @@
       ]
     ],
     "areaPx": 36074,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-76",
@@ -4753,7 +4828,8 @@
       ]
     ],
     "areaPx": 36023,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-77",
@@ -4820,7 +4896,8 @@
       ]
     ],
     "areaPx": 33876,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-78",
@@ -4875,7 +4952,8 @@
       ]
     ],
     "areaPx": 33777,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-79",
@@ -4942,7 +5020,8 @@
       ]
     ],
     "areaPx": 33843,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-80",
@@ -4997,7 +5076,8 @@
       ]
     ],
     "areaPx": 33770,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-81",
@@ -5064,7 +5144,8 @@
       ]
     ],
     "areaPx": 33803,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-82",
@@ -5119,7 +5200,8 @@
       ]
     ],
     "areaPx": 33933,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-83",
@@ -5186,7 +5268,8 @@
       ]
     ],
     "areaPx": 33817,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-84",
@@ -5241,7 +5324,8 @@
       ]
     ],
     "areaPx": 33961,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-85",
@@ -5308,7 +5392,8 @@
       ]
     ],
     "areaPx": 33846,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-86",
@@ -5383,7 +5468,8 @@
       ]
     ],
     "areaPx": 44100,
-    "rendering": null
+    "rendering": null,
+    "phase": 5
   },
   {
     "id": "lot-87",
@@ -5446,7 +5532,8 @@
       ]
     ],
     "areaPx": 38179,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-88",
@@ -5521,7 +5608,8 @@
       ]
     ],
     "areaPx": 33837,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-89",
@@ -5584,7 +5672,8 @@
       ]
     ],
     "areaPx": 38442,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-90",
@@ -5651,7 +5740,8 @@
       ]
     ],
     "areaPx": 42792,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-91",
@@ -5694,7 +5784,8 @@
       ]
     ],
     "areaPx": 36821,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-92",
@@ -5737,7 +5828,8 @@
       ]
     ],
     "areaPx": 36684,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-93",
@@ -5780,7 +5872,8 @@
       ]
     ],
     "areaPx": 36778,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-94",
@@ -5835,7 +5928,8 @@
       ]
     ],
     "areaPx": 36759,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-95",
@@ -5902,7 +5996,8 @@
       ]
     ],
     "areaPx": 36736,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-96",
@@ -5973,7 +6068,8 @@
       ]
     ],
     "areaPx": 39030,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-97",
@@ -6064,7 +6160,8 @@
       ]
     ],
     "areaPx": 48685,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-98",
@@ -6143,7 +6240,8 @@
       ]
     ],
     "areaPx": 41183,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-99",
@@ -6230,7 +6328,8 @@
       ]
     ],
     "areaPx": 41724,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-100",
@@ -6297,7 +6396,8 @@
       ]
     ],
     "areaPx": 35874,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-101",
@@ -6368,7 +6468,8 @@
       ]
     ],
     "areaPx": 39513,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-102",
@@ -6431,7 +6532,8 @@
       ]
     ],
     "areaPx": 38131,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-103",
@@ -6474,7 +6576,8 @@
       ]
     ],
     "areaPx": 37242,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-104",
@@ -6533,7 +6636,8 @@
       ]
     ],
     "areaPx": 37294,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-105",
@@ -6592,7 +6696,8 @@
       ]
     ],
     "areaPx": 37590,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-106",
@@ -6651,7 +6756,8 @@
       ]
     ],
     "areaPx": 37735,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-107",
@@ -6710,7 +6816,8 @@
       ]
     ],
     "areaPx": 37868,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-108",
@@ -6781,7 +6888,8 @@
       ]
     ],
     "areaPx": 38188,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-109",
@@ -6852,7 +6960,8 @@
       ]
     ],
     "areaPx": 38517,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-110",
@@ -6923,7 +7032,8 @@
       ]
     ],
     "areaPx": 38578,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-111",
@@ -6998,7 +7108,8 @@
       ]
     ],
     "areaPx": 37258,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-112",
@@ -7077,7 +7188,8 @@
       ]
     ],
     "areaPx": 35786,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-113",
@@ -7356,7 +7468,8 @@
       ]
     ],
     "areaPx": 61518,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-114",
@@ -7635,7 +7748,8 @@
       ]
     ],
     "areaPx": 61518,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-115",
@@ -7914,7 +8028,8 @@
       ]
     ],
     "areaPx": 61518,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-116",
@@ -8193,7 +8308,8 @@
       ]
     ],
     "areaPx": 61518,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-117",
@@ -8488,7 +8604,8 @@
       ]
     ],
     "areaPx": 59618,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-118",
@@ -8783,7 +8900,8 @@
       ]
     ],
     "areaPx": 59618,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-119",
@@ -9078,7 +9196,8 @@
       ]
     ],
     "areaPx": 59618,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-120",
@@ -9373,7 +9492,8 @@
       ]
     ],
     "areaPx": 59618,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-121",
@@ -9668,7 +9788,8 @@
       ]
     ],
     "areaPx": 58719,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-122",
@@ -9963,7 +10084,8 @@
       ]
     ],
     "areaPx": 58719,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-123",
@@ -10258,7 +10380,8 @@
       ]
     ],
     "areaPx": 58719,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-124",
@@ -10553,7 +10676,8 @@
       ]
     ],
     "areaPx": 58719,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-125",
@@ -10860,7 +10984,8 @@
       ]
     ],
     "areaPx": 58462,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-126",
@@ -11167,7 +11292,8 @@
       ]
     ],
     "areaPx": 58462,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-127",
@@ -11474,7 +11600,8 @@
       ]
     ],
     "areaPx": 58462,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-128",
@@ -11781,7 +11908,8 @@
       ]
     ],
     "areaPx": 58462,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-129",
@@ -12108,7 +12236,8 @@
       ]
     ],
     "areaPx": 58619,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-130",
@@ -12435,7 +12564,8 @@
       ]
     ],
     "areaPx": 58619,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-131",
@@ -12762,7 +12892,8 @@
       ]
     ],
     "areaPx": 58619,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-132",
@@ -13089,7 +13220,8 @@
       ]
     ],
     "areaPx": 58619,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-133",
@@ -13420,7 +13552,8 @@
       ]
     ],
     "areaPx": 58840,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-134",
@@ -13751,7 +13884,8 @@
       ]
     ],
     "areaPx": 58840,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-135",
@@ -14082,7 +14216,8 @@
       ]
     ],
     "areaPx": 58840,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-136",
@@ -14413,7 +14548,8 @@
       ]
     ],
     "areaPx": 58840,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-137",
@@ -14744,7 +14880,8 @@
       ]
     ],
     "areaPx": 58667,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-138",
@@ -15075,7 +15212,8 @@
       ]
     ],
     "areaPx": 58667,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-139",
@@ -15406,7 +15544,8 @@
       ]
     ],
     "areaPx": 58667,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-140",
@@ -15737,7 +15876,8 @@
       ]
     ],
     "areaPx": 58667,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-141",
@@ -16036,7 +16176,8 @@
       ]
     ],
     "areaPx": 51754,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-142",
@@ -16335,7 +16476,8 @@
       ]
     ],
     "areaPx": 51754,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-143",
@@ -16634,7 +16776,8 @@
       ]
     ],
     "areaPx": 51754,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-144",
@@ -16933,7 +17076,8 @@
       ]
     ],
     "areaPx": 51754,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-145",
@@ -17264,7 +17408,8 @@
       ]
     ],
     "areaPx": 63590,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-146",
@@ -17595,7 +17740,8 @@
       ]
     ],
     "areaPx": 63590,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-147",
@@ -17926,7 +18072,8 @@
       ]
     ],
     "areaPx": 63590,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-148",
@@ -18257,7 +18404,8 @@
       ]
     ],
     "areaPx": 63590,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-149",
@@ -18588,7 +18736,8 @@
       ]
     ],
     "areaPx": 63630,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-150",
@@ -18919,7 +19068,8 @@
       ]
     ],
     "areaPx": 63630,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-151",
@@ -19250,7 +19400,8 @@
       ]
     ],
     "areaPx": 63630,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-152",
@@ -19581,7 +19732,8 @@
       ]
     ],
     "areaPx": 63630,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-153",
@@ -19912,7 +20064,8 @@
       ]
     ],
     "areaPx": 58722,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-154",
@@ -20243,7 +20396,8 @@
       ]
     ],
     "areaPx": 58722,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-155",
@@ -20574,7 +20728,8 @@
       ]
     ],
     "areaPx": 58722,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-156",
@@ -20905,7 +21060,8 @@
       ]
     ],
     "areaPx": 58722,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-157",
@@ -21236,7 +21392,8 @@
       ]
     ],
     "areaPx": 58794,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-158",
@@ -21567,7 +21724,8 @@
       ]
     ],
     "areaPx": 58794,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-159",
@@ -21898,7 +22056,8 @@
       ]
     ],
     "areaPx": 58794,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-160",
@@ -22229,7 +22388,8 @@
       ]
     ],
     "areaPx": 58794,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-161",
@@ -22560,7 +22720,8 @@
       ]
     ],
     "areaPx": 58701,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-162",
@@ -22891,7 +23052,8 @@
       ]
     ],
     "areaPx": 58701,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-163",
@@ -23222,7 +23384,8 @@
       ]
     ],
     "areaPx": 58701,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-164",
@@ -23553,7 +23716,8 @@
       ]
     ],
     "areaPx": 58701,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-165",
@@ -23892,7 +24056,8 @@
       ]
     ],
     "areaPx": 70877,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-166",
@@ -24231,7 +24396,8 @@
       ]
     ],
     "areaPx": 70877,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-167",
@@ -24570,7 +24736,8 @@
       ]
     ],
     "areaPx": 70877,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-168",
@@ -24909,7 +25076,8 @@
       ]
     ],
     "areaPx": 70877,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-169",
@@ -25240,7 +25408,8 @@
       ]
     ],
     "areaPx": 58805,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-170",
@@ -25571,7 +25740,8 @@
       ]
     ],
     "areaPx": 58805,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-171",
@@ -25902,7 +26072,8 @@
       ]
     ],
     "areaPx": 58805,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-172",
@@ -26233,7 +26404,8 @@
       ]
     ],
     "areaPx": 58805,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-173",
@@ -26584,7 +26756,8 @@
       ]
     ],
     "areaPx": 73557,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-174",
@@ -26935,7 +27108,8 @@
       ]
     ],
     "areaPx": 73557,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-175",
@@ -27286,7 +27460,8 @@
       ]
     ],
     "areaPx": 73557,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-176",
@@ -27637,7 +27812,8 @@
       ]
     ],
     "areaPx": 73557,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-177",
@@ -27780,7 +27956,8 @@
       ]
     ],
     "areaPx": 50084,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-178",
@@ -27923,7 +28100,8 @@
       ]
     ],
     "areaPx": 50084,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-179",
@@ -28066,7 +28244,8 @@
       ]
     ],
     "areaPx": 50084,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-180",
@@ -28205,7 +28384,8 @@
       ]
     ],
     "areaPx": 33008,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-181",
@@ -28344,7 +28524,8 @@
       ]
     ],
     "areaPx": 33008,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-182",
@@ -28607,7 +28788,8 @@
       ]
     ],
     "areaPx": 64853,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-183",
@@ -28870,7 +29052,8 @@
       ]
     ],
     "areaPx": 64853,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-184",
@@ -29133,7 +29316,8 @@
       ]
     ],
     "areaPx": 64853,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-185",
@@ -29396,7 +29580,8 @@
       ]
     ],
     "areaPx": 64853,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-186",
@@ -29595,7 +29780,8 @@
       ]
     ],
     "areaPx": 68138,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-187",
@@ -29794,7 +29980,8 @@
       ]
     ],
     "areaPx": 68138,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-188",
@@ -29993,7 +30180,8 @@
       ]
     ],
     "areaPx": 68138,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-189",
@@ -30192,7 +30380,8 @@
       ]
     ],
     "areaPx": 68138,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-190",
@@ -30379,7 +30568,8 @@
       ]
     ],
     "areaPx": 58422,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-191",
@@ -30566,7 +30756,8 @@
       ]
     ],
     "areaPx": 58422,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-192",
@@ -30753,7 +30944,8 @@
       ]
     ],
     "areaPx": 58422,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-193",
@@ -30940,7 +31132,8 @@
       ]
     ],
     "areaPx": 58422,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-194",
@@ -31087,7 +31280,8 @@
       ]
     ],
     "areaPx": 46139,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-195",
@@ -31234,7 +31428,8 @@
       ]
     ],
     "areaPx": 46139,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-196",
@@ -31381,7 +31576,8 @@
       ]
     ],
     "areaPx": 46139,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-197",
@@ -31720,7 +31916,8 @@
       ]
     ],
     "areaPx": 64405,
-    "rendering": null
+    "rendering": null,
+    "phase": 3
   },
   {
     "id": "lot-198",
@@ -32059,7 +32256,8 @@
       ]
     ],
     "areaPx": 64405,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-199",
@@ -32398,7 +32596,8 @@
       ]
     ],
     "areaPx": 64405,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-200",
@@ -32737,7 +32936,8 @@
       ]
     ],
     "areaPx": 64405,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-201",
@@ -32976,7 +33176,8 @@
       ]
     ],
     "areaPx": 46238,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-202",
@@ -33215,7 +33416,8 @@
       ]
     ],
     "areaPx": 46238,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-203",
@@ -33454,7 +33656,8 @@
       ]
     ],
     "areaPx": 46238,
-    "rendering": null
+    "rendering": null,
+    "phase": 1
   },
   {
     "id": "lot-204",
@@ -33769,7 +33972,8 @@
       ]
     ],
     "areaPx": 57431,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-205",
@@ -34084,7 +34288,8 @@
       ]
     ],
     "areaPx": 57431,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-206",
@@ -34399,7 +34604,8 @@
       ]
     ],
     "areaPx": 57431,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-207",
@@ -34714,7 +34920,8 @@
       ]
     ],
     "areaPx": 57431,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-208",
@@ -35029,7 +35236,8 @@
       ]
     ],
     "areaPx": 57428,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-209",
@@ -35344,7 +35552,8 @@
       ]
     ],
     "areaPx": 57428,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-210",
@@ -35659,7 +35868,8 @@
       ]
     ],
     "areaPx": 57428,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-211",
@@ -35974,7 +36184,8 @@
       ]
     ],
     "areaPx": 57428,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-212",
@@ -36297,7 +36508,8 @@
       ]
     ],
     "areaPx": 64100,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-213",
@@ -36620,7 +36832,8 @@
       ]
     ],
     "areaPx": 64100,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-214",
@@ -36943,7 +37156,8 @@
       ]
     ],
     "areaPx": 64100,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   },
   {
     "id": "lot-215",
@@ -37266,6 +37480,7 @@
       ]
     ],
     "areaPx": 64100,
-    "rendering": null
+    "rendering": null,
+    "phase": 4
   }
 ]

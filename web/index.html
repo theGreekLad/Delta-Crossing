@@ -19,7 +19,7 @@
         <div class="toolbar-actions">
           <label class="search-box">
             <span class="sr-only">Find lot</span>
-            <input id="lot-search" type="search" placeholder="Find lot #..." autocomplete="off" />
+            <input id="lot-search" type="search" placeholder="Find lot # or CU #..." autocomplete="off" />
           </label>
           <button type="button" id="btn-zoom-in" title="Zoom in">+</button>
           <button type="button" id="btn-zoom-out" title="Zoom out">−</button>
@@ -38,10 +38,10 @@
 
         <aside class="info-panel" id="info-panel">
           <div class="info-empty" id="info-empty">
-            <h2>Select a lot</h2>
+            <h2>Select a lot or unit</h2>
             <p>
-              Click any lot boundary on the map to inspect it. This viewer is structured so
-              each lot can later display a 3D mock-up rendering.
+              Click any lot or commercial unit boundary on the map to inspect it. This viewer is structured so
+              each parcel can later display a 3D mock-up rendering.
             </p>
           </div>
 
@@ -52,6 +52,10 @@
               <div>
                 <dt>Lot number</dt>
                 <dd id="info-lot-number">—</dd>
+              </div>
+            <div>
+                <dt>Phase</dt>
+                <dd id="info-phase">—</dd>
               </div>
               <div>
                 <dt>Sheet</dt>
