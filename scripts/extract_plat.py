@@ -68,6 +68,10 @@ PHASE_SAMPLE_OFFSETS = (
     (10, 10),
     (-10, 10),
 )
+SQUARE_FOOTAGE_PATTERN = re.compile(r"^([\d,]+)\s*S\.?\s*F\.?$", re.IGNORECASE)
+SQUARE_FOOTAGE_MATCH_RADIUS = 80.0
+LOT_TYPE_SINGLE_FAMILY = "single-family"
+LOT_TYPE_TOWNHOME = "townhome"
 
 
 def pdf_to_image_pixel(
@@ -390,6 +394,100 @@ def sample_lot_phase_rgb(page: fitz.Page, pixmap: fitz.Pixmap, pdf_x: float, pdf
     return sample_map_rgb(page, pixmap, pdf_x, pdf_y)
 
 
+def lot_type_for_number(lot_number: int) -> str:
+    return LOT_TYPE_TOWNHOME if lot_number > LEGACY_LOT_MAX else LOT_TYPE_SINGLE_FAMILY
+
+
+def extract_square_footage_annotations(page: fitz.Page) -> list[dict[str, float]]:
+    annotations: list[dict[str, float]] = []
+
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        match = SQUARE_FOOTAGE_PATTERN.fullmatch(content)
+        if not match:
+            continue
+        rect = annot.rect
+        if rect.x0 > MAP_X_MAX:
+            continue
+        annotations.append(
+            {
+                "squareFeet": int(match.group(1).replace(",", "")),
+                "x": (rect.x0 + rect.x1) / 2,
+                "y": (rect.y0 + rect.y1) / 2,
+            }
+        )
+
+    return annotations
+
+
+def match_square_footage_to_lots(
+    labels: dict[int, tuple[float, float]],
+    annotations: list[dict[str, float]],
+) -> dict[int, int]:
+    pairs: list[tuple[float, int, int]] = []
+
+    for lot_number, (label_x, label_y) in labels.items():
+        for index, annotation in enumerate(annotations):
+            distance = math.hypot(annotation["x"] - label_x, annotation["y"] - label_y)
+            if distance <= SQUARE_FOOTAGE_MATCH_RADIUS:
+                pairs.append((distance, lot_number, index))
+
+    pairs.sort(key=lambda entry: entry[0])
+    matched: dict[int, int] = {}
+    used_annotations: set[int] = set()
+
+    for _, lot_number, annotation_index in pairs:
+        if lot_number in matched or annotation_index in used_annotations:
+            continue
+        matched[lot_number] = annotations[annotation_index]["squareFeet"]
+        used_annotations.add(annotation_index)
+
+    return matched
+
+
+def square_feet_per_pixel(lots: list[dict], annotated_square_feet: dict[int, int]) -> float | None:
+    ratios: list[float] = []
+    for lot in lots:
+        lot_number = lot.get("lotNumber")
+        area_px = lot.get("areaPx")
+        if lot_number not in annotated_square_feet or not isinstance(area_px, int) or area_px <= 0:
+            continue
+        ratios.append(annotated_square_feet[lot_number] / area_px)
+
+    if not ratios:
+        return None
+
+    ratios.sort()
+    middle = len(ratios) // 2
+    if len(ratios) % 2:
+        return ratios[middle]
+    return (ratios[middle - 1] + ratios[middle]) / 2
+
+
+def assign_lot_square_footage(plat_page: fitz.Page, lots: list[dict]) -> None:
+    """Assign lot type and square footage using plat-map annotations and polygon area."""
+    if not lots:
+        return
+
+    labels = extract_lot_labels(plat_page)
+    annotations = extract_square_footage_annotations(plat_page)
+    annotated_square_feet = match_square_footage_to_lots(labels, annotations)
+    sqft_per_px = square_feet_per_pixel(lots, annotated_square_feet)
+
+    for lot in lots:
+        lot_number = lot.get("lotNumber")
+        if not isinstance(lot_number, int):
+            continue
+
+        lot["lotType"] = lot_type_for_number(lot_number)
+        if lot_number in annotated_square_feet:
+            lot["squareFeet"] = annotated_square_feet[lot_number]
+        elif sqft_per_px is not None and isinstance(lot.get("areaPx"), int):
+            lot["squareFeet"] = round(lot["areaPx"] * sqft_per_px)
+        else:
+            lot.pop("squareFeet", None)
+
+
 def assign_lot_phases(doc: fitz.Document, lots: list[dict]) -> None:
     """Assign each lot a phase using the page 2 phasing legend color fills."""
     if not lots:
@@ -490,7 +588,13 @@ def render_sheet(page: fitz.Page, sheet_id: str) -> tuple[int, int]:
     return pixmap.width, pixmap.height
 
 
-def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = False) -> dict:
+def process_sheet(
+    doc: fitz.Document,
+    page_index: int,
+    plat_page: fitz.Page,
+    *,
+    skip_tiles: bool = False,
+) -> dict:
     page = doc[page_index]
     sheet_number = page_index + 1
     sheet_id = f"sheet{sheet_number}"
@@ -508,6 +612,7 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
     lots = preserved_lots + new_lots
     lots.sort(key=lambda lot: lot["lotNumber"])
     assign_lot_phases(doc, lots)
+    assign_lot_square_footage(plat_page, lots)
     roads = extract_road_labels(page)
     commercial_units: list[dict] = []
     commercial_path = DATA_DIR / f"{sheet_id}-commercial.json"
@@ -558,7 +663,10 @@ def main() -> None:
         raise SystemExit(f"PDF not found: {PDF_PATH}")
 
     doc = fitz.open(PDF_PATH)
-    sheets = [process_sheet(doc, index, skip_tiles=skip_tiles) for index in range(doc.page_count)]
+    plat_page = doc[0]
+    sheets = [
+        process_sheet(doc, index, plat_page, skip_tiles=skip_tiles) for index in range(doc.page_count)
+    ]
     doc.close()
 
     manifest = {

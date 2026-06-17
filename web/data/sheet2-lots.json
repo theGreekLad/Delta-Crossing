@@ -153,7 +153,9 @@
     ],
     "areaPx": 26206,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7846
   },
   {
     "id": "lot-2",
@@ -341,7 +343,9 @@
     ],
     "areaPx": 24689,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7849
   },
   {
     "id": "lot-3",
@@ -473,7 +477,9 @@
     ],
     "areaPx": 26301,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7852
   },
   {
     "id": "lot-4",
@@ -645,7 +651,9 @@
     ],
     "areaPx": 30701,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7855
   },
   {
     "id": "lot-5",
@@ -801,7 +809,9 @@
     ],
     "areaPx": 34399,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7859
   },
   {
     "id": "lot-6",
@@ -889,7 +899,9 @@
     ],
     "areaPx": 35023,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7862
   },
   {
     "id": "lot-7",
@@ -933,7 +945,9 @@
     ],
     "areaPx": 35010,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7865
   },
   {
     "id": "lot-8",
@@ -977,7 +991,9 @@
     ],
     "areaPx": 35341,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7868
   },
   {
     "id": "lot-9",
@@ -1081,7 +1097,9 @@
     ],
     "areaPx": 34308,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7871
   },
   {
     "id": "lot-10",
@@ -1185,7 +1203,9 @@
     ],
     "areaPx": 34484,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7878
   },
   {
     "id": "lot-11",
@@ -1277,7 +1297,9 @@
     ],
     "areaPx": 34881,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7881
   },
   {
     "id": "lot-12",
@@ -1377,7 +1399,9 @@
     ],
     "areaPx": 35032,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7884
   },
   {
     "id": "lot-13",
@@ -1493,7 +1517,9 @@
     ],
     "areaPx": 35025,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7887
   },
   {
     "id": "lot-14",
@@ -1557,7 +1583,9 @@
     ],
     "areaPx": 35284,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7891
   },
   {
     "id": "lot-15",
@@ -1641,7 +1669,9 @@
     ],
     "areaPx": 35092,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7894
   },
   {
     "id": "lot-16",
@@ -1805,7 +1835,9 @@
     ],
     "areaPx": 37699,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 8541
   },
   {
     "id": "lot-17",
@@ -1937,7 +1969,9 @@
     ],
     "areaPx": 42681,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 9687
   },
   {
     "id": "lot-18",
@@ -1989,7 +2023,9 @@
     ],
     "areaPx": 42951,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 9645
   },
   {
     "id": "lot-19",
@@ -2105,7 +2141,9 @@
     ],
     "areaPx": 49974,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 11024
   },
   {
     "id": "lot-20",
@@ -2189,7 +2227,9 @@
     ],
     "areaPx": 36787,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 8177
   },
   {
     "id": "lot-21",
@@ -2261,7 +2301,9 @@
     ],
     "areaPx": 33976,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-22",
@@ -2349,7 +2391,9 @@
     ],
     "areaPx": 33806,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-23",
@@ -2393,7 +2437,9 @@
     ],
     "areaPx": 34162,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-24",
@@ -2525,7 +2571,9 @@
     ],
     "areaPx": 33356,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-25",
@@ -2613,7 +2661,9 @@
     ],
     "areaPx": 32614,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-26",
@@ -2657,7 +2707,9 @@
     ],
     "areaPx": 34161,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-27",
@@ -2713,7 +2765,9 @@
     ],
     "areaPx": 34054,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-28",
@@ -2757,7 +2811,9 @@
     ],
     "areaPx": 34180,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-29",
@@ -2801,7 +2857,9 @@
     ],
     "areaPx": 33974,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-30",
@@ -2857,7 +2915,9 @@
     ],
     "areaPx": 33788,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-31",
@@ -2937,7 +2997,9 @@
     ],
     "areaPx": 33305,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-32",
@@ -3053,7 +3115,9 @@
     ],
     "areaPx": 45968,
     "rendering": null,
-    "phase": 7
+    "phase": 7,
+    "lotType": "single-family",
+    "squareFeet": 10351
   },
   {
     "id": "lot-33",
@@ -3137,7 +3201,9 @@
     ],
     "areaPx": 38082,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8624
   },
   {
     "id": "lot-34",
@@ -3205,7 +3271,9 @@
     ],
     "areaPx": 38971,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8623
   },
   {
     "id": "lot-35",
@@ -3257,7 +3325,9 @@
     ],
     "areaPx": 39070,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8670
   },
   {
     "id": "lot-36",
@@ -3341,7 +3411,9 @@
     ],
     "areaPx": 44074,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 9851
   },
   {
     "id": "lot-37",
@@ -3409,7 +3481,9 @@
     ],
     "areaPx": 33084,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-38",
@@ -3465,7 +3539,9 @@
     ],
     "areaPx": 32859,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-39",
@@ -3525,7 +3601,9 @@
     ],
     "areaPx": 33862,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-40",
@@ -3601,7 +3679,9 @@
     ],
     "areaPx": 34033,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-41",
@@ -3685,7 +3765,9 @@
     ],
     "areaPx": 33900,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-42",
@@ -3729,7 +3811,9 @@
     ],
     "areaPx": 34031,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-43",
@@ -3789,7 +3873,9 @@
     ],
     "areaPx": 33061,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-44",
@@ -3901,7 +3987,9 @@
     ],
     "areaPx": 33170,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-45",
@@ -3977,7 +4065,9 @@
     ],
     "areaPx": 33495,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-46",
@@ -4109,7 +4199,9 @@
     ],
     "areaPx": 33417,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-47",
@@ -4197,7 +4289,9 @@
     ],
     "areaPx": 33645,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-48",
@@ -4257,7 +4351,9 @@
     ],
     "areaPx": 36962,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 8177
   },
   {
     "id": "lot-49",
@@ -4373,7 +4469,9 @@
     ],
     "areaPx": 35719,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8177
   },
   {
     "id": "lot-50",
@@ -4441,7 +4539,9 @@
     ],
     "areaPx": 33683,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-51",
@@ -4561,7 +4661,9 @@
     ],
     "areaPx": 32994,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-52",
@@ -4621,7 +4723,9 @@
     ],
     "areaPx": 34309,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-53",
@@ -4721,7 +4825,9 @@
     ],
     "areaPx": 32803,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-54",
@@ -4821,7 +4927,9 @@
     ],
     "areaPx": 33638,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-55",
@@ -4881,7 +4989,9 @@
     ],
     "areaPx": 34005,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-56",
@@ -4937,7 +5047,9 @@
     ],
     "areaPx": 33939,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-57",
@@ -5033,7 +5145,9 @@
     ],
     "areaPx": 33160,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-58",
@@ -5125,7 +5239,9 @@
     ],
     "areaPx": 33277,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-59",
@@ -5221,7 +5337,9 @@
     ],
     "areaPx": 38601,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 8640
   },
   {
     "id": "lot-60",
@@ -5329,7 +5447,9 @@
     ],
     "areaPx": 45636,
     "rendering": null,
-    "phase": 6
+    "phase": 6,
+    "lotType": "single-family",
+    "squareFeet": 10250
   },
   {
     "id": "lot-61",
@@ -5377,7 +5497,9 @@
     ],
     "areaPx": 40773,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8997
   },
   {
     "id": "lot-62",
@@ -5421,7 +5543,9 @@
     ],
     "areaPx": 34233,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7555
   },
   {
     "id": "lot-63",
@@ -5469,7 +5593,9 @@
     ],
     "areaPx": 36716,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8217
   },
   {
     "id": "lot-64",
@@ -5521,7 +5647,9 @@
     ],
     "areaPx": 39012,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 8677
   },
   {
     "id": "lot-65",
@@ -5565,7 +5693,9 @@
     ],
     "areaPx": 34147,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-66",
@@ -5641,7 +5771,9 @@
     ],
     "areaPx": 32981,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-67",
@@ -5721,7 +5853,9 @@
     ],
     "areaPx": 33785,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-68",
@@ -5781,7 +5915,9 @@
     ],
     "areaPx": 33129,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-69",
@@ -5877,7 +6013,9 @@
     ],
     "areaPx": 33321,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-70",
@@ -5945,7 +6083,9 @@
     ],
     "areaPx": 33563,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-71",
@@ -6009,7 +6149,9 @@
     ],
     "areaPx": 33112,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-72",
@@ -6053,7 +6195,9 @@
     ],
     "areaPx": 34071,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-73",
@@ -6109,7 +6253,9 @@
     ],
     "areaPx": 32953,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-74",
@@ -6177,7 +6323,9 @@
     ],
     "areaPx": 34022,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-75",
@@ -6257,7 +6405,9 @@
     ],
     "areaPx": 36152,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 8177
   },
   {
     "id": "lot-76",
@@ -6389,7 +6539,9 @@
     ],
     "areaPx": 35558,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 8176
   },
   {
     "id": "lot-77",
@@ -6509,7 +6661,9 @@
     ],
     "areaPx": 33024,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-78",
@@ -6605,7 +6759,9 @@
     ],
     "areaPx": 33646,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-79",
@@ -6665,7 +6821,9 @@
     ],
     "areaPx": 33642,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-80",
@@ -6709,7 +6867,9 @@
     ],
     "areaPx": 34148,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-81",
@@ -6769,7 +6929,9 @@
     ],
     "areaPx": 32811,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-82",
@@ -6853,7 +7015,9 @@
     ],
     "areaPx": 33598,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-83",
@@ -6969,7 +7133,9 @@
     ],
     "areaPx": 33189,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-84",
@@ -7013,7 +7179,9 @@
     ],
     "areaPx": 34025,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-85",
@@ -7057,7 +7225,9 @@
     ],
     "areaPx": 34142,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-86",
@@ -7193,7 +7363,9 @@
     ],
     "areaPx": 43217,
     "rendering": null,
-    "phase": 5
+    "phase": 5,
+    "lotType": "single-family",
+    "squareFeet": 9789
   },
   {
     "id": "lot-87",
@@ -7313,7 +7485,9 @@
     ],
     "areaPx": 38442,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8575
   },
   {
     "id": "lot-88",
@@ -7421,7 +7595,9 @@
     ],
     "areaPx": 33038,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7560
   },
   {
     "id": "lot-89",
@@ -7545,7 +7721,9 @@
     ],
     "areaPx": 37738,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8633
   },
   {
     "id": "lot-90",
@@ -7625,7 +7803,9 @@
     ],
     "areaPx": 42370,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 9541
   },
   {
     "id": "lot-91",
@@ -7733,7 +7913,9 @@
     ],
     "areaPx": 36986,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8221
   },
   {
     "id": "lot-92",
@@ -7793,7 +7975,9 @@
     ],
     "areaPx": 36647,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8221
   },
   {
     "id": "lot-93",
@@ -7853,7 +8037,9 @@
     ],
     "areaPx": 36677,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8221
   },
   {
     "id": "lot-94",
@@ -7897,7 +8083,9 @@
     ],
     "areaPx": 37217,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8221
   },
   {
     "id": "lot-95",
@@ -7957,7 +8145,9 @@
     ],
     "areaPx": 36307,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8221
   },
   {
     "id": "lot-96",
@@ -8029,7 +8219,9 @@
     ],
     "areaPx": 38550,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "single-family",
+    "squareFeet": 8759
   },
   {
     "id": "lot-97",
@@ -8157,7 +8349,9 @@
     ],
     "areaPx": 48488,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 10815
   },
   {
     "id": "lot-98",
@@ -8285,7 +8479,9 @@
     ],
     "areaPx": 40734,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 9048
   },
   {
     "id": "lot-99",
@@ -8501,7 +8697,9 @@
     ],
     "areaPx": 39831,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "single-family",
+    "squareFeet": 9276
   },
   {
     "id": "lot-100",
@@ -8649,7 +8847,9 @@
     ],
     "areaPx": 34844,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8100
   },
   {
     "id": "lot-101",
@@ -8773,7 +8973,9 @@
     ],
     "areaPx": 38147,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8820
   },
   {
     "id": "lot-102",
@@ -8909,7 +9111,9 @@
     ],
     "areaPx": 37166,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8530
   },
   {
     "id": "lot-103",
@@ -9049,7 +9253,9 @@
     ],
     "areaPx": 35907,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8268
   },
   {
     "id": "lot-104",
@@ -9197,7 +9403,9 @@
     ],
     "areaPx": 36107,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8311
   },
   {
     "id": "lot-105",
@@ -9369,7 +9577,9 @@
     ],
     "areaPx": 36052,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8355
   },
   {
     "id": "lot-106",
@@ -9517,7 +9727,9 @@
     ],
     "areaPx": 36374,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8398
   },
   {
     "id": "lot-107",
@@ -9641,7 +9853,9 @@
     ],
     "areaPx": 35884,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8441
   },
   {
     "id": "lot-108",
@@ -9761,7 +9975,9 @@
     ],
     "areaPx": 36518,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8484
   },
   {
     "id": "lot-109",
@@ -9889,7 +10105,9 @@
     ],
     "areaPx": 37417,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8528
   },
   {
     "id": "lot-110",
@@ -10017,7 +10235,9 @@
     ],
     "areaPx": 36861,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8571
   },
   {
     "id": "lot-111",
@@ -10133,7 +10353,9 @@
     ],
     "areaPx": 36321,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 8319
   },
   {
     "id": "lot-112",
@@ -10269,7 +10491,9 @@
     ],
     "areaPx": 34856,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 7978
   },
   {
     "id": "lot-113",
@@ -10793,7 +11017,9 @@
     ],
     "areaPx": 54327,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12233
   },
   {
     "id": "lot-114",
@@ -11317,7 +11543,9 @@
     ],
     "areaPx": 54327,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12233
   },
   {
     "id": "lot-115",
@@ -11841,7 +12069,9 @@
     ],
     "areaPx": 54327,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12233
   },
   {
     "id": "lot-116",
@@ -12365,7 +12595,9 @@
     ],
     "areaPx": 54327,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12233
   },
   {
     "id": "lot-117",
@@ -12925,7 +13157,9 @@
     ],
     "areaPx": 56291,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12676
   },
   {
     "id": "lot-118",
@@ -13485,7 +13719,9 @@
     ],
     "areaPx": 56291,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12676
   },
   {
     "id": "lot-119",
@@ -14045,7 +14281,9 @@
     ],
     "areaPx": 56291,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12676
   },
   {
     "id": "lot-120",
@@ -14605,7 +14843,9 @@
     ],
     "areaPx": 56291,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "single-family",
+    "squareFeet": 12676
   },
   {
     "id": "lot-121",
@@ -15197,7 +15437,9 @@
     ],
     "areaPx": 53215,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 11983
   },
   {
     "id": "lot-122",
@@ -15789,7 +16031,9 @@
     ],
     "areaPx": 53215,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 11983
   },
   {
     "id": "lot-123",
@@ -16381,7 +16625,9 @@
     ],
     "areaPx": 53215,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 11983
   },
   {
     "id": "lot-124",
@@ -16973,7 +17219,9 @@
     ],
     "areaPx": 53215,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 11983
   },
   {
     "id": "lot-125",
@@ -17537,7 +17785,9 @@
     ],
     "areaPx": 53791,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12113
   },
   {
     "id": "lot-126",
@@ -18101,7 +18351,9 @@
     ],
     "areaPx": 53791,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12113
   },
   {
     "id": "lot-127",
@@ -18665,7 +18917,9 @@
     ],
     "areaPx": 53791,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12113
   },
   {
     "id": "lot-128",
@@ -19229,7 +19483,9 @@
     ],
     "areaPx": 53791,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12113
   },
   {
     "id": "lot-129",
@@ -19741,7 +19997,9 @@
     ],
     "areaPx": 55852,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12577
   },
   {
     "id": "lot-130",
@@ -20253,7 +20511,9 @@
     ],
     "areaPx": 55852,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12577
   },
   {
     "id": "lot-131",
@@ -20765,7 +21025,9 @@
     ],
     "areaPx": 55852,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12577
   },
   {
     "id": "lot-132",
@@ -21277,7 +21539,9 @@
     ],
     "areaPx": 55852,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12577
   },
   {
     "id": "lot-133",
@@ -21813,7 +22077,9 @@
     ],
     "areaPx": 56569,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12738
   },
   {
     "id": "lot-134",
@@ -22349,7 +22615,9 @@
     ],
     "areaPx": 56569,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12738
   },
   {
     "id": "lot-135",
@@ -22885,7 +23153,9 @@
     ],
     "areaPx": 56569,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12738
   },
   {
     "id": "lot-136",
@@ -23421,7 +23691,9 @@
     ],
     "areaPx": 56569,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12738
   },
   {
     "id": "lot-137",
@@ -23897,7 +24169,9 @@
     ],
     "areaPx": 56857,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12803
   },
   {
     "id": "lot-138",
@@ -24373,7 +24647,9 @@
     ],
     "areaPx": 56857,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12803
   },
   {
     "id": "lot-139",
@@ -24849,7 +25125,9 @@
     ],
     "areaPx": 56857,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12803
   },
   {
     "id": "lot-140",
@@ -25325,7 +25603,9 @@
     ],
     "areaPx": 56857,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12803
   },
   {
     "id": "lot-141",
@@ -25661,7 +25941,9 @@
     ],
     "areaPx": 51121,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 11512
   },
   {
     "id": "lot-142",
@@ -25997,7 +26279,9 @@
     ],
     "areaPx": 51121,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 11512
   },
   {
     "id": "lot-143",
@@ -26333,7 +26617,9 @@
     ],
     "areaPx": 51121,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 11512
   },
   {
     "id": "lot-144",
@@ -26669,7 +26955,9 @@
     ],
     "areaPx": 51121,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 11512
   },
   {
     "id": "lot-145",
@@ -27165,7 +27453,9 @@
     ],
     "areaPx": 62314,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14032
   },
   {
     "id": "lot-146",
@@ -27661,7 +27951,9 @@
     ],
     "areaPx": 62314,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14032
   },
   {
     "id": "lot-147",
@@ -28157,7 +28449,9 @@
     ],
     "areaPx": 62314,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14032
   },
   {
     "id": "lot-148",
@@ -28653,7 +28947,9 @@
     ],
     "areaPx": 62314,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14032
   },
   {
     "id": "lot-149",
@@ -29173,7 +29469,9 @@
     ],
     "areaPx": 62135,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 13992
   },
   {
     "id": "lot-150",
@@ -29693,7 +29991,9 @@
     ],
     "areaPx": 62135,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 13992
   },
   {
     "id": "lot-151",
@@ -30213,7 +30513,9 @@
     ],
     "areaPx": 62135,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 13992
   },
   {
     "id": "lot-152",
@@ -30733,7 +31035,9 @@
     ],
     "areaPx": 62135,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 13992
   },
   {
     "id": "lot-153",
@@ -31397,7 +31701,9 @@
     ],
     "areaPx": 57008,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12837
   },
   {
     "id": "lot-154",
@@ -32061,7 +32367,9 @@
     ],
     "areaPx": 57008,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12837
   },
   {
     "id": "lot-155",
@@ -32725,7 +33033,9 @@
     ],
     "areaPx": 57008,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12837
   },
   {
     "id": "lot-156",
@@ -33389,7 +33699,9 @@
     ],
     "areaPx": 57008,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12837
   },
   {
     "id": "lot-157",
@@ -33833,7 +34145,9 @@
     ],
     "areaPx": 57508,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12950
   },
   {
     "id": "lot-158",
@@ -34277,7 +34591,9 @@
     ],
     "areaPx": 57508,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12950
   },
   {
     "id": "lot-159",
@@ -34721,7 +35037,9 @@
     ],
     "areaPx": 57508,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12950
   },
   {
     "id": "lot-160",
@@ -35165,7 +35483,9 @@
     ],
     "areaPx": 57508,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12950
   },
   {
     "id": "lot-161",
@@ -35585,7 +35905,9 @@
     ],
     "areaPx": 54439,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12259
   },
   {
     "id": "lot-162",
@@ -36005,7 +36327,9 @@
     ],
     "areaPx": 54439,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12259
   },
   {
     "id": "lot-163",
@@ -36425,7 +36749,9 @@
     ],
     "areaPx": 54439,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12259
   },
   {
     "id": "lot-164",
@@ -36845,7 +37171,9 @@
     ],
     "areaPx": 54439,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12259
   },
   {
     "id": "lot-165",
@@ -37253,7 +37581,9 @@
     ],
     "areaPx": 70276,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 15825
   },
   {
     "id": "lot-166",
@@ -37661,7 +37991,9 @@
     ],
     "areaPx": 70276,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 15825
   },
   {
     "id": "lot-167",
@@ -38069,7 +38401,9 @@
     ],
     "areaPx": 70276,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 15825
   },
   {
     "id": "lot-168",
@@ -38477,7 +38811,9 @@
     ],
     "areaPx": 70276,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 15825
   },
   {
     "id": "lot-169",
@@ -38889,7 +39225,9 @@
     ],
     "areaPx": 57392,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12924
   },
   {
     "id": "lot-170",
@@ -39301,7 +39639,9 @@
     ],
     "areaPx": 57392,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12924
   },
   {
     "id": "lot-171",
@@ -39713,7 +40053,9 @@
     ],
     "areaPx": 57392,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12924
   },
   {
     "id": "lot-172",
@@ -40125,7 +40467,9 @@
     ],
     "areaPx": 57392,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 12924
   },
   {
     "id": "lot-173",
@@ -40505,7 +40849,9 @@
     ],
     "areaPx": 72877,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 16411
   },
   {
     "id": "lot-174",
@@ -40885,7 +41231,9 @@
     ],
     "areaPx": 72877,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 16411
   },
   {
     "id": "lot-175",
@@ -41265,7 +41613,9 @@
     ],
     "areaPx": 72877,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 16411
   },
   {
     "id": "lot-176",
@@ -41645,7 +41995,9 @@
     ],
     "areaPx": 72877,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 16411
   },
   {
     "id": "lot-177",
@@ -41805,7 +42157,9 @@
     ],
     "areaPx": 48787,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10986
   },
   {
     "id": "lot-178",
@@ -41965,7 +42319,9 @@
     ],
     "areaPx": 48787,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10986
   },
   {
     "id": "lot-179",
@@ -42125,7 +42481,9 @@
     ],
     "areaPx": 48787,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10986
   },
   {
     "id": "lot-180",
@@ -42265,7 +42623,9 @@
     ],
     "areaPx": 32810,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 7388
   },
   {
     "id": "lot-181",
@@ -42405,7 +42765,9 @@
     ],
     "areaPx": 32810,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 7388
   },
   {
     "id": "lot-182",
@@ -42689,7 +43051,9 @@
     ],
     "areaPx": 63854,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14379
   },
   {
     "id": "lot-183",
@@ -42973,7 +43337,9 @@
     ],
     "areaPx": 63854,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14379
   },
   {
     "id": "lot-184",
@@ -43257,7 +43623,9 @@
     ],
     "areaPx": 63854,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14379
   },
   {
     "id": "lot-185",
@@ -43541,7 +43909,9 @@
     ],
     "areaPx": 63854,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14379
   },
   {
     "id": "lot-186",
@@ -43793,7 +44163,9 @@
     ],
     "areaPx": 66151,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14896
   },
   {
     "id": "lot-187",
@@ -44045,7 +44417,9 @@
     ],
     "areaPx": 66151,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14896
   },
   {
     "id": "lot-188",
@@ -44297,7 +44671,9 @@
     ],
     "areaPx": 66151,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14896
   },
   {
     "id": "lot-189",
@@ -44549,7 +44925,9 @@
     ],
     "areaPx": 66151,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14896
   },
   {
     "id": "lot-190",
@@ -44889,7 +45267,9 @@
     ],
     "areaPx": 56731,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12775
   },
   {
     "id": "lot-191",
@@ -45229,7 +45609,9 @@
     ],
     "areaPx": 56731,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12775
   },
   {
     "id": "lot-192",
@@ -45569,7 +45951,9 @@
     ],
     "areaPx": 56731,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12775
   },
   {
     "id": "lot-193",
@@ -45909,7 +46293,9 @@
     ],
     "areaPx": 56731,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 12775
   },
   {
     "id": "lot-194",
@@ -46145,7 +46531,9 @@
     ],
     "areaPx": 45343,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10210
   },
   {
     "id": "lot-195",
@@ -46381,7 +46769,9 @@
     ],
     "areaPx": 45343,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10210
   },
   {
     "id": "lot-196",
@@ -46617,7 +47007,9 @@
     ],
     "areaPx": 45343,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 10210
   },
   {
     "id": "lot-197",
@@ -47097,7 +47489,9 @@
     ],
     "areaPx": 62674,
     "rendering": null,
-    "phase": 3
+    "phase": 3,
+    "lotType": "townhome",
+    "squareFeet": 14113
   },
   {
     "id": "lot-198",
@@ -47577,7 +47971,9 @@
     ],
     "areaPx": 62674,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14113
   },
   {
     "id": "lot-199",
@@ -48057,7 +48453,9 @@
     ],
     "areaPx": 62674,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14113
   },
   {
     "id": "lot-200",
@@ -48537,7 +48935,9 @@
     ],
     "areaPx": 62674,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 14113
   },
   {
     "id": "lot-201",
@@ -48905,7 +49305,9 @@
     ],
     "areaPx": 45325,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 10206
   },
   {
     "id": "lot-202",
@@ -49273,7 +49675,9 @@
     ],
     "areaPx": 45325,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 10206
   },
   {
     "id": "lot-203",
@@ -49641,7 +50045,9 @@
     ],
     "areaPx": 45325,
     "rendering": null,
-    "phase": 1
+    "phase": 1,
+    "lotType": "townhome",
+    "squareFeet": 10206
   },
   {
     "id": "lot-204",
@@ -50117,7 +50523,9 @@
     ],
     "areaPx": 55789,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12563
   },
   {
     "id": "lot-205",
@@ -50593,7 +51001,9 @@
     ],
     "areaPx": 55789,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12563
   },
   {
     "id": "lot-206",
@@ -51069,7 +51479,9 @@
     ],
     "areaPx": 55789,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12563
   },
   {
     "id": "lot-207",
@@ -51545,7 +51957,9 @@
     ],
     "areaPx": 55789,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12563
   },
   {
     "id": "lot-208",
@@ -51893,7 +52307,9 @@
     ],
     "areaPx": 56883,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12809
   },
   {
     "id": "lot-209",
@@ -52241,7 +52657,9 @@
     ],
     "areaPx": 56883,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12809
   },
   {
     "id": "lot-210",
@@ -52589,7 +53007,9 @@
     ],
     "areaPx": 56883,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12809
   },
   {
     "id": "lot-211",
@@ -52937,7 +53357,9 @@
     ],
     "areaPx": 56883,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 12809
   },
   {
     "id": "lot-212",
@@ -53365,7 +53787,9 @@
     ],
     "areaPx": 62868,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 14157
   },
   {
     "id": "lot-213",
@@ -53793,7 +54217,9 @@
     ],
     "areaPx": 62868,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 14157
   },
   {
     "id": "lot-214",
@@ -54221,7 +54647,9 @@
     ],
     "areaPx": 62868,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 14157
   },
   {
     "id": "lot-215",
@@ -54649,6 +55077,8 @@
     ],
     "areaPx": 62868,
     "rendering": null,
-    "phase": 4
+    "phase": 4,
+    "lotType": "townhome",
+    "squareFeet": 14157
   }
 ]

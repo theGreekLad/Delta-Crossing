@@ -20,6 +20,8 @@
     infoContent: document.getElementById("info-content"),
     infoTitle: document.getElementById("info-title"),
     infoLotNumber: document.getElementById("info-lot-number"),
+    infoLotType: document.getElementById("info-lot-type"),
+    infoSquareFeet: document.getElementById("info-square-feet"),
     infoPhase: document.getElementById("info-phase"),
     infoSheet: document.getElementById("info-sheet"),
     infoCentroid: document.getElementById("info-centroid"),
@@ -247,6 +249,17 @@
     return `Lot ${parcel.lotNumber}`;
   }
 
+  function formatLotType(lotType) {
+    if (lotType === "single-family") return "Single family";
+    if (lotType === "townhome") return "Townhome";
+    return lotType || "—";
+  }
+
+  function formatSquareFeet(squareFeet) {
+    if (!Number.isFinite(squareFeet)) return "—";
+    return `${squareFeet.toLocaleString()} sq ft`;
+  }
+
   function selectParcel(parcelId, options = { zoom: true }) {
     const parcel = findParcel(parcelId);
     if (!parcel) return;
@@ -272,6 +285,8 @@
     els.infoLotNumber.textContent = isCommercial
       ? `Block ${parcel.blockNumber}`
       : parcel.lotNumber;
+    els.infoLotType.textContent = isCommercial ? "Commercial" : formatLotType(parcel.lotType);
+    els.infoSquareFeet.textContent = isCommercial ? "—" : formatSquareFeet(parcel.squareFeet);
     els.infoPhase.textContent = parcel.phase ? `Phase ${parcel.phase}` : "—";
     els.infoSheet.textContent = sheet ? sheet.title : state.activeSheetId;
     els.infoCentroid.textContent = `${parcel.centroid[0]}, ${parcel.centroid[1]}`;
