@@ -35,6 +35,9 @@ SKIP_LAYERS = {
     "PAPERSPACE",
     "CANDG",
 }
+MIN_LOT_NUMBER = 1
+MAX_LOT_NUMBER = 215
+LEGACY_LOT_MAX = 120
 MIN_LOT_AREA = 500
 MAX_LOT_AREA = 250000
 
@@ -55,7 +58,7 @@ def extract_lot_labels(page: fitz.Page) -> dict[int, tuple[float, float]]:
         if not re.fullmatch(r"\d+", content):
             continue
         lot_number = int(content)
-        if not 1 <= lot_number <= 120:
+        if not MIN_LOT_NUMBER <= lot_number <= MAX_LOT_NUMBER:
             continue
         rect = annot.rect
         center = ((rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2)
@@ -215,6 +218,22 @@ def extract_lot_polygons(page: fitz.Page, labels: dict[int, tuple[float, float]]
     return lots
 
 
+def load_preserved_lots(lots_path: Path) -> list[dict]:
+    """Keep the original 1-120 extraction when refreshing townhome lots."""
+    if not lots_path.exists():
+        return []
+
+    extra_fields = {"clickBounds", "clickPolygon", "townhomeGroupSize"}
+    existing = json.loads(lots_path.read_text(encoding="utf-8"))
+    preserved = [
+        {key: value for key, value in lot.items() if key not in extra_fields}
+        for lot in existing
+        if isinstance(lot.get("lotNumber"), int) and lot["lotNumber"] <= LEGACY_LOT_MAX
+    ]
+    preserved.sort(key=lambda lot: lot["lotNumber"])
+    return preserved
+
+
 def save_dzi(image: Image.Image, prefix: Path, tile_size: int = TILE_SIZE, overlap: int = TILE_OVERLAP) -> None:
     width, height = image.size
     max_level = int(math.ceil(math.log2(max(width, height))))
@@ -273,7 +292,16 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
     print(f"Processing {sheet_id}...")
 
     labels = extract_lot_labels(page)
-    lots = extract_lot_polygons(page, labels)
+    lots_path = DATA_DIR / f"{sheet_id}-lots.json"
+    preserved_lots = load_preserved_lots(lots_path)
+    townhome_labels = {
+        lot_number: position
+        for lot_number, position in labels.items()
+        if lot_number > LEGACY_LOT_MAX
+    }
+    new_lots = extract_lot_polygons(page, townhome_labels)
+    lots = preserved_lots + new_lots
+    lots.sort(key=lambda lot: lot["lotNumber"])
     roads = extract_road_labels(page)
     if skip_tiles:
         pixel_width = int(page.rect.width * RENDER_SCALE)
@@ -281,11 +309,13 @@ def process_sheet(doc: fitz.Document, page_index: int, *, skip_tiles: bool = Fal
     else:
         pixel_width, pixel_height = render_sheet(page, sheet_id)
 
-    lots_path = DATA_DIR / f"{sheet_id}-lots.json"
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     lots_path.write_text(json.dumps(lots, indent=2), encoding="utf-8")
 
-    print(f"  extracted {len(lots)} lot polygons, {len(roads)} road labels")
+    print(
+        f"  kept {len(preserved_lots)} legacy lots, extracted {len(new_lots)} townhome lots, "
+        f"{len(roads)} road labels"
+    )
     return {
         "id": sheet_id,
         "title": "Plat Map" if sheet_number == 1 else "Utilities Plan",
