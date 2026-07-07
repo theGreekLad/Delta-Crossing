@@ -1,0 +1,674 @@
+{
+  "version": 2,
+  "model": "for-sale",
+  "description": "For-sale proforma with ordinance-based infrastructure costing. Road area = total site acreage minus single-family, townhome, commercial, and designated areas.",
+  "phaseOrder": [
+    1,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "platAreas": {
+    "sf_acres": 23.3,
+    "th_acres": 28.92,
+    "residential_acres": 52.22,
+    "commercial_acres": 0.0,
+    "designated_acres": 0.0,
+    "total_site_acres": 52.0,
+    "road_acres": 0.0,
+    "notes": "Total site is the ~52 ac residential parcel assembly. Commercial (~4 ac) and designated areas are editable assumptions; study documents may cite different scopes."
+  },
+  "ordinanceRef": {
+    "title": "Ordinance 2025-317 \u2014 Delta City Design & Construction Standards",
+    "path": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+    "drawings": [
+      "ST-103 Local Roads (50' ROW)",
+      "ST-113 Utility Locations",
+      "ST-131 Sidewalks"
+    ]
+  },
+  "assumptions": [
+    {
+      "id": "total_site_acres",
+      "label": "Total plat acreage",
+      "value": 52.0,
+      "default": 52.0,
+      "unit": "acres",
+      "category": "site_area",
+      "description": "~52 ac project parcel assembly. Study documents may cite different scopes (SF+TH lots annotate to 52.22 ac).",
+      "source": {
+        "name": "Delta Crossings project parcel assembly",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-07",
+        "notes": "~52 ac total across project parcels; commercial ~4 ac may be cited separately in studies."
+      },
+      "overridable": true
+    },
+    {
+      "id": "commercial_site_acres",
+      "label": "Commercial area (within project)",
+      "value": 0.0,
+      "default": 0.0,
+      "unit": "acres",
+      "category": "site_area",
+      "description": "~4 ac commercial zoning, often outside the 52 ac residential assembly and excluded from study-doc totals. Set if within the 52 ac site.",
+      "source": {
+        "name": "Delta Crossings project parcel assembly",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-07",
+        "notes": "~52 ac total across project parcels; commercial ~4 ac may be cited separately in studies."
+      },
+      "overridable": true
+    },
+    {
+      "id": "designated_site_acres",
+      "label": "Designated area (canal, parks, open space)",
+      "value": 0.0,
+      "default": 0.0,
+      "unit": "acres",
+      "category": "site_area",
+      "description": "Non-lot designated parcels within the site. Set per survey if known.",
+      "source": {
+        "name": "Delta Crossings project parcel assembly",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-07",
+        "notes": "~52 ac total across project parcels; commercial ~4 ac may be cited separately in studies."
+      },
+      "overridable": true
+    },
+    {
+      "id": "initial_equity",
+      "label": "Starting equity / cash",
+      "value": 500000,
+      "default": 500000,
+      "unit": "USD",
+      "category": "financing",
+      "description": "Cash on hand before phase 1 construction.",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "land_cost_total",
+      "label": "Land acquisition (total)",
+      "value": 1835000,
+      "default": 1835000,
+      "unit": "USD",
+      "category": "development",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "engineering_total",
+      "label": "Engineering & design (total)",
+      "value": 110000,
+      "default": 110000,
+      "unit": "USD",
+      "category": "development",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "studies_total",
+      "label": "Studies & reports (total)",
+      "value": 17500,
+      "default": 17500,
+      "unit": "USD",
+      "category": "development",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sf_sale_price",
+      "label": "Single-family sale price",
+      "value": 485000,
+      "default": 485000,
+      "unit": "USD/home",
+      "category": "revenue",
+      "description": "",
+      "source": {
+        "name": "Delta rural new-home market estimate",
+        "url": "https://buildgenius.app/construction-costs/utah",
+        "retrieved": "2026-07-07",
+        "notes": "Construction ~$168/sqft \u00d7 ~2,200 sqft + land/infra margin for Millard County."
+      },
+      "overridable": true
+    },
+    {
+      "id": "townhome_sale_price",
+      "label": "Townhome sale price",
+      "value": 385000,
+      "default": 385000,
+      "unit": "USD/home",
+      "category": "revenue",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx \u2014 Unit Mix",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Townhome unit revenue scaled to full home pricing; adjust for market."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sf_reserved_for_rent",
+      "label": "Single-family units reserved for rent",
+      "value": 0,
+      "default": 0,
+      "unit": "units",
+      "category": "rental_reserve",
+      "description": "Held for rental income instead of sold. Reserved from latest phases first.",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "townhome_reserved_for_rent",
+      "label": "Townhome units reserved for rent",
+      "value": 0,
+      "default": 0,
+      "unit": "units",
+      "category": "rental_reserve",
+      "description": "Held for rental income instead of sold. Reserved from latest phases first.",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sf_construction_cost_per_sqft",
+      "label": "Single-family vertical construction",
+      "value": 168,
+      "default": 168,
+      "unit": "USD/sqft",
+      "category": "vertical_construction",
+      "description": "",
+      "source": {
+        "name": "BuildGenius Utah Construction Costs 2026",
+        "url": "https://buildgenius.app/construction-costs/utah",
+        "retrieved": "2026-07-07",
+        "notes": "Standard finish single-family; Utah cost index 102%."
+      },
+      "overridable": true
+    },
+    {
+      "id": "labor_overhead_pct",
+      "label": "Labor burden & contractor O&P",
+      "value": 0.1,
+      "default": 0.1,
+      "unit": "ratio",
+      "category": "vertical_construction",
+      "description": "",
+      "source": {
+        "name": "NAHB cost breakdown guidance",
+        "url": "https://www.nahb.org/",
+        "retrieved": "2026-07-07",
+        "notes": "Labor represents 35\u201340% of hard costs; 10% burden on vertical."
+      },
+      "overridable": true
+    },
+    {
+      "id": "material_waste_pct",
+      "label": "Material waste factor",
+      "value": 0.07,
+      "default": 0.07,
+      "unit": "ratio",
+      "category": "vertical_construction",
+      "description": "",
+      "source": {
+        "name": "RSMeans residential estimating practice",
+        "url": "https://www.rsmeans.com/2026-residential-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "Typical 5\u201310% waste allowance on materials."
+      },
+      "overridable": true
+    },
+    {
+      "id": "soft_cost_pct",
+      "label": "Soft costs (% of hard costs)",
+      "value": 0.08,
+      "default": 0.08,
+      "unit": "ratio",
+      "category": "soft_costs",
+      "description": "Permits, insurance, legal, project management.",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "contingency_pct",
+      "label": "Contingency (% of direct costs)",
+      "value": 0.05,
+      "default": 0.05,
+      "unit": "ratio",
+      "category": "soft_costs",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "construction_loan_rate",
+      "label": "Construction loan interest rate",
+      "value": 0.085,
+      "default": 0.085,
+      "unit": "ratio/year",
+      "category": "financing",
+      "description": "",
+      "source": {
+        "name": "Construction financing market (2026)",
+        "url": "https://www.nahb.org/",
+        "retrieved": "2026-07-07",
+        "notes": "Adjust for lender quotes."
+      },
+      "overridable": true
+    },
+    {
+      "id": "construction_loan_advance_pct",
+      "label": "Max loan advance (% of phase cost)",
+      "value": 0.7,
+      "default": 0.7,
+      "unit": "ratio",
+      "category": "financing",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "homes_sold_per_month",
+      "label": "Home absorption rate",
+      "value": 3,
+      "default": 3,
+      "unit": "homes/month",
+      "category": "schedule",
+      "description": "",
+      "source": {
+        "name": "Western States Market Study \u2014 Delta Apartments",
+        "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "Market study projects ~10 units/month multifamily; for-sale assumed lower."
+      },
+      "overridable": true
+    },
+    {
+      "id": "months_to_build_home",
+      "label": "Months to build one home",
+      "value": 6,
+      "default": 6,
+      "unit": "months",
+      "category": "schedule",
+      "description": "",
+      "source": {
+        "name": "Production home builder cycle",
+        "url": "https://www.nahb.org/",
+        "retrieved": "2026-07-07",
+        "notes": "Standard stick-built production timeline."
+      },
+      "overridable": true
+    },
+    {
+      "id": "parallel_homes_per_phase",
+      "label": "Homes under construction simultaneously (per phase)",
+      "value": 6,
+      "default": 6,
+      "unit": "homes",
+      "category": "schedule",
+      "description": "",
+      "source": {
+        "name": "12_11_23 Proforma Delta.xlsx",
+        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+        "retrieved": "2026-07-07",
+        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "row_width_ft",
+      "label": "Right-of-way width (local road, ST-103)",
+      "value": 50,
+      "default": 50,
+      "unit": "feet",
+      "category": "infrastructure",
+      "description": "50' local road typical section per Ord. 2025-317 ST-103.",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "pavement_width_ft",
+      "label": "Pavement width (local road, ST-103)",
+      "value": 24,
+      "default": 24,
+      "unit": "feet",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sidewalk_width_ft",
+      "label": "Sidewalk width (ST-131)",
+      "value": 5,
+      "default": 5,
+      "unit": "feet",
+      "category": "infrastructure",
+      "description": "4\" concrete sidewalk against curb per ST-131.",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sewer_manhole_spacing_ft",
+      "label": "Max sewer manhole spacing",
+      "value": 350,
+      "default": 350,
+      "unit": "feet",
+      "category": "infrastructure",
+      "description": "PVC sewer mains; max 350' between manholes per Ord. 2025-317.",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "storm_network_coverage_pct",
+      "label": "Storm drain coverage (% of road network)",
+      "value": 0.85,
+      "default": 0.85,
+      "unit": "ratio",
+      "category": "infrastructure",
+      "description": "Share of road centerline receiving storm drain per typical subdivision layout.",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "asphalt_paving_per_sqft",
+      "label": "Asphalt pavement (installed)",
+      "value": 4.5,
+      "default": 4.5,
+      "unit": "USD/sqft",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah asphalt paving cost guide 2026",
+        "url": "https://utahasphalt.com/asphalt-paving-cost-utah-2026/",
+        "retrieved": "2026-07-07",
+        "notes": "Commercial-scale paving $3\u2013$7/sqft; mid-range for subdivision streets."
+      },
+      "overridable": true
+    },
+    {
+      "id": "curb_gutter_per_lf",
+      "label": "Curb & gutter (installed)",
+      "value": 27,
+      "default": 27,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "ProMatcher Salt Lake City curbing report",
+        "url": "https://curbing.promatcher.com/cost/salt-lake-city-ut-curbing-costs-prices.aspx",
+        "retrieved": "2026-07-07",
+        "notes": "$24\u2013$31/LF installed concrete curb and gutter."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sidewalk_concrete_per_sqft",
+      "label": "Concrete sidewalk 4\" (installed)",
+      "value": 12,
+      "default": 12,
+      "unit": "USD/sqft",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "RSMeans / Utah concrete flatwork benchmarks",
+        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "4\" sidewalk with base course per ST-131."
+      },
+      "overridable": true
+    },
+    {
+      "id": "road_grading_per_sqft",
+      "label": "Road corridor grading & base",
+      "value": 1.25,
+      "default": 1.25,
+      "unit": "USD/sqft",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah earthwork & base course benchmarks",
+        "url": "https://utahasphalt.com/asphalt-paving-cost-utah-2026/",
+        "retrieved": "2026-07-07",
+        "notes": "Grading, granular borrow, and base course under pavement."
+      },
+      "overridable": true
+    },
+    {
+      "id": "water_main_per_lf",
+      "label": "Culinary water main 8\" PVC (installed)",
+      "value": 85,
+      "default": 85,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah water main installation benchmarks",
+        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "AWWA C900 PVC blue pipe per Ord. 2025-317; one side of street."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sewer_main_per_lf",
+      "label": "Sanitary sewer 8\" PVC (installed)",
+      "value": 95,
+      "default": 95,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah sewer main installation benchmarks",
+        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "PVC sewer opposite water line per ST-113."
+      },
+      "overridable": true
+    },
+    {
+      "id": "storm_drain_per_lf",
+      "label": "Storm drain HDPE (installed)",
+      "value": 75,
+      "default": 75,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah storm drain installation benchmarks",
+        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "Black corrugated HDPE per Ord. 2025-317."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sewer_manhole_each",
+      "label": "Sewer manhole (precast)",
+      "value": 4500,
+      "default": 4500,
+      "unit": "USD/each",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "storm_manhole_each",
+      "label": "Storm drain manhole (precast)",
+      "value": 5500,
+      "default": 5500,
+      "unit": "USD/each",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
+        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+      },
+      "overridable": true
+    },
+    {
+      "id": "utility_trench_per_lf",
+      "label": "Gas / power / telecom trenching",
+      "value": 35,
+      "default": 35,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "",
+      "source": {
+        "name": "Utah utility trenching benchmarks",
+        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "retrieved": "2026-07-07",
+        "notes": "Joint trench allowance along road corridor."
+      },
+      "overridable": true
+    },
+    {
+      "id": "townhome_rent_monthly",
+      "label": "Townhome rent (reserved units)",
+      "value": 1750,
+      "default": 1750,
+      "unit": "USD/month",
+      "category": "rental_holdout",
+      "description": "",
+      "source": {
+        "name": "Western States Market Study \u2014 3-bed townhome",
+        "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "$1,750/mo market rent for 3-bed townhome."
+      },
+      "overridable": true
+    },
+    {
+      "id": "sf_rent_monthly",
+      "label": "Single-family rent (reserved units)",
+      "value": 2200,
+      "default": 2200,
+      "unit": "USD/month",
+      "category": "rental_holdout",
+      "description": "",
+      "source": {
+        "name": "Western States Market Study \u2014 comparable rents",
+        "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "Estimated market rent for reserved single-family units."
+      },
+      "overridable": true
+    },
+    {
+      "id": "rental_opex_per_unit_year",
+      "label": "Rental operating expenses",
+      "value": 6000,
+      "default": 6000,
+      "unit": "USD/unit/year",
+      "category": "rental_holdout",
+      "description": "",
+      "source": {
+        "name": "Western States Market Study",
+        "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
+        "retrieved": "2026-07-07",
+        "notes": "Projected opex $6,000/unit/year."
+      },
+      "overridable": true
+    },
+    {
+      "id": "rental_vacancy_pct",
+      "label": "Rental vacancy & credit loss",
+      "value": 0.05,
+      "default": 0.05,
+      "unit": "ratio",
+      "category": "rental_holdout",
+      "description": "",
+      "source": {
+        "name": "Western States Market Study",
+        "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
+        "retrieved": "2026-07-07",
+        "notes": ""
+      },
+      "overridable": true
+    }
+  ]
+}

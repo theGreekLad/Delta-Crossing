@@ -74,7 +74,7 @@
         }
       ],
       "siteAreasFile": "data/sheet1-site-areas.json",
-      "siteAreaCount": 13,
+      "siteAreaCount": 43,
       "lotCount": 215,
       "commercialFile": "data/sheet1-commercial.json",
       "commercialCount": 5,
@@ -155,7 +155,7 @@
         }
       ],
       "siteAreasFile": "data/sheet2-site-areas.json",
-      "siteAreaCount": 96,
+      "siteAreaCount": 71,
       "lotCount": 215
     }
   ]

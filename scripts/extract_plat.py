@@ -338,10 +338,54 @@ def contour_to_site_area(
     }
 
 
+def compute_feet_per_pixel(lots: list[dict]) -> float:
+    ratios = [
+        math.sqrt(lot["squareFeet"] / lot["areaPx"])
+        for lot in lots
+        if lot.get("squareFeet") and lot.get("areaPx")
+    ]
+    if not ratios:
+        return 0.22
+    ratios.sort()
+    return ratios[len(ratios) // 2]
+
+
+def build_plat_bbox_mask(
+    lots: list[dict],
+    commercial: list[dict],
+    page_width: int,
+    page_height: int,
+    *,
+    padding: int = 120,
+) -> np.ndarray:
+    """Clip road extraction to the plat footprint (lots + commercial bounds)."""
+    mask = np.zeros((page_height, page_width), np.uint8)
+    xs: list[float] = []
+    ys: list[float] = []
+    for entry in [*lots, *commercial]:
+        polygon = entry.get("polygon") or []
+        for point in polygon:
+            xs.append(point[0])
+            ys.append(point[1])
+    if not xs:
+        mask[:, :] = 255
+        return mask
+
+    min_x = max(0, int(min(xs) - padding))
+    max_x = min(page_width, int(max(xs) + padding))
+    min_y = max(0, int(min(ys) - padding))
+    max_y = min(page_height, int(max(ys) + padding))
+    mask[min_y:max_y, min_x:max_x] = 255
+    return mask
+
+
 def extract_site_areas(page: fitz.Page, lots: list[dict], commercial: list[dict]) -> list[dict]:
     page_width = int(page.rect.width * RENDER_SCALE)
     page_height = int(page.rect.height * RENDER_SCALE)
     free_space = build_linework_mask(page, page_width, page_height)
+    plat_mask = build_plat_bbox_mask(lots, commercial, page_width, page_height)
+    free_space = cv2.bitwise_and(free_space, plat_mask)
+    feet_per_pixel = compute_feet_per_pixel(lots)
 
     claimed = np.zeros((page_height, page_width), np.uint8)
     lot_polygons = [lot["polygon"] for lot in lots if lot.get("polygon")]
@@ -392,7 +436,7 @@ def extract_site_areas(page: fitz.Page, lots: list[dict], commercial: list[dict]
     contours, _ = cv2.findContours(road_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for contour in contours:
         area = cv2.contourArea(contour)
-        if area < MIN_ROAD_AREA or area > 750_000:
+        if area < MIN_ROAD_AREA:
             continue
 
         type_counters["road"] = type_counters.get("road", 0) + 1
@@ -403,6 +447,10 @@ def extract_site_areas(page: fitz.Page, lots: list[dict], commercial: list[dict]
             f"site-road-{type_counters['road']}",
         )
         if record:
+            area_sqft = int(area * feet_per_pixel * feet_per_pixel)
+            record["squareFeet"] = area_sqft
+            record["pavementWidthFt"] = 24
+            record["estimatedLengthFt"] = round(area_sqft / 24) if area_sqft else 0
             areas.append(record)
 
     areas.sort(key=lambda entry: (-entry["areaPx"], entry["type"], entry["id"]))

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Scene3D from './components/Scene3D';
 import LotPanel from './components/LotPanel';
 import { usePlatSite } from './data/usePlatSite';
-import { platUrl } from './data/platUrls';
+import { platUrl, appUrl } from './data/platUrls';
 
 export default function App() {
   const { site, error, loading } = usePlatSite('sheet1');
@@ -133,6 +133,9 @@ export default function App() {
           </button>
           <a className="btn btn-primary" href={platUrl('index.html')}>
             Plat Map
+          </a>
+          <a className="btn" href={appUrl('proforma.html')}>
+            Proforma
           </a>
         </div>
       </header>
