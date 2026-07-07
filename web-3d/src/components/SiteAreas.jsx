@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { polygonCentroid, polygonShape } from '../utils/geometry';
+import { polygonCentroid, polygonShapeOnGround } from '../utils/geometry';
 
 const AREA_STYLES = {
   road: {
@@ -55,9 +55,9 @@ const AREA_STYLES = {
 
 function buildShape(polygon, holes = []) {
   const [cx, cz] = polygonCentroid(polygon);
-  const shape = polygonShape(polygon.map(([x, z]) => [x - cx, z - cz]));
+  const shape = polygonShapeOnGround(polygon.map(([x, z]) => [x - cx, z - cz]));
   holes.forEach((hole) => {
-    const holeShape = polygonShape(hole.map(([x, z]) => [x - cx, z - cz]));
+    const holeShape = polygonShapeOnGround(hole.map(([x, z]) => [x - cx, z - cz]));
     shape.holes.push(holeShape);
   });
   return { shape, cx, cz };

@@ -18,17 +18,24 @@ function SceneContent({
   selectedLot,
 }) {
   const { cx, cz, span } = cameraTargetFromBounds(site.bounds);
+  const maxDistance = span * 2.8;
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[cx - span * 0.55, span * 0.65, cz + span * 0.55]} fov={48} />
+      <PerspectiveCamera
+        makeDefault
+        position={[cx - span * 0.55, span * 0.65, cz + span * 0.55]}
+        fov={48}
+        near={10}
+        far={span * 8}
+      />
       <OrbitControls
         ref={controlsRef}
         target={[cx, 0, cz]}
         enableDamping
         dampingFactor={0.08}
         minDistance={120}
-        maxDistance={span * 2.8}
+        maxDistance={maxDistance}
         maxPolarAngle={Math.PI / 2.2}
         minPolarAngle={Math.PI / 10}
         enablePan
@@ -43,7 +50,7 @@ function SceneContent({
         intensity={1.3}
         castShadow
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-far={2500}
+        shadow-camera-far={span * 4}
         shadow-camera-left={-1200}
         shadow-camera-right={1200}
         shadow-camera-top={1200}
@@ -60,7 +67,7 @@ function SceneContent({
         rayleigh={0.8}
       />
 
-      <fog attach="fog" args={['#c9d6e3', span * 1.2, span * 3.2]} />
+      <fog attach="fog" args={['#c9d6e3', span * 4, span * 10]} />
 
       <Ground
         bounds={site.bounds}

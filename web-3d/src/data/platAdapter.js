@@ -5,9 +5,11 @@ import {
   createCoordinateTransform,
 } from './platGeometry';
 import { groundTextureUrl, platUrl } from './platUrls';
+import { R4_ZONING } from './zoning';
+import { computeBuildingEnvelope } from '../utils/buildingEnvelope';
 
-function mapResidentialLot(lot, transform) {
-  return {
+function mapResidentialLot(lot, transform, roads) {
+  const mapped = {
     id: lot.id,
     type: lot.lotType === 'townhome' ? 'townhome' : 'single-family',
     label: `Lot ${lot.lotNumber}`,
@@ -21,6 +23,9 @@ function mapResidentialLot(lot, transform) {
     bounds: lot.bounds,
     fromPlat: true,
   };
+
+  mapped.building = computeBuildingEnvelope(mapped, { roads, transform });
+  return mapped;
 }
 
 function mapSiteArea(area, transform) {
@@ -35,8 +40,8 @@ function mapSiteArea(area, transform) {
   };
 }
 
-function mapCommercialLot(parcel, transform) {
-  return {
+function mapCommercialLot(parcel, transform, roads) {
+  const mapped = {
     id: parcel.id,
     type: 'commercial',
     label: `${parcel.label} ${parcel.blockNumber}`,
@@ -49,6 +54,9 @@ function mapCommercialLot(parcel, transform) {
     bounds: parcel.bounds,
     fromPlat: true,
   };
+
+  mapped.building = computeBuildingEnvelope(mapped, { roads, transform });
+  return mapped;
 }
 
 function generateTrees(lots, bounds) {
@@ -94,8 +102,9 @@ export function buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas
   const feetPerPixel = computeFeetPerPixel(lots);
   const transform = createCoordinateTransform(sheet.pixelWidth, sheet.pixelHeight, feetPerPixel);
 
-  const residentialLots = lots.map((lot) => mapResidentialLot(lot, transform));
-  const commercialLots = commercial.map((parcel) => mapCommercialLot(parcel, transform));
+  const roads = sheet.roads || [];
+  const residentialLots = lots.map((lot) => mapResidentialLot(lot, transform, roads));
+  const commercialLots = commercial.map((parcel) => mapCommercialLot(parcel, transform, roads));
   const mappedSiteAreas = siteAreas.map((area) => mapSiteArea(area, transform));
   const allLots = [...residentialLots, ...commercialLots];
   const bounds = boundsFromPolygons([
@@ -112,7 +121,8 @@ export function buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas
       phase: sheet.title || 'Plat Map',
       location: 'Delta City, Millard County, Utah',
       disclaimer:
-        '3D visualization aligned to the official preliminary plat map. Building models are conceptual; final construction may vary.',
+        '3D visualization aligned to the preliminary plat map. Single-family homes target 2,000–2,500 sq ft footprints with Delta City R-4 setbacks (25\' front, 10\' side/rear, 20\' corner street). Conceptual massing only.',
+      zoning: R4_ZONING.zone,
     },
     lots: allLots,
     siteAreas: mappedSiteAreas,
@@ -128,6 +138,7 @@ export function buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas
       commercialBlocks: commercial.length,
       siteAreas: mappedSiteAreas.length,
       platAligned: true,
+      zoning: R4_ZONING.zone,
     },
   };
 }

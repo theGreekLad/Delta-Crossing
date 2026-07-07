@@ -1,48 +1,36 @@
 import { useMemo } from 'react';
-import * as THREE from 'three';
-import { polygonShape, polygonCentroid } from '../utils/geometry';
-
-function buildingHeight(lot) {
-  switch (lot.type) {
-    case 'commercial':
-      return { wall: 28 + (lot.blockNumber || 1) * 2, roof: 2 };
-    case 'townhome':
-      return { wall: 32, roof: 4 };
-    default:
-      return { wall: lot.sqft > 6500 ? 20 : 14, roof: 8 };
-  }
-}
+import { polygonShapeOnGround, polygonCentroid } from '../utils/geometry';
 
 function Home({ lot, selected, hovered, onSelect, onHover }) {
   const lotPoly = lot.polygon;
-  const [cx, cz] = polygonCentroid(lotPoly);
-
-  const { width, depth } = useMemo(() => {
-    const xs = lotPoly.map(([x]) => x);
-    const zs = lotPoly.map(([, z]) => z);
-    return {
-      width: Math.max(...xs) - Math.min(...xs),
-      depth: Math.max(...zs) - Math.min(...zs),
-    };
-  }, [lotPoly]);
-
-  const { wall, roof } = buildingHeight(lot);
+  const building = lot.building;
   const highlight = selected ? '#5bbfb0' : hovered ? '#7ecfc3' : lot.color;
-  const isCommercial = lot.type === 'commercial';
   const isTownhome = lot.type === 'townhome';
 
-  const bodyScaleW = isTownhome ? 0.98 : isCommercial ? 0.94 : 0.78;
-  const bodyScaleD = isTownhome ? 0.96 : isCommercial ? 0.92 : 0.72;
+  const hasFootprint = building && building.width > 1 && building.depth > 1;
+  const [cx, cz] = hasFootprint ? building.center : polygonCentroid(lotPoly);
+  const rotation = hasFootprint ? building.rotation : 0;
+  const width = hasFootprint ? building.width : 0;
+  const depth = hasFootprint ? building.depth : 0;
+  const wall = hasFootprint ? building.wallHeight : 12;
 
-  const bodyColor = isCommercial
-    ? '#d4c4a8'
-    : isTownhome
-      ? '#d4c4a8'
-      : '#e8dcc8';
+  const bodyColor =
+    lot.type === 'commercial' ? '#d4c4a8' : isTownhome ? '#d4c4a8' : '#e8dcc8';
+
+  const footprintOutline = useMemo(() => {
+    if (!hasFootprint) return null;
+    const halfW = width / 2;
+    const halfD = depth / 2;
+    return [
+      [-halfW, -halfD],
+      [halfW, -halfD],
+      [halfW, halfD],
+      [-halfW, halfD],
+    ];
+  }, [hasFootprint, width, depth]);
 
   return (
     <group
-      position={[cx, 0, cz]}
       onClick={(event) => {
         event.stopPropagation();
         onSelect(lot);
@@ -57,8 +45,8 @@ function Home({ lot, selected, hovered, onSelect, onHover }) {
         document.body.style.cursor = 'default';
       }}
     >
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow>
-        <shapeGeometry args={[polygonShape(lotPoly.map(([x, z]) => [x - cx, z - cz]))]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} receiveShadow>
+        <shapeGeometry args={[polygonShapeOnGround(lotPoly)]} />
         <meshStandardMaterial
           color={highlight}
           transparent
@@ -67,40 +55,33 @@ function Home({ lot, selected, hovered, onSelect, onHover }) {
         />
       </mesh>
 
-      <group>
-        <mesh position={[0, wall / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[width * bodyScaleW, wall, depth * bodyScaleD]} />
-          <meshStandardMaterial color={bodyColor} roughness={0.75} />
-        </mesh>
-
-        <mesh position={[0, wall + roof / 2, 0]} castShadow>
-          <boxGeometry args={[width * (bodyScaleW + 0.04), roof, depth * (bodyScaleD + 0.04)]} />
-          <meshStandardMaterial color={lot.roofColor || '#5a4a3a'} roughness={0.85} />
-        </mesh>
-      </group>
-
-      {isTownhome &&
-        [-0.32, 0, 0.32].map((unitOffset, index) => (
-          <mesh key={index} position={[width * unitOffset, wall * 0.55, 0]} castShadow>
-            <boxGeometry args={[width * 0.14, wall * 0.9, depth * 0.65]} />
-            <meshStandardMaterial color="#dcc8a8" roughness={0.8} />
+      {hasFootprint && (
+        <group position={[cx, 0, cz]} rotation={[0, rotation, 0]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+            <shapeGeometry args={[polygonShapeOnGround(footprintOutline)]} />
+            <meshBasicMaterial color="#4a90a4" transparent opacity={0.22} />
           </mesh>
-        ))}
 
-      {lot.type === 'single-family' && (
-        <group>
-          <mesh position={[0, 5, depth * bodyScaleD * 0.28]} castShadow>
-            <boxGeometry args={[width * bodyScaleW * 0.42, 10, depth * bodyScaleD * 0.32]} />
-            <meshStandardMaterial color="#ccc5b8" roughness={0.8} />
+          <mesh position={[0, wall / 2, 0]} castShadow receiveShadow>
+            <boxGeometry args={[width, wall, depth]} />
+            <meshStandardMaterial color={bodyColor} roughness={0.75} />
           </mesh>
+
+          {isTownhome &&
+            [-0.32, 0, 0.32].map((unitOffset, index) => (
+              <mesh key={index} position={[width * unitOffset, wall * 0.55, 0]} castShadow>
+                <boxGeometry args={[width * 0.12, wall * 0.88, depth * 0.62]} />
+                <meshStandardMaterial color="#dcc8a8" roughness={0.8} />
+              </mesh>
+            ))}
+
+          {(selected || hovered) && (
+            <mesh position={[0, wall + 3, 0]}>
+              <sphereGeometry args={[2, 8, 8]} />
+              <meshStandardMaterial color="#d4a853" emissive="#d4a853" emissiveIntensity={0.4} />
+            </mesh>
+          )}
         </group>
-      )}
-
-      {(selected || hovered) && (
-        <mesh position={[0, wall + roof + 4, 0]}>
-          <sphereGeometry args={[2, 8, 8]} />
-          <meshStandardMaterial color="#d4a853" emissive="#d4a853" emissiveIntensity={0.4} />
-        </mesh>
       )}
     </group>
   );

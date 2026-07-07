@@ -170,6 +170,7 @@ export default function App() {
             <strong>{stats.commercialBlocks}</strong> commercial blocks
           </div>
           {stats.platAligned && <div className="stat-chip">Plat aligned</div>}
+          {stats.zoning && <div className="stat-chip">{stats.zoning} setbacks</div>}
         </div>
 
         <LotPanel lot={selectedLot} onClose={handleClose} />
@@ -199,6 +200,10 @@ export default function App() {
           <div className="legend-item">
             <div className="legend-swatch" style={{ background: '#5a9a6a' }} />
             Open Space / Retention
+          </div>
+          <div className="legend-item">
+            <div className="legend-swatch" style={{ background: '#4a90a4', opacity: 0.5 }} />
+            Modeled building pad (R-4 setbacks)
           </div>
           <div className="legend-item">
             <div className="legend-swatch" style={{ background: '#4a90a4' }} />

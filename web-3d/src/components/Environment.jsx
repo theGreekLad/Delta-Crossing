@@ -42,13 +42,14 @@ export function Ground({ bounds, groundTextureUrl, showPlatOverlay }) {
   const { minX, maxX, minZ, maxZ } = bounds;
   const width = maxX - minX;
   const depth = maxZ - minZ;
+  const span = Math.max(width, depth);
   const cx = (minX + maxX) / 2;
   const cz = (minZ + maxZ) / 2;
 
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, -0.1, cz]} receiveShadow>
-        <planeGeometry args={[width + 300, depth + 300]} />
+        <planeGeometry args={[span * 3, span * 3]} />
         <meshStandardMaterial color="#3a3a3a" roughness={0.92} metalness={0.04} />
       </mesh>
 
