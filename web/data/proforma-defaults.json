@@ -374,10 +374,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "RSMeans / Utah concrete flatwork benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "ProMatcher Salt Lake City concrete report",
+        "url": "https://concrete.promatcher.com/cost/salt-lake-city-ut-concrete-costs-prices.aspx",
         "retrieved": "2026-07-07",
-        "notes": "4\" sidewalk with base course per ST-131."
+        "notes": "Public report shows $6.43/sqft (4\" reinforced sidewalk); default is higher for base course per ST-131."
       },
       "overridable": true
     },
@@ -406,10 +406,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah water main installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Ogden City \u2014 Monroe Water Line bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "AWWA C900 PVC blue pipe per Ord. 2025-317; one side of street."
+        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108\u2013$149/LF (2023); default is mid-range planning value."
       },
       "overridable": true
     },
@@ -422,10 +422,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah sewer main installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "ProMatcher Utah sewer cost report",
+        "url": "https://sewers.promatcher.com/cost/utah.aspx",
         "retrieved": "2026-07-07",
-        "notes": "PVC sewer opposite water line per ST-113."
+        "notes": "Public report shows $63.18/LF ($55\u2013$71) for trench replacement; default higher for new subdivision main per ST-113."
       },
       "overridable": true
     },
@@ -438,10 +438,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah storm drain installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Black corrugated HDPE per Ord. 2025-317."
+        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114\u2013$155/LF (2023); comparable installed storm pipe cost."
       },
       "overridable": true
     },
@@ -454,10 +454,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
-        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+        "notes": "Bid items A8/A9: 4'\u20135' precast sewer manholes $5,393\u2013$7,005 each (2019); spacing per Ord. 2025-317 ST-103."
       },
       "overridable": true
     },
@@ -470,10 +470,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
-        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050\u2013$11,238 each (2023); spacing per Ord. 2025-317."
       },
       "overridable": true
     },
@@ -486,10 +486,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah utility trenching benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "Joint trench allowance along road corridor."
+        "notes": "Bid item A16: relocate 3\" gas line $70\u2013$130/LF (2019); default is lower joint-trench allowance along road corridor."
       },
       "overridable": true
     },
