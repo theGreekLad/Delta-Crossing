@@ -7,6 +7,7 @@ import {
   formatPct,
   mergeAssumptions,
   setOverride,
+  isRatioUnit,
 } from '../proforma/assumptions';
 import { computeProforma } from '../proforma/computeProforma';
 import { buildCalculations } from '../proforma/buildCalculations';
@@ -18,9 +19,9 @@ import {
 } from '../proforma/CalculationPanel';
 
 function AssumptionField({ entry, onChange, highlighted }) {
-  const isPct = entry.unit === 'ratio';
+  const isPct = isRatioUnit(entry.unit);
   const isCount = entry.unit === 'units';
-  const displayValue = isPct ? (entry.value * 100).toFixed(1) : entry.value;
+  const displayValue = isPct ? (entry.value * 100).toFixed(2) : entry.value;
   const isOverridden = entry.value !== entry.default;
 
   return (

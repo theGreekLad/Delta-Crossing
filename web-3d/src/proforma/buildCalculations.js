@@ -3,6 +3,8 @@
  * Each entry powers the "how was this calculated?" slide-over panel.
  */
 
+import { isRatioUnit } from './assumptions';
+
 function step(label, value, format = 'currency', meta = null) {
   return { label, value, format, meta };
 }
@@ -805,8 +807,8 @@ export function buildCalculations(result, merged) {
         entry.label,
         entry.description || 'User assumption — edit in the Assumptions panel',
         entry.value,
-        entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number',
-        [step('Current value', entry.value, entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number')],
+        isRatioUnit(entry.unit) ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number',
+        [step('Current value', entry.value, isRatioUnit(entry.unit) ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number')],
         [],
         entry.source?.name ? `Source: ${entry.source.name}` : null,
       );

@@ -63,7 +63,11 @@ export function formatNumber(value, digits = 0) {
   }).format(value);
 }
 
-export function formatPct(value) {
+export function isRatioUnit(unit) {
+  return unit === 'ratio' || (typeof unit === 'string' && unit.startsWith('ratio/'));
+}
+
+export function formatPct(value, digits = 1) {
   if (value == null || Number.isNaN(value)) return '—';
-  return `${(value * 100).toFixed(1)}%`;
+  return `${(value * 100).toFixed(digits)}%`;
 }

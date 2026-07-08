@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { formatCurrency, formatNumber, formatPct } from './assumptions';
+import { formatCurrency, formatNumber, formatPct, isRatioUnit } from './assumptions';
 
 function formatStepValue(value, format) {
   if (value == null || (typeof value === 'number' && Number.isNaN(value))) return '—';
@@ -7,7 +7,7 @@ function formatStepValue(value, format) {
     case 'currency':
       return formatCurrency(value);
     case 'pct':
-      return formatPct(value);
+      return formatPct(value, 2);
     case 'multiple':
       return `${Number(value).toFixed(2)}×`;
     case 'months': {
@@ -133,8 +133,8 @@ export function CalculationPanel({ calcId, calculations, assumptions, onClose, o
                       >
                         <span>{entry.label}</span>
                         <span className="calc-assumption-value">
-                          {entry.unit === 'ratio'
-                            ? formatPct(entry.value)
+                          {isRatioUnit(entry.unit)
+                            ? formatPct(entry.value, 2)
                             : entry.unit === 'USD'
                               ? formatCurrency(entry.value)
                               : formatNumber(entry.value)}
