@@ -9,15 +9,22 @@ import {
   setOverride,
 } from '../proforma/assumptions';
 import { computeProforma } from '../proforma/computeProforma';
+import { buildCalculations } from '../proforma/buildCalculations';
+import {
+  CalcMetricCard,
+  CalcTd,
+  CalcTh,
+  CalculationPanel,
+} from '../proforma/CalculationPanel';
 
-function AssumptionField({ entry, onChange }) {
+function AssumptionField({ entry, onChange, highlighted }) {
   const isPct = entry.unit === 'ratio';
   const isCount = entry.unit === 'units';
   const displayValue = isPct ? (entry.value * 100).toFixed(1) : entry.value;
   const isOverridden = entry.value !== entry.default;
 
   return (
-    <div className={`assumption-row ${isOverridden ? 'overridden' : ''}`}>
+    <div className={`assumption-row ${isOverridden ? 'overridden' : ''} ${highlighted ? 'assumption-highlight' : ''}`}>
       <div className="assumption-label">
         <label htmlFor={entry.id}>{entry.label}</label>
         {entry.description ? <p className="assumption-desc">{entry.description}</p> : null}
@@ -54,13 +61,18 @@ function AssumptionField({ entry, onChange }) {
   );
 }
 
-function CategorySection({ title, items, onChange }) {
+function CategorySection({ title, items, onChange, highlightId }) {
   if (!items.length) return null;
   return (
     <section className="assumption-section">
       <h3>{title}</h3>
       {items.map((entry) => (
-        <AssumptionField key={entry.id} entry={entry} onChange={onChange} />
+        <AssumptionField
+          key={entry.id}
+          entry={entry}
+          onChange={onChange}
+          highlighted={entry.id === highlightId}
+        />
       ))}
     </section>
   );
@@ -85,7 +97,7 @@ function formatMonths(value) {
   return `${years} yr ${months} mo`;
 }
 
-function FinancialsView({ financials }) {
+function FinancialsView({ financials, onShowCalc }) {
   if (!financials) {
     return (
       <section className="proforma-section">
@@ -110,61 +122,81 @@ function FinancialsView({ financials }) {
       </p>
 
       <div className="financials-hero">
-        <div className="financials-hero-metric primary">
+        <button
+          type="button"
+          className="financials-hero-metric primary calc-hero"
+          onClick={() => onShowCalc?.('irr')}
+        >
           <span>Project IRR</span>
           <strong>{formatIrr(financials.irr)}</strong>
           <p>Levered equity, annualized</p>
-        </div>
-        <div className="financials-hero-metric">
+          <span className="calc-hint" aria-hidden="true">ⓘ</span>
+        </button>
+        <button
+          type="button"
+          className="financials-hero-metric calc-hero"
+          onClick={() => onShowCalc?.('equityMultiple')}
+        >
           <span>Equity Multiple</span>
           <strong>{formatMultiple(financials.equityMultiple)}</strong>
           <p>Exit value ÷ equity invested</p>
-        </div>
-        <div className="financials-hero-metric">
+          <span className="calc-hint" aria-hidden="true">ⓘ</span>
+        </button>
+        <button
+          type="button"
+          className="financials-hero-metric calc-hero"
+          onClick={() => onShowCalc?.('returnOnCost')}
+        >
           <span>Return on Cost</span>
           <strong>{formatPct(financials.returnOnCost)}</strong>
           <p>Net profit ÷ total dev cost</p>
-        </div>
-        <div className="financials-hero-metric">
+          <span className="calc-hint" aria-hidden="true">ⓘ</span>
+        </button>
+        <button
+          type="button"
+          className="financials-hero-metric calc-hero"
+          onClick={() => onShowCalc?.('npvAt10Pct')}
+        >
           <span>NPV @ 10%</span>
           <strong>{formatCurrency(financials.npvAt10Pct)}</strong>
           <p>Discounted equity cash flows</p>
-        </div>
+          <span className="calc-hint" aria-hidden="true">ⓘ</span>
+        </button>
       </div>
 
       <div className="metric-grid">
-        <div className="metric-card">
+        <CalcMetricCard calcId="totalEquityInvested" onShow={onShowCalc}>
           <span>Total equity invested</span>
           <strong>{formatCurrency(financials.totalEquityInvested)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="peakDebt" onShow={onShowCalc}>
           <span>Peak construction debt</span>
           <strong>{formatCurrency(financials.peakDebt)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="totalInterest" onShow={onShowCalc}>
           <span>Total interest paid</span>
           <strong>{formatCurrency(financials.totalInterest)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="totalSaleProceeds" onShow={onShowCalc}>
           <span>Total sale proceeds</span>
           <strong>{formatCurrency(financials.totalSaleProceeds)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="profitMargin" onShow={onShowCalc}>
           <span>Gross profit margin</span>
           <strong>{formatPct(financials.profitMargin)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="projectDurationMonths" onShow={onShowCalc}>
           <span>Project duration</span>
           <strong>{formatMonths(financials.projectDurationMonths)}</strong>
-        </div>
-        <div className="metric-card">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="paybackMonth" onShow={onShowCalc}>
           <span>Equity payback</span>
           <strong>{formatMonths(financials.paybackMonth)}</strong>
-        </div>
-        <div className="metric-card highlight">
+        </CalcMetricCard>
+        <CalcMetricCard calcId="exitEquity" onShow={onShowCalc} highlight>
           <span>Exit equity value</span>
           <strong>{formatCurrency(financials.exitEquity)}</strong>
-        </div>
+        </CalcMetricCard>
       </div>
 
       <h3>Development Timeline</h3>
@@ -288,6 +320,8 @@ export default function ProformaPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('financials');
   const [overrideTick, setOverrideTick] = useState(0);
+  const [activeCalcId, setActiveCalcId] = useState(null);
+  const [highlightAssumptionId, setHighlightAssumptionId] = useState(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(() => {
     try {
       return localStorage.getItem('proforma-assumptions-open') !== 'false';
@@ -367,6 +401,36 @@ export default function ProformaPage() {
       phaseOrder: merged.phaseOrder,
     });
   }, [merged, platData]);
+
+  const calculations = useMemo(() => {
+    if (!result || !merged) return {};
+    return buildCalculations(result, merged);
+  }, [result, merged]);
+
+  const showCalc = useCallback((calcId) => {
+    setActiveCalcId(calcId);
+  }, []);
+
+  const closeCalc = useCallback(() => {
+    setActiveCalcId(null);
+  }, []);
+
+  const jumpToAssumption = useCallback((assumptionId) => {
+    toggleAssumptions(true);
+    setHighlightAssumptionId(assumptionId);
+    setActiveCalcId(null);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(assumptionId);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus({ preventScroll: true });
+    });
+  }, [toggleAssumptions]);
+
+  useEffect(() => {
+    if (!highlightAssumptionId) return undefined;
+    const timer = window.setTimeout(() => setHighlightAssumptionId(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [highlightAssumptionId]);
 
   const handleOverride = useCallback((id, value) => {
     setOverride(id, value);
@@ -448,6 +512,7 @@ export default function ProformaPage() {
                 title={label}
                 items={assumptionsByCategory[key] || []}
                 onChange={handleOverride}
+                highlightId={highlightAssumptionId}
               />
             ))}
           </div>
@@ -513,89 +578,89 @@ export default function ProformaPage() {
             ))}
           </nav>
 
-          {view === 'financials' && <FinancialsView financials={result.financials} />}
+          {view === 'financials' && <FinancialsView financials={result.financials} onShowCalc={showCalc} />}
 
           {view === 'total' && (
             <section className="proforma-section">
               <h2>Total Project Summary</h2>
               <div className="metric-grid">
-                <div className="metric-card">
+                <CalcMetricCard calcId="singleFamilyHomes" onShow={showCalc}>
                   <span>Single-family homes</span>
                   <strong>{result.projectTotals.singleFamilyHomes}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="townhomeLots" onShow={showCalc}>
                   <span>Townhomes</span>
                   <strong>{result.projectTotals.townhomeLots}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="forSaleHomes" onShow={showCalc}>
                   <span>For sale</span>
                   <strong>{result.projectTotals.forSaleHomes}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="reservedForRent" onShow={showCalc}>
                   <span>Reserved for rent</span>
                   <strong>{result.projectTotals.reservedForRent}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="avgDwellingSqFt" onShow={showCalc}>
                   <span>Avg dwelling size</span>
                   <strong>{formatNumber(result.projectTotals.avgDwellingSqFt)} sqft</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="waterRightsTotal" onShow={showCalc}>
                   <span>
                     Water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF)
                   </span>
                   <strong>{formatCurrency(result.waterRights.total)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="totalDevelopmentCost" onShow={showCalc}>
                   <span>Total development cost</span>
                   <strong>{formatCurrency(result.projectTotals.totalDevelopmentCost)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="totalSaleRevenue" onShow={showCalc}>
                   <span>Total sale revenue</span>
                   <strong>{formatCurrency(result.projectTotals.totalSaleRevenue)}</strong>
-                </div>
-                <div className="metric-card highlight">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="totalGrossMargin" onShow={showCalc} highlight>
                   <span>Gross margin (pre-finance)</span>
                   <strong>{formatCurrency(result.projectTotals.totalGrossMargin)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="avgCostPerHome" onShow={showCalc}>
                   <span>Avg cost / home</span>
                   <strong>{formatCurrency(result.projectTotals.avgCostPerHome)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="endingCash" onShow={showCalc}>
                   <span>Ending cash</span>
                   <strong>{formatCurrency(result.waterfall.endingCash)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="endingDebt" onShow={showCalc}>
                   <span>Ending debt</span>
                   <strong>{formatCurrency(result.waterfall.endingDebt)}</strong>
-                </div>
+                </CalcMetricCard>
               </div>
 
               <h3>Development Costs (project-wide)</h3>
               <table className="proforma-table">
                 <tbody>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('land_cost_total')}>
                     <td>Land acquisition</td>
-                    <td>{formatCurrency(result.map.land_cost_total)}</td>
+                    <CalcTd calcId="land_cost_total" onShow={showCalc}>{formatCurrency(result.map.land_cost_total)}</CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('engineering_total')}>
                     <td>Engineering &amp; design</td>
-                    <td>{formatCurrency(result.map.engineering_total)}</td>
+                    <CalcTd calcId="engineering_total" onShow={showCalc}>{formatCurrency(result.map.engineering_total)}</CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('studies_total')}>
                     <td>Studies &amp; reports</td>
-                    <td>{formatCurrency(result.map.studies_total)}</td>
+                    <CalcTd calcId="studies_total" onShow={showCalc}>{formatCurrency(result.map.studies_total)}</CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('waterRightsTotal')}>
                     <td>
                       Culinary water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF
                       @ {formatCurrency(result.waterRights.costPerAcreFoot)}/AF)
                     </td>
-                    <td>{formatCurrency(result.waterRights.total)}</td>
+                    <CalcTd calcId="waterRightsTotal" onShow={showCalc}>{formatCurrency(result.waterRights.total)}</CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('totalInfraBudget')}>
                     <td>Road &amp; utility infrastructure (Ord. 2025-317)</td>
-                    <td>{formatCurrency(result.infrastructure.totalInfraBudget)}</td>
+                    <CalcTd calcId="totalInfraBudget" onShow={showCalc}>{formatCurrency(result.infrastructure.totalInfraBudget)}</CalcTd>
                   </tr>
                 </tbody>
               </table>
@@ -609,9 +674,9 @@ export default function ProformaPage() {
                     <th>Homes</th>
                     <th>For Sale</th>
                     <th>Reserved</th>
-                    <th>Dev Cost</th>
-                    <th>Sale Revenue</th>
-                    <th>Gross Margin</th>
+                    <CalcTh calcId="col_dev_cost" onShow={showCalc}>Dev Cost</CalcTh>
+                    <CalcTh calcId="col_sale_revenue" onShow={showCalc}>Sale Revenue</CalcTh>
+                    <CalcTh calcId="col_gross_margin" onShow={showCalc}>Gross Margin</CalcTh>
                     <th>Avg Margin / Home</th>
                   </tr>
                 </thead>
@@ -622,10 +687,18 @@ export default function ProformaPage() {
                       <td>{phase.homeCount}</td>
                       <td>{phase.sellableCount}</td>
                       <td>{phase.reservedCount}</td>
-                      <td>{formatCurrency(phase.totalCost)}</td>
-                      <td>{formatCurrency(phase.totalRevenue)}</td>
-                      <td>{formatCurrency(phase.totalMargin)}</td>
-                      <td>{formatCurrency(phase.homeCount ? phase.totalMargin / Math.max(phase.sellableCount, 1) : 0)}</td>
+                      <CalcTd calcId={`phase_${phase.phase}_totalCost`} onShow={showCalc}>
+                        {formatCurrency(phase.totalCost)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${phase.phase}_totalRevenue`} onShow={showCalc}>
+                        {formatCurrency(phase.totalRevenue)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${phase.phase}_totalMargin`} onShow={showCalc}>
+                        {formatCurrency(phase.totalMargin)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${phase.phase}_totalMargin`} onShow={showCalc}>
+                        {formatCurrency(phase.homeCount ? phase.totalMargin / Math.max(phase.sellableCount, 1) : 0)}
+                      </CalcTd>
                     </tr>
                   ))}
                 </tbody>
@@ -647,10 +720,10 @@ export default function ProformaPage() {
                     <th>Built</th>
                     <th>Sold</th>
                     <th>Reserved</th>
-                    <th>Phase Cost</th>
-                    <th>Loan Draw</th>
-                    <th>Interest</th>
-                    <th>Sale Proceeds</th>
+                    <CalcTh calcId="col_dev_cost" onShow={showCalc}>Phase Cost</CalcTh>
+                    <CalcTh calcId="col_loan_draw" onShow={showCalc}>Loan Draw</CalcTh>
+                    <CalcTh calcId="col_interest" onShow={showCalc}>Interest</CalcTh>
+                    <CalcTh calcId="col_sale_revenue" onShow={showCalc}>Sale Proceeds</CalcTh>
                     <th>Net Profit</th>
                     <th>Cash After</th>
                     <th>Debt After</th>
@@ -663,13 +736,27 @@ export default function ProformaPage() {
                       <td>{row.homeCount}</td>
                       <td>{row.sellableCount}</td>
                       <td>{row.reservedCount}</td>
-                      <td>{formatCurrency(row.totalCost)}</td>
-                      <td>{formatCurrency(row.financingDraw)}</td>
-                      <td>{formatCurrency(row.interest)}</td>
-                      <td>{formatCurrency(row.saleProceeds)}</td>
-                      <td>{formatCurrency(row.netProfit)}</td>
-                      <td>{formatCurrency(row.cashAfterPhase)}</td>
-                      <td>{formatCurrency(row.debtAfterPhase)}</td>
+                      <CalcTd calcId={`phase_${row.phase}_totalCost`} onShow={showCalc}>
+                        {formatCurrency(row.totalCost)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${row.phase}_financingDraw`} onShow={showCalc}>
+                        {formatCurrency(row.financingDraw)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${row.phase}_interest`} onShow={showCalc}>
+                        {formatCurrency(row.interest)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${row.phase}_totalRevenue`} onShow={showCalc}>
+                        {formatCurrency(row.saleProceeds)}
+                      </CalcTd>
+                      <CalcTd calcId={`phase_${row.phase}_netProfit`} onShow={showCalc}>
+                        {formatCurrency(row.netProfit)}
+                      </CalcTd>
+                      <CalcTd calcId="endingCash" onShow={showCalc}>
+                        {formatCurrency(row.cashAfterPhase)}
+                      </CalcTd>
+                      <CalcTd calcId="endingDebt" onShow={showCalc}>
+                        {formatCurrency(row.debtAfterPhase)}
+                      </CalcTd>
                     </tr>
                   ))}
                 </tbody>
@@ -706,19 +793,23 @@ export default function ProformaPage() {
                     <td>Centerline segments</td>
                     <td>{formatNumber(result.infrastructure.roadArea.segmentCount)}</td>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('totalRoadLf')}>
                     <td>Total centerline length</td>
-                    <td>{formatNumber(result.infrastructure.totalRoadLf)} LF</td>
+                    <CalcTd calcId="totalRoadLf" onShow={showCalc}>
+                      {formatNumber(result.infrastructure.totalRoadLf)} LF
+                    </CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('roadSqFt')}>
                     <td>
                       <strong>Road corridor area</strong>
                     </td>
                     <td>
-                      <strong>
-                        {formatNumber(result.infrastructure.roadArea.roadSqFt / 43560, 2)} acres (
-                        {formatNumber(result.infrastructure.totalRoadSqFt)} sqft)
-                      </strong>
+                      <button type="button" className="calc-td-trigger" onClick={() => showCalc('roadSqFt')}>
+                        <strong>
+                          {formatNumber(result.infrastructure.roadArea.roadSqFt / 43560, 2)} acres (
+                          {formatNumber(result.infrastructure.totalRoadSqFt)} sqft)
+                        </strong>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
@@ -753,15 +844,19 @@ export default function ProformaPage() {
               <h3>Ord. 2025-317 Quantities</h3>
               <table className="proforma-table">
                 <tbody>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('pavementSqFt')}>
                     <td>Pavement ({result.infrastructure.ordinanceSpecs.pavementWidthFt}&apos; per ST-103)</td>
-                    <td>{formatNumber(result.infrastructure.pavementSqFt)} sqft</td>
+                    <CalcTd calcId="pavementSqFt" onShow={showCalc}>
+                      {formatNumber(result.infrastructure.pavementSqFt)} sqft
+                    </CalcTd>
                   </tr>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('sidewalkSqFt')}>
                     <td>
                       Sidewalks ({result.infrastructure.ordinanceSpecs.sidewalkWidthFt}&apos; × 2 per ST-131)
                     </td>
-                    <td>{formatNumber(result.infrastructure.sidewalkSqFt)} sqft</td>
+                    <CalcTd calcId="sidewalkSqFt" onShow={showCalc}>
+                      {formatNumber(result.infrastructure.sidewalkSqFt)} sqft
+                    </CalcTd>
                   </tr>
                   <tr>
                     <td>Curb &amp; gutter (both sides, ST-121)</td>
@@ -794,22 +889,22 @@ export default function ProformaPage() {
 
               <h3>Ordinance Quantities Summary</h3>
               <div className="metric-grid">
-                <div className="metric-card">
+                <CalcMetricCard calcId="totalRoadLf" onShow={showCalc}>
                   <span>Centerline length</span>
                   <strong>{formatNumber(result.infrastructure.totalRoadLf)} LF</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="pavementSqFt" onShow={showCalc}>
                   <span>Pavement area</span>
                   <strong>{formatNumber(result.infrastructure.pavementSqFt)} sqft</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="sidewalkSqFt" onShow={showCalc}>
                   <span>Sidewalk area</span>
                   <strong>{formatNumber(result.infrastructure.sidewalkSqFt)} sqft</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="totalInfraBudget" onShow={showCalc}>
                   <span>Total infrastructure cost</span>
                   <strong>{formatCurrency(result.infrastructure.totalInfraBudget)}</strong>
-                </div>
+                </CalcMetricCard>
               </div>
 
               <h3>Cost Line Items</h3>
@@ -825,24 +920,32 @@ export default function ProformaPage() {
                 </thead>
                 <tbody>
                   {result.infrastructure.lineItems.map((row) => (
-                    <tr key={row.id}>
+                    <tr
+                      key={row.id}
+                      className="calc-row-clickable"
+                      onClick={() => showCalc(`infra_${row.id}`)}
+                    >
                       <td>{row.label}</td>
                       <td>{row.ordinanceRef}</td>
                       <td>
                         {formatNumber(row.quantity, row.unit === 'each' ? 0 : 0)} {row.unit}
                       </td>
                       <td>{formatCurrency(row.unitCost)}</td>
-                      <td>{formatCurrency(row.amount)}</td>
+                      <CalcTd calcId={`infra_${row.id}`} onShow={showCalc}>
+                        {formatCurrency(row.amount)}
+                      </CalcTd>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('totalInfraBudget')}>
                     <td colSpan={4}>
                       <strong>Total infrastructure</strong>
                     </td>
                     <td>
-                      <strong>{formatCurrency(result.infrastructure.totalInfraBudget)}</strong>
+                      <button type="button" className="calc-td-trigger" onClick={() => showCalc('totalInfraBudget')}>
+                        <strong>{formatCurrency(result.infrastructure.totalInfraBudget)}</strong>
+                      </button>
                     </td>
                   </tr>
                 </tfoot>
@@ -855,42 +958,42 @@ export default function ProformaPage() {
               <h2>Reserved Rental Units</h2>
               <p className="section-lead">{result.rentalHoldout.reason}</p>
               <div className="metric-grid">
-                <div className="metric-card">
+                <CalcMetricCard calcId="rentalUnits" onShow={showCalc}>
                   <span>Total reserved units</span>
                   <strong>{result.rentalHoldout.units}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="reservedForRent" onShow={showCalc}>
                   <span>SF reserved</span>
                   <strong>{result.rentalHoldout.sfUnits}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="reservedForRent" onShow={showCalc}>
                   <span>Townhome reserved</span>
                   <strong>{result.rentalHoldout.townhomeUnits}</strong>
-                </div>
+                </CalcMetricCard>
                 <div className="metric-card">
                   <span>Rentals active</span>
                   <strong>{result.rentalHoldout.activated ? 'Yes' : 'No'}</strong>
                 </div>
-                <div className="metric-card">
+                <CalcMetricCard calcId="sf_rent_monthly" onShow={showCalc}>
                   <span>SF rent / unit</span>
                   <strong>{formatCurrency(result.rentalHoldout.sfRent)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="townhome_rent_monthly" onShow={showCalc}>
                   <span>Townhome rent / unit</span>
                   <strong>{formatCurrency(result.rentalHoldout.townhomeRent)}</strong>
-                </div>
-                <div className="metric-card highlight">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="annualNoi" onShow={showCalc} highlight>
                   <span>Annual NOI (if active)</span>
                   <strong>{formatCurrency(result.rentalHoldout.annualNoi)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="potentialAnnualNoi" onShow={showCalc}>
                   <span>Potential NOI (all reserved)</span>
                   <strong>{formatCurrency(result.rentalHoldout.potentialAnnualNoi)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId="capValueAt5Pct" onShow={showCalc}>
                   <span>Implied value @ 5% cap</span>
                   <strong>{formatCurrency(result.rentalHoldout.capValueAt5Pct)}</strong>
-                </div>
+                </CalcMetricCard>
               </div>
               {result.rentalHoldout.reservedHomes.length > 0 && (
                 <table className="proforma-table">
@@ -933,18 +1036,18 @@ export default function ProformaPage() {
                   <span>Homes in phase</span>
                   <strong>{phaseData.homeCount}</strong>
                 </div>
-                <div className="metric-card">
+                <CalcMetricCard calcId={`phase_${phaseData.phase}_totalCost`} onShow={showCalc}>
                   <span>Phase development cost</span>
                   <strong>{formatCurrency(phaseData.totalCost)}</strong>
-                </div>
-                <div className="metric-card">
+                </CalcMetricCard>
+                <CalcMetricCard calcId={`phase_${phaseData.phase}_totalRevenue`} onShow={showCalc}>
                   <span>Phase sale revenue</span>
                   <strong>{formatCurrency(phaseData.totalRevenue)}</strong>
-                </div>
-                <div className="metric-card highlight">
+                </CalcMetricCard>
+                <CalcMetricCard calcId={`phase_${phaseData.phase}_totalMargin`} onShow={showCalc} highlight>
                   <span>Phase gross margin</span>
                   <strong>{formatCurrency(phaseData.totalMargin)}</strong>
-                </div>
+                </CalcMetricCard>
               </div>
               <table className="proforma-table">
                 <thead>
@@ -953,12 +1056,12 @@ export default function ProformaPage() {
                     <th>Type</th>
                     <th>Disposition</th>
                     <th>Dwelling</th>
-                    <th>Land</th>
-                    <th>Infra</th>
-                    <th>Vertical</th>
+                    <CalcTh calcId="col_land" onShow={showCalc}>Land</CalcTh>
+                    <CalcTh calcId="col_infra" onShow={showCalc}>Infra</CalcTh>
+                    <CalcTh calcId="col_vertical" onShow={showCalc}>Vertical</CalcTh>
                     <th>Total Cost</th>
                     <th>Sale Price</th>
-                    <th>Margin</th>
+                    <CalcTh calcId="col_gross_margin" onShow={showCalc}>Margin</CalcTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -968,16 +1071,25 @@ export default function ProformaPage() {
                       <td>{home.lotType === 'townhome' ? 'Townhome' : 'SF'}</td>
                       <td>{home.disposition === 'rent' ? 'Rent' : 'Sale'}</td>
                       <td>{formatNumber(home.dwellingSqFt)} sqft</td>
-                      <td>{formatCurrency(home.costs.land)}</td>
-                      <td>{formatCurrency(home.costs.infrastructure)}</td>
-                      <td>{formatCurrency(home.costs.verticalHard)}</td>
-                      <td>{formatCurrency(home.costs.total)}</td>
+                      <CalcTd calcId="col_land" onShow={showCalc}>
+                        {formatCurrency(home.costs.land)}
+                      </CalcTd>
+                      <CalcTd calcId="col_infra" onShow={showCalc}>
+                        {formatCurrency(home.costs.infrastructure)}
+                      </CalcTd>
+                      <CalcTd calcId={`lot_${home.lotNumber}_vertical`} onShow={showCalc}>
+                        {formatCurrency(home.costs.verticalHard)}
+                      </CalcTd>
+                      <CalcTd calcId={`lot_${home.lotNumber}_total`} onShow={showCalc}>
+                        {formatCurrency(home.costs.total)}
+                      </CalcTd>
                       <td>{home.disposition === 'rent' ? '—' : formatCurrency(home.salePrice)}</td>
-                      <td>
-                        {home.disposition === 'rent'
-                          ? '—'
-                          : formatCurrency(home.grossMargin)}
-                      </td>
+                      <CalcTd
+                        calcId={home.disposition === 'rent' ? null : `lot_${home.lotNumber}_margin`}
+                        onShow={showCalc}
+                      >
+                        {home.disposition === 'rent' ? '—' : formatCurrency(home.grossMargin)}
+                      </CalcTd>
                     </tr>
                   ))}
                 </tbody>
@@ -986,6 +1098,14 @@ export default function ProformaPage() {
           )}
         </main>
       </div>
+
+      <CalculationPanel
+        calcId={activeCalcId}
+        calculations={calculations}
+        assumptions={merged.assumptions}
+        onClose={closeCalc}
+        onAssumptionClick={jumpToAssumption}
+      />
     </div>
   );
 }
