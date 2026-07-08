@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { platUrl, appUrl } from '../data/platUrls';
 import {
   clearOverrides,
@@ -95,6 +95,25 @@ function formatMonths(value) {
   if (years === 0) return `${months} mo`;
   if (months === 0) return `${years} yr`;
   return `${years} yr ${months} mo`;
+}
+
+async function readJsonResponse(response, label) {
+  const url = response.url || label;
+  if (!response.ok) {
+    throw new Error(`${label} failed (${response.status}) at ${url}`);
+  }
+
+  const text = await response.text();
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('json') && text.trimStart().startsWith('<')) {
+    throw new Error(`${label} returned HTML instead of JSON at ${url}. Use the Vite dev server (npm run dev in web-3d).`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${label} returned invalid JSON at ${url}`);
+  }
 }
 
 function FinancialsView({ financials, onShowCalc }) {
@@ -324,9 +343,9 @@ export default function ProformaPage() {
   const [highlightAssumptionId, setHighlightAssumptionId] = useState(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(() => {
     try {
-      return localStorage.getItem('proforma-assumptions-open') !== 'false';
+      return localStorage.getItem('proforma-assumptions-open') === 'true';
     } catch {
-      return true;
+      return false;
     }
   });
 
@@ -357,11 +376,11 @@ export default function ProformaPage() {
         }
 
         const [defaultsJson, manifest, lots, commercial, roadSegments] = await Promise.all([
-          defaultsRes.json(),
-          manifestRes.json(),
-          lotsRes.json(),
-          commercialRes.ok ? commercialRes.json() : [],
-          roadSegmentsRes.ok ? roadSegmentsRes.json() : null,
+          readJsonResponse(defaultsRes, 'Proforma defaults'),
+          readJsonResponse(manifestRes, 'Plat manifest'),
+          readJsonResponse(lotsRes, 'Sheet1 lots'),
+          commercialRes.ok ? readJsonResponse(commercialRes, 'Commercial lots') : [],
+          roadSegmentsRes.ok ? readJsonResponse(roadSegmentsRes, 'Road segments') : null,
         ]);
 
         const sheet = manifest.sheets.find((entry) => entry.id === 'sheet1');
@@ -478,7 +497,7 @@ export default function ProformaPage() {
           <p>For-sale single-family & townhomes · Phase-funded development · {result.meta.ordinanceRef.title}</p>
         </div>
         <div className="proforma-header-actions">
-          <a className="btn" href={platUrl('index.html')}>
+          <a className="btn btn-primary" href={platUrl('index.html')}>
             Plat Map
           </a>
           <a className="btn btn-primary" href={appUrl('index.html')}>
@@ -524,10 +543,18 @@ export default function ProformaPage() {
               type="button"
               className="assumptions-expand-tab"
               onClick={() => toggleAssumptions(true)}
-              aria-label="Show assumptions panel"
-              title="Show assumptions"
+              aria-label="Expand assumptions panel"
+              aria-expanded="false"
+              title="Expand assumptions"
             >
-              Assumptions ›
+              <span className="assumptions-expand-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M3 4.5h12M3 9h8M3 13.5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M14.5 7.5v5M12 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="assumptions-expand-label">Assumptions</span>
+              <span className="assumptions-expand-chevron" aria-hidden="true">›</span>
             </button>
           ) : null}
           <nav className="proforma-tabs" aria-label="Proforma views">

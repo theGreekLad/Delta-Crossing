@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function LotPanel({ lot, onClose }) {
   if (!lot) return null;
 

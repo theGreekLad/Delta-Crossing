@@ -5,6 +5,7 @@ import {
   createCoordinateTransform,
 } from './platGeometry';
 import { groundTextureUrl, platUrl } from './platUrls';
+import { satelliteOverlayFromGeoref } from './georef';
 import { R4_ZONING } from './zoning';
 import { computeBuildingEnvelope } from '../utils/buildingEnvelope';
 
@@ -130,7 +131,9 @@ export function buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas
     transform,
     sheet,
     trees: generateTrees(residentialLots, bounds),
-    groundTextureUrl: groundTextureUrl(sheet.tileSource),
+    groundTextureUrl: groundTextureUrl(sheet.tileSource, sheet.pixelWidth, sheet.pixelHeight),
+    satelliteOverlay: null,
+    georef: null,
     stats: {
       totalLots: lots.length,
       singleFamilyLots,
@@ -177,5 +180,22 @@ export async function loadPlatSite(sheetId = 'sheet1') {
     }
   }
 
-  return buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas });
+  const site = buildSiteFromPlat({ manifest, sheet, lots, commercial, siteAreas });
+
+  const georefResponse = await fetch(platUrl('data/boundary-georef.json'));
+  if (georefResponse.ok) {
+    const georef = await georefResponse.json();
+    site.georef = georef;
+    if (georef.satellite?.image) {
+      site.satelliteOverlay = satelliteOverlayFromGeoref({
+        ...georef,
+        satellite: {
+          ...georef.satellite,
+          image: platUrl(georef.satellite.image),
+        },
+      });
+    }
+  }
+
+  return site;
 }

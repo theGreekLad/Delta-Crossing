@@ -117,21 +117,47 @@ html.proforma-page #root {
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0 8px 8px 0;
-  border: 1px solid var(--surface-border);
-  border-left: none;
-  background: rgba(16, 20, 26, 0.92);
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
+  gap: 0.55rem;
+  margin: -0.25rem 0 1rem -1.5rem;
+  padding: 0.65rem 1rem 0.65rem 1.25rem;
+  border-radius: 0 10px 10px 0;
+  border: 1px solid rgba(61, 154, 139, 0.45);
+  border-left: 3px solid var(--accent);
+  background: linear-gradient(90deg, rgba(61, 154, 139, 0.14), rgba(16, 20, 26, 0.96));
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 .assumptions-expand-tab:hover {
-  color: var(--text);
-  background: rgba(22, 28, 36, 0.98);
+  background: linear-gradient(90deg, rgba(61, 154, 139, 0.22), rgba(22, 28, 36, 0.98));
+  border-color: rgba(61, 154, 139, 0.65);
+  transform: translateX(2px);
+}
+
+.assumptions-expand-tab:active {
+  transform: translateX(0);
+}
+
+.assumptions-expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+.assumptions-expand-label {
+  letter-spacing: 0.01em;
+}
+
+.assumptions-expand-chevron {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--accent-light);
+  margin-left: 0.15rem;
 }
 
 .panel-note,
@@ -918,7 +944,45 @@ html.proforma-page #root {
 
   .assumptions-expand-tab {
     position: static;
-    border-left: 1px solid var(--surface-border);
-    border-radius: 8px;
+    margin-left: 0;
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .timeline-track {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    min-height: auto;
+    padding: 0.75rem;
+    overflow: visible;
+  }
+
+  .timeline-phase {
+    position: relative;
+    left: auto !important;
+    width: 100% !important;
+    top: auto;
+    bottom: auto;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .timeline-connector {
+    display: none;
+  }
+
+  .equity-chart {
+    height: 110px;
+    gap: 1px;
+    padding: 0.5rem;
+    overflow: hidden;
+  }
+
+  .equity-bar {
+    flex: 1 1 0;
+    min-width: 0;
   }
 }

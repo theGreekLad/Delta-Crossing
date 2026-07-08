@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Scene3D from './components/Scene3D';
 import LotPanel from './components/LotPanel';
 import { usePlatSite } from './data/usePlatSite';
@@ -8,7 +8,7 @@ export default function App() {
   const { site, error, loading } = usePlatSite('sheet1');
   const [selectedLot, setSelectedLot] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
-  const [showPlatOverlay, setShowPlatOverlay] = useState(false);
+  const [showSatelliteOverlay, setShowSatelliteOverlay] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -123,10 +123,11 @@ export default function App() {
           </label>
           <button
             type="button"
-            className={`btn ${showPlatOverlay ? 'active' : ''}`}
-            onClick={() => setShowPlatOverlay((value) => !value)}
+            className={`btn ${showSatelliteOverlay ? 'active' : ''}`}
+            onClick={() => setShowSatelliteOverlay((value) => !value)}
+            disabled={!site.satelliteOverlay}
           >
-            Plat Overlay
+            Satellite Overlay
           </button>
           <button type="button" className="btn" onClick={resetView}>
             Reset View
@@ -134,7 +135,7 @@ export default function App() {
           <a className="btn btn-primary" href={platUrl('index.html')}>
             Plat Map
           </a>
-          <a className="btn" href={appUrl('proforma.html')}>
+          <a className="btn btn-primary" href={appUrl('proforma.html')}>
             Proforma
           </a>
         </div>
@@ -147,7 +148,7 @@ export default function App() {
           onSelect={handleSelect}
           onHover={setHoveredId}
           hoveredId={hoveredId}
-          showPlatOverlay={showPlatOverlay}
+          showSatelliteOverlay={showSatelliteOverlay}
         />
 
         {showWelcome && (

@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useTexture } from '@react-three/drei';
+import * as THREE from 'three';
 
 function Tree({ x, z, scale }) {
   const ref = useRef();
@@ -38,7 +38,7 @@ export default function Trees({ trees }) {
   );
 }
 
-export function Ground({ bounds, groundTextureUrl, showPlatOverlay }) {
+export function Ground({ bounds, satelliteOverlay, showSatelliteOverlay }) {
   const { minX, maxX, minZ, maxZ } = bounds;
   const width = maxX - minX;
   const depth = maxZ - minZ;
@@ -53,21 +53,48 @@ export function Ground({ bounds, groundTextureUrl, showPlatOverlay }) {
         <meshStandardMaterial color="#3a3a3a" roughness={0.92} metalness={0.04} />
       </mesh>
 
-      {showPlatOverlay && (
-        <PlatOverlay bounds={{ width, depth, cx, cz }} groundTextureUrl={groundTextureUrl} />
+      {showSatelliteOverlay && satelliteOverlay && (
+        <SatelliteOverlay overlay={satelliteOverlay} />
       )}
     </group>
   );
 }
 
-function PlatOverlay({ bounds, groundTextureUrl }) {
-  const platTexture = useTexture(groundTextureUrl);
-  const { width, depth, cx, cz } = bounds;
+function SatelliteOverlay({ overlay }) {
+  const [texture, setTexture] = useState(null);
+  const { width, depth, centerX, centerZ } = overlay;
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadedTexture = null;
+    const loader = new THREE.TextureLoader();
+
+    loader.load(
+      overlay.textureUrl,
+      (nextTexture) => {
+        loadedTexture = nextTexture;
+        nextTexture.colorSpace = THREE.SRGBColorSpace;
+        if (!cancelled) setTexture(nextTexture);
+      },
+      undefined,
+      () => {
+        if (!cancelled) setTexture(null);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      loadedTexture?.dispose();
+      setTexture(null);
+    };
+  }, [overlay.textureUrl]);
+
+  if (!texture) return null;
 
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.25, cz]}>
-      <planeGeometry args={[width * 0.98, depth * 0.98]} />
-      <meshBasicMaterial map={platTexture} transparent opacity={0.88} toneMapped={false} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[centerX, 0.25, centerZ]}>
+      <planeGeometry args={[width, depth]} />
+      <meshBasicMaterial map={texture} transparent opacity={0.92} toneMapped={false} />
     </mesh>
   );
 }

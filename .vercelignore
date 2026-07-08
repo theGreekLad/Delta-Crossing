@@ -1,0 +1,14 @@
+Supporting Docs/
+scripts/
+web-3d/node_modules/
+web-3d/.vite/
+.git/
+node_modules/
+__pycache__/
+*.py
+*.py[cod]
+requirements.txt
+debug_*.png
+.env
+.DS_Store
+Thumbs.db

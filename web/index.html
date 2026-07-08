@@ -3,33 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interactive plat map for Delta Crossings — aligned to the official preliminary plat map."
+    />
     <title>Delta Crossings — Interactive Plat Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/app.css" />
   </head>
   <body>
     <div class="app">
-      <header class="toolbar">
-        <div class="brand">
+      <header class="header">
+        <div class="header-brand">
           <h1>Delta Crossings</h1>
-          <p>Interactive Plat Map</p>
+          <p>Interactive Plat Map · Delta City, Millard County, Utah</p>
         </div>
 
         <div class="sheet-tabs" id="sheet-tabs" role="tablist" aria-label="Map sheets"></div>
 
-        <div class="toolbar-actions">
-          <a href="index.html" class="view-link active" aria-current="page">Plat Map</a>
-          <a href="3d/index.html" class="view-link" id="link-3d">3D View</a>
-          <a href="3d/proforma.html" class="view-link">Proforma</a>
+        <div class="header-actions">
+          <a href="index.html" class="btn active" aria-current="page">Plat Map</a>
+          <a href="3d/index.html" class="btn btn-primary" id="link-3d">3D View</a>
+          <a href="3d/proforma.html" class="btn btn-primary">Proforma</a>
           <label class="search-box">
             <span class="sr-only">Find lot</span>
             <input id="lot-search" type="search" placeholder="Find lot # or CU #..." autocomplete="off" />
           </label>
-          <button type="button" id="btn-zoom-in" title="Zoom in">+</button>
-          <button type="button" id="btn-zoom-out" title="Zoom out">−</button>
-          <button type="button" id="btn-reset" title="Reset view">Reset</button>
-          <button type="button" id="btn-rotate-left" title="Rotate left">↺</button>
-          <button type="button" id="btn-rotate-right" title="Rotate right">↻</button>
-          <button type="button" id="btn-fullscreen" title="Fullscreen">⛶</button>
+          <button type="button" class="btn btn-icon" id="btn-zoom-in" title="Zoom in">+</button>
+          <button type="button" class="btn btn-icon" id="btn-zoom-out" title="Zoom out">−</button>
+          <button type="button" class="btn" id="btn-reset" title="Reset view">Reset View</button>
+          <button type="button" class="btn btn-icon" id="btn-rotate-left" title="Rotate left">↺</button>
+          <button type="button" class="btn btn-icon" id="btn-rotate-right" title="Rotate right">↻</button>
+          <button type="button" class="btn btn-icon" id="btn-fullscreen" title="Fullscreen">⛶</button>
         </div>
       </header>
 
@@ -52,33 +62,33 @@
             <p class="info-kicker">Selected lot</p>
             <h2 id="info-title">Lot 0</h2>
             <dl class="info-grid">
-              <div>
-                <dt>Lot number</dt>
-                <dd id="info-lot-number">—</dd>
+              <div class="detail-item">
+                <dt class="label">Lot number</dt>
+                <dd class="value" id="info-lot-number">—</dd>
               </div>
-              <div>
-                <dt>Lot type</dt>
-                <dd id="info-lot-type">—</dd>
+              <div class="detail-item">
+                <dt class="label">Lot type</dt>
+                <dd class="value" id="info-lot-type">—</dd>
               </div>
-              <div>
-                <dt>Square footage</dt>
-                <dd id="info-square-feet">—</dd>
+              <div class="detail-item">
+                <dt class="label">Square footage</dt>
+                <dd class="value" id="info-square-feet">—</dd>
               </div>
-              <div>
-                <dt>Phase</dt>
-                <dd id="info-phase">—</dd>
+              <div class="detail-item">
+                <dt class="label">Phase</dt>
+                <dd class="value" id="info-phase">—</dd>
               </div>
-              <div>
-                <dt>Sheet</dt>
-                <dd id="info-sheet">—</dd>
+              <div class="detail-item">
+                <dt class="label">Sheet</dt>
+                <dd class="value" id="info-sheet">—</dd>
               </div>
-              <div>
-                <dt>Centroid</dt>
-                <dd id="info-centroid">—</dd>
+              <div class="detail-item">
+                <dt class="label">Centroid</dt>
+                <dd class="value" id="info-centroid">—</dd>
               </div>
-              <div>
-                <dt>Bounds</dt>
-                <dd id="info-bounds">—</dd>
+              <div class="detail-item">
+                <dt class="label">Bounds</dt>
+                <dd class="value" id="info-bounds">—</dd>
               </div>
             </dl>
 
@@ -91,6 +101,10 @@
           </div>
         </aside>
       </main>
+
+      <footer class="app-footer">
+        Interactive plat map aligned to the preliminary plat. Lot boundaries extracted from the official PDF; verify against recorded plat before permitting.
+      </footer>
     </div>
 
     <script src="js/vendor/openseadragon.min.js"></script>

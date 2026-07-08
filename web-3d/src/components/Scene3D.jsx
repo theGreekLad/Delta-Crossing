@@ -1,4 +1,4 @@
-import { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Sky, ContactShadows, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -13,7 +13,7 @@ function SceneContent({
   onSelect,
   onHover,
   hoveredId,
-  showPlatOverlay,
+  showSatelliteOverlay,
   controlsRef,
   selectedLot,
 }) {
@@ -71,8 +71,8 @@ function SceneContent({
 
       <Ground
         bounds={site.bounds}
-        groundTextureUrl={site.groundTextureUrl}
-        showPlatOverlay={showPlatOverlay}
+        satelliteOverlay={site.satelliteOverlay}
+        showSatelliteOverlay={showSatelliteOverlay}
       />
       <SiteAreas areas={site.siteAreas} />
       <Lots
@@ -127,7 +127,7 @@ function FocusOnLot({ lot, controlsRef }) {
   return null;
 }
 
-export default function Scene3D({ site, selectedLot, onSelect, onHover, hoveredId, showPlatOverlay }) {
+export default function Scene3D({ site, selectedLot, onSelect, onHover, hoveredId, showSatelliteOverlay }) {
   const controlsRef = useRef();
 
   return (
@@ -139,7 +139,7 @@ export default function Scene3D({ site, selectedLot, onSelect, onHover, hoveredI
           onSelect={onSelect}
           onHover={onHover}
           hoveredId={hoveredId}
-          showPlatOverlay={showPlatOverlay}
+          showSatelliteOverlay={showSatelliteOverlay}
           controlsRef={controlsRef}
           selectedLot={selectedLot}
         />

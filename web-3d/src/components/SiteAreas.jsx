@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { polygonCentroid, polygonShapeOnGround } from '../utils/geometry';
 
 const AREA_STYLES = {

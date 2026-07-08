@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { polygonShapeOnGround, polygonCentroid } from '../utils/geometry';
 
 function Home({ lot, selected, hovered, onSelect, onHover }) {

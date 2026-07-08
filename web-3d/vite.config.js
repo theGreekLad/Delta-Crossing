@@ -21,13 +21,21 @@ const MIME_TYPES = {
 function servePlatWeb() {
   return {
     name: 'serve-plat-web',
+    enforce: 'pre',
     configureServer(server) {
-      server.middlewares.use('/plat-web', (req, res, next) => {
-        const relPath = decodeURIComponent((req.url || '/').split('?')[0].replace(/^\//, ''));
+      server.middlewares.use((req, res, next) => {
+        const pathname = (req.url || '/').split('?')[0];
+        if (!pathname.startsWith('/plat-web/')) {
+          next();
+          return;
+        }
+
+        const relPath = decodeURIComponent(pathname.slice('/plat-web/'.length));
         const filePath = path.resolve(platWebRoot, relPath);
 
         if (!filePath.startsWith(platWebRoot) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-          next();
+          res.statusCode = 404;
+          res.end(`Plat asset not found: ${relPath}`);
           return;
         }
 
@@ -54,6 +62,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true,
     fs: {
       allow: ['..'],
     },

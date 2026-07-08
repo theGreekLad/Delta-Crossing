@@ -1,0 +1,210 @@
+{
+  "source": "Supporting Docs/Delta/Reports/Rezone Legal.pdf",
+  "anchor": {
+    "description": "Northeast corner of Section 7, T17S R6W SLM",
+    "sectionLabel": "T17S R6W",
+    "longitude": -112.557224036072,
+    "latitude": 39.359785189839
+  },
+  "acres": 49.055,
+  "verticesLatLon": [
+    {
+      "lat": 39.359785189839,
+      "lon": -112.557224036072
+    },
+    {
+      "lat": 39.3590676831915,
+      "lon": -112.55886655827719
+    },
+    {
+      "lat": 39.35909841599096,
+      "lon": -112.56190295628619
+    },
+    {
+      "lat": 39.36348998689626,
+      "lon": -112.56187007688067
+    },
+    {
+      "lat": 39.36343097798128,
+      "lon": -112.56056418718266
+    },
+    {
+      "lat": 39.36329953534459,
+      "lon": -112.56056641264226
+    },
+    {
+      "lat": 39.363292383567014,
+      "lon": -112.56046566163806
+    },
+    {
+      "lat": 39.362624482708235,
+      "lon": -112.55781565799485
+    },
+    {
+      "lat": 39.36211012968611,
+      "lon": -112.55453447878902
+    },
+    {
+      "lat": 39.35906767819342,
+      "lon": -112.55886656535769
+    }
+  ],
+  "verticesLocalFeet": [
+    {
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "x": -463.82,
+      "y": -262.05
+    },
+    {
+      "x": -1321.246535894711,
+      "y": -250.82567179757226
+    },
+    {
+      "x": -1311.9619576893163,
+      "y": 1353.0774554228806
+    },
+    {
+      "x": -943.2011836736974,
+      "y": 1331.5260367363614
+    },
+    {
+      "x": -943.8296151570777,
+      "y": 1283.5201498695333
+    },
+    {
+      "x": -915.3792656777794,
+      "y": 1280.9081555154448
+    },
+    {
+      "x": -167.06384813945294,
+      "y": 1036.9753353078306
+    },
+    {
+      "x": 759.4846846196399,
+      "y": 849.1217315575371
+    },
+    {
+      "x": -463.8219994089234,
+      "y": -262.05182541321835
+    }
+  ],
+  "bounds": {
+    "minLat": 39.35906767819342,
+    "maxLat": 39.36348998689626,
+    "minLon": -112.56190295628619,
+    "maxLon": -112.55453447878902,
+    "centerLat": 39.36152664633984,
+    "centerLon": -112.55926765911208
+  },
+  "alignment": {
+    "method": "legal-scale-site-anchor",
+    "platBounds": {
+      "minX": -949.1205268443936,
+      "maxX": 1032.7830434038844,
+      "minZ": -872.0753844760488,
+      "maxZ": 692.9336117300204,
+      "centerX": 41.83125827974544,
+      "centerZ": -89.57088637301422,
+      "feetPerPixel": 0.4726695850818693
+    },
+    "geoBounds": {
+      "minLat": 39.35906767819342,
+      "maxLat": 39.36348998689626,
+      "minLon": -112.56190295628619,
+      "maxLon": -112.55453447878902,
+      "centerLat": 39.36152664633984,
+      "centerLon": -112.55926765911208
+    },
+    "siteReference": {
+      "label": "460 N Highway 6, Delta, UT (approximate)",
+      "lat": 39.3522,
+      "lon": -112.5772
+    },
+    "rotationDeg": 0,
+    "scaleFeetPerDegreeLat": 365223.09711140004,
+    "scaleFeetPerDegreeLon": 282375.7481837906,
+    "uniformScale": 1.040932198707563,
+    "worldOrigin": {
+      "x": 41.83125827974544,
+      "z": -89.57088637301422
+    },
+    "geoOrigin": {
+      "lon": -112.5772,
+      "lat": 39.3522
+    }
+  },
+  "satellite": {
+    "provider": "Esri World Imagery",
+    "bounds": {
+      "minLat": 39.349434505905165,
+      "maxLat": 39.35496549409484,
+      "minLon": -112.58172969809783,
+      "maxLon": -112.57267030190218
+    },
+    "worldBounds": {
+      "minX": -1186.94895527168,
+      "maxX": 1270.611471831171,
+      "minZ": -1059.8764640216868,
+      "maxZ": 880.7346912756583
+    },
+    "image": "assets/satellite.jpg",
+    "imageWidth": 2048,
+    "imageHeight": 2048,
+    "attribution": "Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+  },
+  "segments": [
+    {
+      "kind": "offset",
+      "south_ft": 262.05,
+      "west_ft": 463.82
+    },
+    {
+      "kind": "line",
+      "bearing": "N 89\u00b015'00\" W",
+      "distance_ft": 857.5
+    },
+    {
+      "kind": "line",
+      "bearing": "N 00\u00b019'54\" E",
+      "distance_ft": 1603.93
+    },
+    {
+      "kind": "curve",
+      "radius_ft": 5384.74,
+      "arc_length_ft": 369.47,
+      "delta_deg": 3.931388888888889,
+      "chord_bearing": "S 86\u00b039'19\" E",
+      "chord_length_ft": 369.39,
+      "turn": "left"
+    },
+    {
+      "kind": "line",
+      "bearing": "S 00\u00b045'00\" W",
+      "distance_ft": 48.01
+    },
+    {
+      "kind": "line",
+      "bearing": "S 84\u00b045'16\" E",
+      "distance_ft": 28.57
+    },
+    {
+      "kind": "line",
+      "bearing": "S 71\u00b056'43\" E",
+      "distance_ft": 787.07
+    },
+    {
+      "kind": "line",
+      "bearing": "S 78\u00b032'20\" E",
+      "distance_ft": 945.4
+    },
+    {
+      "kind": "line",
+      "bearing": "S 47\u00b045'00\" W",
+      "distance_ft": 1652.63
+    }
+  ],
+  "disclaimer": "Computed from rezone legal metes-and-bounds anchored to UGRC GCDB section corner. For mapping only; not a legal survey."
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { formatCurrency, formatNumber, formatPct } from './assumptions';
 
 function formatStepValue(value, format) {
