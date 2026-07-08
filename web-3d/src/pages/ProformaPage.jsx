@@ -127,6 +127,10 @@ function FinancialsView({ financials, onShowCalc }) {
   }
 
   const totalMonths = Math.max(financials.projectDurationMonths, 1);
+  const maxPhaseMonths = Math.max(
+    ...financials.phaseTimeline.map((phase) => phase.endMonth - phase.startMonth + 1),
+    1,
+  );
   const maxReturn = Math.max(
     ...financials.monthlyRows.map((row) => Math.abs(row.cumulativeEquityReturn)),
     1,
@@ -226,14 +230,20 @@ function FinancialsView({ financials, onShowCalc }) {
         </div>
         <div className="timeline-track">
           {financials.phaseTimeline.map((phase, index) => {
+            const phaseMonths = phase.endMonth - phase.startMonth + 1;
             const leftPct = ((phase.startMonth - 1) / totalMonths) * 100;
-            const widthPct = ((phase.endMonth - phase.startMonth + 1) / totalMonths) * 100;
+            const widthPct = (phaseMonths / totalMonths) * 100;
+            const mobileWidthPct = (phaseMonths / maxPhaseMonths) * 100;
             const buildPct = (phase.buildMonths / (phase.buildMonths + phase.saleMonths)) * 100;
             return (
               <div
                 key={phase.phase}
                 className="timeline-phase"
-                style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                style={{
+                  left: `${leftPct}%`,
+                  width: `${widthPct}%`,
+                  '--phase-mobile-width': `${mobileWidthPct}%`,
+                }}
               >
                 <div className="timeline-phase-bar">
                   <div className="timeline-build" style={{ width: `${buildPct}%` }} />
