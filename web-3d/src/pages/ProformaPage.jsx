@@ -27,7 +27,6 @@ function AssumptionField({ entry, onChange }) {
           id={entry.id}
           type="number"
           min={isCount ? 0 : undefined}
-          step={isPct ? '0.1' : isCount ? '1' : entry.unit === 'USD/sqft' || entry.unit === 'acres' ? '0.1' : entry.unit === 'USD/LF' ? '1' : '1000'}
           value={displayValue}
           onChange={(event) => {
             const raw = Number(event.target.value);
@@ -42,11 +41,13 @@ function AssumptionField({ entry, onChange }) {
       </div>
       <div className="assumption-source">
         {entry.source?.url?.startsWith('http') ? (
-          <a href={entry.source.url} target="_blank" rel="noreferrer">
+          <a className="source-link" href={entry.source.url} target="_blank" rel="noreferrer">
             {entry.source.name}
           </a>
         ) : (
-          <span title={entry.source?.path || entry.source?.url}>{entry.source?.name}</span>
+          <span className="source-label" title={entry.source?.path || entry.source?.url}>
+            {entry.source?.name}
+          </span>
         )}
       </div>
     </div>
@@ -65,12 +66,214 @@ function CategorySection({ title, items, onChange }) {
   );
 }
 
+function formatIrr(value) {
+  if (value == null || Number.isNaN(value)) return '—';
+  return formatPct(value);
+}
+
+function formatMultiple(value) {
+  if (value == null || Number.isNaN(value)) return '—';
+  return `${value.toFixed(2)}×`;
+}
+
+function formatMonths(value) {
+  if (value == null || Number.isNaN(value)) return '—';
+  const years = Math.floor(value / 12);
+  const months = value % 12;
+  if (years === 0) return `${months} mo`;
+  if (months === 0) return `${years} yr`;
+  return `${years} yr ${months} mo`;
+}
+
+function FinancialsView({ financials }) {
+  if (!financials) {
+    return (
+      <section className="proforma-section">
+        <h2>Financial Returns</h2>
+        <p className="section-lead">Financial metrics are not available for this model yet.</p>
+      </section>
+    );
+  }
+
+  const totalMonths = Math.max(financials.projectDurationMonths, 1);
+  const maxReturn = Math.max(
+    ...financials.monthlyRows.map((row) => Math.abs(row.cumulativeEquityReturn)),
+    1,
+  );
+
+  return (
+    <section className="proforma-section financials-section">
+      <h2>Financial Returns</h2>
+      <p className="section-lead">
+        Levered equity returns based on phase construction, monthly absorption, and exit value including
+        reserved rental units at a 5% cap rate.
+      </p>
+
+      <div className="financials-hero">
+        <div className="financials-hero-metric primary">
+          <span>Project IRR</span>
+          <strong>{formatIrr(financials.irr)}</strong>
+          <p>Levered equity, annualized</p>
+        </div>
+        <div className="financials-hero-metric">
+          <span>Equity Multiple</span>
+          <strong>{formatMultiple(financials.equityMultiple)}</strong>
+          <p>Exit value ÷ equity invested</p>
+        </div>
+        <div className="financials-hero-metric">
+          <span>Return on Cost</span>
+          <strong>{formatPct(financials.returnOnCost)}</strong>
+          <p>Net profit ÷ total dev cost</p>
+        </div>
+        <div className="financials-hero-metric">
+          <span>NPV @ 10%</span>
+          <strong>{formatCurrency(financials.npvAt10Pct)}</strong>
+          <p>Discounted equity cash flows</p>
+        </div>
+      </div>
+
+      <div className="metric-grid">
+        <div className="metric-card">
+          <span>Total equity invested</span>
+          <strong>{formatCurrency(financials.totalEquityInvested)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Peak construction debt</span>
+          <strong>{formatCurrency(financials.peakDebt)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Total interest paid</span>
+          <strong>{formatCurrency(financials.totalInterest)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Total sale proceeds</span>
+          <strong>{formatCurrency(financials.totalSaleProceeds)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Gross profit margin</span>
+          <strong>{formatPct(financials.profitMargin)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Project duration</span>
+          <strong>{formatMonths(financials.projectDurationMonths)}</strong>
+        </div>
+        <div className="metric-card">
+          <span>Equity payback</span>
+          <strong>{formatMonths(financials.paybackMonth)}</strong>
+        </div>
+        <div className="metric-card highlight">
+          <span>Exit equity value</span>
+          <strong>{formatCurrency(financials.exitEquity)}</strong>
+        </div>
+      </div>
+
+      <h3>Development Timeline</h3>
+      <div className="timeline-shell">
+        <div className="timeline-axis">
+          <span>Month 0</span>
+          <span>Month {totalMonths}</span>
+        </div>
+        <div className="timeline-track">
+          {financials.phaseTimeline.map((phase, index) => {
+            const leftPct = ((phase.startMonth - 1) / totalMonths) * 100;
+            const widthPct = ((phase.endMonth - phase.startMonth + 1) / totalMonths) * 100;
+            const buildPct = (phase.buildMonths / (phase.buildMonths + phase.saleMonths)) * 100;
+            return (
+              <div
+                key={phase.phase}
+                className="timeline-phase"
+                style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+              >
+                <div className="timeline-phase-bar">
+                  <div className="timeline-build" style={{ width: `${buildPct}%` }} />
+                  <div className="timeline-sell" style={{ width: `${100 - buildPct}%` }} />
+                </div>
+                <div className="timeline-phase-label">
+                  <strong>Phase {phase.phase}</strong>
+                  <span>
+                    {phase.homeCount} homes · {formatMonths(phase.buildMonths + phase.saleMonths)}
+                  </span>
+                </div>
+                {index < financials.phaseTimeline.length - 1 ? (
+                  <div className="timeline-connector" aria-hidden="true" />
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <div className="timeline-legend">
+          <span>
+            <i className="legend-swatch build" /> Construction
+          </span>
+          <span>
+            <i className="legend-swatch sell" /> Home sales
+          </span>
+        </div>
+      </div>
+
+      <h3>Cumulative Equity Return</h3>
+      <div className="equity-chart" aria-label="Cumulative equity return over project timeline">
+        {financials.monthlyRows.map((row) => {
+          const heightPct = Math.max(4, (Math.abs(row.cumulativeEquityReturn) / maxReturn) * 100);
+          const positive = row.cumulativeEquityReturn >= 0;
+          return (
+            <div
+              key={`${row.month}-${row.label}`}
+              className={`equity-bar ${positive ? 'positive' : 'negative'}`}
+              style={{ height: `${heightPct}%` }}
+              title={`Month ${row.month}: ${formatCurrency(row.cumulativeEquityReturn)}`}
+            />
+          );
+        })}
+      </div>
+
+      <h3>Monthly Cash Flow</h3>
+      <div className="financials-table-wrap">
+        <table className="proforma-table financials-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Phase</th>
+            <th>Stage</th>
+            <th>Equity Flow</th>
+            <th>Build Spend</th>
+            <th>Sales</th>
+            <th>Interest</th>
+            <th>Debt</th>
+            <th>Cumulative Return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {financials.monthlyRows.map((row) => (
+            <tr key={`${row.month}-${row.label}`}>
+              <td>{row.month}</td>
+              <td>{row.phase ? `Phase ${row.phase}` : '—'}</td>
+              <td>
+                <span className={`stage-pill ${row.stage}`}>{row.stage}</span>
+              </td>
+              <td className={row.equityFlow >= 0 ? 'pos' : 'neg'}>
+                {formatCurrency(row.equityFlow)}
+              </td>
+              <td>{row.buildSpend ? formatCurrency(row.buildSpend) : '—'}</td>
+              <td>{row.saleProceeds ? formatCurrency(row.saleProceeds) : '—'}</td>
+              <td>{row.interest ? formatCurrency(row.interest) : '—'}</td>
+              <td>{formatCurrency(row.debt)}</td>
+              <td className={row.cumulativeEquityReturn >= 0 ? 'pos' : 'neg'}>
+                {formatCurrency(row.cumulativeEquityReturn)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 const CATEGORY_LABELS = {
-  site_area: 'Site Area',
   development: 'Land & Development',
-  infrastructure: 'Infrastructure (Ord. 2025-317)',
+  infrastructure: 'Infrastructure Unit Costs',
   vertical_construction: 'Vertical Construction',
-  soft_costs: 'Soft Costs & Contingency',
   financing: 'Financing',
   revenue: 'For-Sale Revenue',
   rental_reserve: 'Rent vs. Sale Reserve',
@@ -83,32 +286,48 @@ export default function ProformaPage() {
   const [platData, setPlatData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('total');
+  const [view, setView] = useState('financials');
   const [overrideTick, setOverrideTick] = useState(0);
+  const [assumptionsOpen, setAssumptionsOpen] = useState(() => {
+    try {
+      return localStorage.getItem('proforma-assumptions-open') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleAssumptions = useCallback((open) => {
+    setAssumptionsOpen(open);
+    try {
+      localStorage.setItem('proforma-assumptions-open', String(open));
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
-        const [defaultsRes, manifestRes, lotsRes, commercialRes, siteAreasRes] = await Promise.all([
+        const [defaultsRes, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
           fetch(platUrl('data/proforma-defaults.json')),
           fetch(platUrl('data/manifest.json')),
           fetch(platUrl('data/sheet1-lots.json')),
           fetch(platUrl('data/sheet1-commercial.json')),
-          fetch(platUrl('data/sheet1-site-areas.json')),
+          fetch(platUrl('data/sheet1-road-segments.json')),
         ]);
 
         if (!defaultsRes.ok || !manifestRes.ok || !lotsRes.ok) {
           throw new Error('Failed to load proforma data');
         }
 
-        const [defaultsJson, manifest, lots, commercial, siteAreas] = await Promise.all([
+        const [defaultsJson, manifest, lots, commercial, roadSegments] = await Promise.all([
           defaultsRes.json(),
           manifestRes.json(),
           lotsRes.json(),
           commercialRes.ok ? commercialRes.json() : [],
-          siteAreasRes.ok ? siteAreasRes.json() : [],
+          roadSegmentsRes.ok ? roadSegmentsRes.json() : null,
         ]);
 
         const sheet = manifest.sheets.find((entry) => entry.id === 'sheet1');
@@ -116,7 +335,7 @@ export default function ProformaPage() {
 
         if (!cancelled) {
           setDefaults(defaultsJson);
-          setPlatData({ manifest, sheet, lots, commercial, siteAreas });
+          setPlatData({ manifest, sheet, lots, commercial, roadSegments });
         }
       } catch (loadError) {
         if (!cancelled) setError(loadError);
@@ -143,7 +362,7 @@ export default function ProformaPage() {
       defaults: merged,
       lots: platData.lots,
       commercial: platData.commercial,
-      siteAreas: platData.siteAreas,
+      roadSegments: platData.roadSegments,
       sheet: platData.sheet,
       phaseOrder: merged.phaseOrder,
     });
@@ -207,22 +426,53 @@ export default function ProformaPage() {
         </div>
       </header>
 
-      <div className="proforma-layout">
-        <aside className="assumptions-panel">
-          <h2>Assumptions</h2>
-          <p className="panel-note">Edit any value to see live updates. Sources are cited for traceability.</p>
-          {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-            <CategorySection
-              key={key}
-              title={label}
-              items={assumptionsByCategory[key] || []}
-              onChange={handleOverride}
-            />
-          ))}
+      <div className={`proforma-layout ${assumptionsOpen ? 'assumptions-open' : 'assumptions-collapsed'}`}>
+        <aside className="assumptions-panel" aria-hidden={!assumptionsOpen}>
+          <div className="assumptions-panel-header">
+            <h2>Assumptions</h2>
+            <button
+              type="button"
+              className="assumptions-panel-toggle"
+              onClick={() => toggleAssumptions(false)}
+              aria-label="Collapse assumptions panel"
+              title="Hide assumptions"
+            >
+              ‹
+            </button>
+          </div>
+          <div className="assumptions-panel-body">
+            <p className="panel-note">Edit any value to see live updates. Sources are cited for traceability.</p>
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              <CategorySection
+                key={key}
+                title={label}
+                items={assumptionsByCategory[key] || []}
+                onChange={handleOverride}
+              />
+            ))}
+          </div>
         </aside>
 
         <main className="proforma-main">
+          {!assumptionsOpen ? (
+            <button
+              type="button"
+              className="assumptions-expand-tab"
+              onClick={() => toggleAssumptions(true)}
+              aria-label="Show assumptions panel"
+              title="Show assumptions"
+            >
+              Assumptions ›
+            </button>
+          ) : null}
           <nav className="proforma-tabs" aria-label="Proforma views">
+            <button
+              type="button"
+              className={view === 'financials' ? 'active' : ''}
+              onClick={() => setView('financials')}
+            >
+              Financials
+            </button>
             <button
               type="button"
               className={view === 'total' ? 'active' : ''}
@@ -263,6 +513,8 @@ export default function ProformaPage() {
             ))}
           </nav>
 
+          {view === 'financials' && <FinancialsView financials={result.financials} />}
+
           {view === 'total' && (
             <section className="proforma-section">
               <h2>Total Project Summary</h2>
@@ -286,6 +538,12 @@ export default function ProformaPage() {
                 <div className="metric-card">
                   <span>Avg dwelling size</span>
                   <strong>{formatNumber(result.projectTotals.avgDwellingSqFt)} sqft</strong>
+                </div>
+                <div className="metric-card">
+                  <span>
+                    Water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF)
+                  </span>
+                  <strong>{formatCurrency(result.waterRights.total)}</strong>
                 </div>
                 <div className="metric-card">
                   <span>Total development cost</span>
@@ -312,6 +570,36 @@ export default function ProformaPage() {
                   <strong>{formatCurrency(result.waterfall.endingDebt)}</strong>
                 </div>
               </div>
+
+              <h3>Development Costs (project-wide)</h3>
+              <table className="proforma-table">
+                <tbody>
+                  <tr>
+                    <td>Land acquisition</td>
+                    <td>{formatCurrency(result.map.land_cost_total)}</td>
+                  </tr>
+                  <tr>
+                    <td>Engineering &amp; design</td>
+                    <td>{formatCurrency(result.map.engineering_total)}</td>
+                  </tr>
+                  <tr>
+                    <td>Studies &amp; reports</td>
+                    <td>{formatCurrency(result.map.studies_total)}</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Culinary water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF
+                      @ {formatCurrency(result.waterRights.costPerAcreFoot)}/AF)
+                    </td>
+                    <td>{formatCurrency(result.waterRights.total)}</td>
+                  </tr>
+                  <tr>
+                    <td>Road &amp; utility infrastructure (Ord. 2025-317)</td>
+                    <td>{formatCurrency(result.infrastructure.totalInfraBudget)}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="section-lead">{result.waterRights.notes}</p>
 
               <h3>Per-Phase Overview</h3>
               <table className="proforma-table">
@@ -401,38 +689,30 @@ export default function ProformaPage() {
                 <p className="section-lead">{result.infrastructure.roadArea.notes}</p>
               ) : null}
 
-              <h3>Road Area Calculation</h3>
+              <h3>Road Area (from Plat)</h3>
               <table className="proforma-table">
                 <thead>
                   <tr>
                     <th>Component</th>
-                    <th>Area</th>
+                    <th>Value</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Total plat acreage</td>
-                    <td>{formatNumber(result.infrastructure.roadArea.totalSiteSqFt / 43560, 2)} acres</td>
+                    <td>ROW width (30&apos; each side of centerline)</td>
+                    <td>{formatNumber(result.infrastructure.roadArea.rowWidthFt, 0)} ft</td>
                   </tr>
                   <tr>
-                    <td>Single-family lots</td>
-                    <td>− {formatNumber(result.infrastructure.roadArea.sfSqFt / 43560, 2)} acres</td>
+                    <td>Centerline segments</td>
+                    <td>{formatNumber(result.infrastructure.roadArea.segmentCount)}</td>
                   </tr>
                   <tr>
-                    <td>Townhome lots</td>
-                    <td>− {formatNumber(result.infrastructure.roadArea.thSqFt / 43560, 2)} acres</td>
-                  </tr>
-                  <tr>
-                    <td>Commercial</td>
-                    <td>− {formatNumber(result.infrastructure.roadArea.commercialSqFt / 43560, 2)} acres</td>
-                  </tr>
-                  <tr>
-                    <td>Designated (canal, park, open space, etc.)</td>
-                    <td>− {formatNumber(result.infrastructure.roadArea.designatedSqFt / 43560, 2)} acres</td>
+                    <td>Total centerline length</td>
+                    <td>{formatNumber(result.infrastructure.totalRoadLf)} LF</td>
                   </tr>
                   <tr>
                     <td>
-                      <strong>Road area (remainder)</strong>
+                      <strong>Road corridor area</strong>
                     </td>
                     <td>
                       <strong>
@@ -444,7 +724,75 @@ export default function ProformaPage() {
                 </tbody>
               </table>
 
-              <h3>Ordinance Quantities</h3>
+              {result.infrastructure.roadArea.segments?.length ? (
+                <>
+                  <h3>Centerline Segments</h3>
+                  <table className="proforma-table">
+                    <thead>
+                      <tr>
+                        <th>Segment</th>
+                        <th>Length</th>
+                        <th>Orientation</th>
+                        <th>Plat label</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.infrastructure.roadArea.segments.map((segment) => (
+                        <tr key={segment.id}>
+                          <td>{segment.id}</td>
+                          <td>{formatNumber(segment.lengthFt, 1)} ft</td>
+                          <td>{segment.orientation}</td>
+                          <td>{segment.label}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              ) : null}
+
+              <h3>Ord. 2025-317 Quantities</h3>
+              <table className="proforma-table">
+                <tbody>
+                  <tr>
+                    <td>Pavement ({result.infrastructure.ordinanceSpecs.pavementWidthFt}&apos; per ST-103)</td>
+                    <td>{formatNumber(result.infrastructure.pavementSqFt)} sqft</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Sidewalks ({result.infrastructure.ordinanceSpecs.sidewalkWidthFt}&apos; × 2 per ST-131)
+                    </td>
+                    <td>{formatNumber(result.infrastructure.sidewalkSqFt)} sqft</td>
+                  </tr>
+                  <tr>
+                    <td>Curb &amp; gutter (both sides, ST-121)</td>
+                    <td>{formatNumber(result.infrastructure.curbGutterLf)} LF</td>
+                  </tr>
+                  <tr>
+                    <td>Water main in ROW (ST-113)</td>
+                    <td>{formatNumber(result.infrastructure.totalRoadLf)} LF</td>
+                  </tr>
+                  <tr>
+                    <td>Sewer main in ROW (ST-113)</td>
+                    <td>{formatNumber(result.infrastructure.totalRoadLf)} LF</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Storm drain (
+                      {formatNumber(result.infrastructure.ordinanceSpecs.stormNetworkCoveragePct * 100, 0)}% of
+                      network)
+                    </td>
+                    <td>
+                      {formatNumber(
+                        result.infrastructure.totalRoadLf *
+                          result.infrastructure.ordinanceSpecs.stormNetworkCoveragePct,
+                      )}{' '}
+                      LF
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3>Ordinance Quantities Summary</h3>
               <div className="metric-grid">
                 <div className="metric-card">
                   <span>Centerline length</span>
@@ -608,7 +956,6 @@ export default function ProformaPage() {
                     <th>Land</th>
                     <th>Infra</th>
                     <th>Vertical</th>
-                    <th>Soft+Cont.</th>
                     <th>Total Cost</th>
                     <th>Sale Price</th>
                     <th>Margin</th>
@@ -624,7 +971,6 @@ export default function ProformaPage() {
                       <td>{formatCurrency(home.costs.land)}</td>
                       <td>{formatCurrency(home.costs.infrastructure)}</td>
                       <td>{formatCurrency(home.costs.verticalHard)}</td>
-                      <td>{formatCurrency(home.costs.soft + home.costs.contingency)}</td>
                       <td>{formatCurrency(home.costs.total)}</td>
                       <td>{home.disposition === 'rent' ? '—' : formatCurrency(home.salePrice)}</td>
                       <td>

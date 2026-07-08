@@ -159,6 +159,197 @@ def extract_road_labels(page: fitz.Page) -> list[dict]:
     return roads
 
 
+ROW_HALF_WIDTH_PATTERN = re.compile(r"^30\.?0*'|30'$")
+ROAD_LENGTH_STANDALONE = re.compile(r"^([\d.]+)'$")
+ROAD_LENGTH_BEARING = re.compile(r"^[NS].*\s([\d.]+)'$", re.IGNORECASE)
+LOT_FRONTAGE_LENGTHS = {70.0, 73.9, 73.91, 75.71, 76.12, 105.5, 108.0}
+ROAD_SEGMENT_MIN_FT = 100.0
+ROAD_SEGMENT_MAX_FT = 450.0
+ROAD_BEARING_MAX_FT = 450.0
+ROAD_RIBBON_BIN_PX = 80
+ROAD_NEAR_ROW_MARKER_FT = 55.0
+DEFAULT_ROW_HALF_WIDTH_FT = 30.0
+DEFAULT_ROW_WIDTH_FT = 60.0
+
+
+def parse_road_length_annotation(content: str) -> tuple[float | None, str | None]:
+    match = ROAD_LENGTH_STANDALONE.fullmatch(content.strip())
+    if match:
+        return float(match.group(1)), "standalone"
+    match = ROAD_LENGTH_BEARING.match(content.strip())
+    if match:
+        return float(match.group(1)), "bearing"
+    return None, None
+
+
+def extract_row_width_markers(page: fitz.Page) -> list[dict]:
+    markers: list[dict] = []
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        if not ROW_HALF_WIDTH_PATTERN.fullmatch(content):
+            continue
+        rect = annot.rect
+        if rect.x0 > MAP_X_MAX:
+            continue
+        image_x, image_y = pdf_to_image_pixel(page, (rect.x0 + rect.x1) / 2, (rect.y0 + rect.y1) / 2)
+        markers.append(
+            {
+                "label": content,
+                "x": round(rect.x0 + (rect.x1 - rect.x0) / 2, 2),
+                "y": round(rect.y0 + (rect.y1 - rect.y0) / 2, 2),
+                "imageX": round(image_x, 2),
+                "imageY": round(image_y, 2),
+            }
+        )
+    return markers
+
+
+def build_road_corridor_mask(
+    page: fitz.Page, lots: list[dict], commercial: list[dict]
+) -> np.ndarray:
+    page_width = int(page.rect.width * RENDER_SCALE)
+    page_height = int(page.rect.height * RENDER_SCALE)
+    free_space = build_linework_mask(page, page_width, page_height)
+    plat_mask = build_plat_bbox_mask(lots, commercial, page_width, page_height)
+    free_space = cv2.bitwise_and(free_space, plat_mask)
+
+    claimed = np.zeros((page_height, page_width), np.uint8)
+    lot_polygons = [lot["polygon"] for lot in lots if lot.get("polygon")]
+    commercial_polygons = [unit["polygon"] for unit in commercial if unit.get("polygon")]
+    fill_polygons_mask(claimed, lot_polygons)
+    fill_polygons_mask(claimed, commercial_polygons)
+    free_space[claimed > 0] = 0
+    return free_space > 128
+
+
+def extract_road_segments(
+    page: fitz.Page,
+    lots: list[dict],
+    commercial: list[dict] | None = None,
+) -> dict:
+    """Estimate internal road centerline segments from plat ROW and length annotations."""
+    commercial = commercial or []
+    row_markers = extract_row_width_markers(page)
+    road_corridor = build_road_corridor_mask(page, lots, commercial)
+    page_height, page_width = road_corridor.shape
+
+    row_points = [(marker["x"], marker["y"]) for marker in row_markers]
+    candidates: list[dict] = []
+
+    for annot in page.annots() or []:
+        content = (annot.info.get("content") or "").strip()
+        if not content or annot.rect.x0 > MAP_X_MAX:
+            continue
+        if ROW_HALF_WIDTH_PATTERN.fullmatch(content):
+            continue
+        if SQUARE_FOOTAGE_PATTERN.fullmatch(content):
+            continue
+        if re.fullmatch(r"\d+", content):
+            continue
+
+        length_ft, length_kind = parse_road_length_annotation(content)
+        if length_ft is None:
+            continue
+        if length_ft in LOT_FRONTAGE_LENGTHS:
+            continue
+        if length_ft < ROAD_SEGMENT_MIN_FT:
+            continue
+
+        rect = annot.rect
+        pdf_x = (rect.x0 + rect.x1) / 2
+        pdf_y = (rect.y0 + rect.y1) / 2
+        image_x, image_y = pdf_to_image_pixel(page, pdf_x, pdf_y)
+        ix = int(image_x)
+        iy = int(image_y)
+        in_corridor = (
+            0 <= ix < page_width
+            and 0 <= iy < page_height
+            and bool(road_corridor[iy, ix])
+        )
+        near_row = any(
+            math.hypot(pdf_x - marker_x, pdf_y - marker_y) <= ROAD_NEAR_ROW_MARKER_FT
+            for marker_x, marker_y in row_points
+        )
+        if not in_corridor:
+            continue
+
+        max_ft = ROAD_BEARING_MAX_FT if length_kind == "bearing" else ROAD_SEGMENT_MAX_FT
+        if length_ft > max_ft:
+            continue
+
+        rect_width = rect.x1 - rect.x0
+        rect_height = rect.y1 - rect.y0
+        orientation = "horizontal" if rect_width >= rect_height else "vertical"
+        source = "corridor-and-row-marker" if near_row else "road-corridor"
+
+        candidates.append(
+            {
+                "label": content,
+                "lengthFt": round(length_ft, 2),
+                "orientation": orientation,
+                "source": source,
+                "x": round(pdf_x, 2),
+                "y": round(pdf_y, 2),
+                "imageX": round(image_x, 2),
+                "imageY": round(image_y, 2),
+                "ribbonKey": round(iy / ROAD_RIBBON_BIN_PX)
+                if orientation == "horizontal"
+                else round(ix / ROAD_RIBBON_BIN_PX),
+            }
+        )
+
+    # One centerline segment per street ribbon — avoids double-counting repeated lot dims.
+    ribbon_best: dict[tuple[str, int], dict] = {}
+    for candidate in candidates:
+        key = (candidate["orientation"], candidate["ribbonKey"])
+        existing = ribbon_best.get(key)
+        if existing is None or candidate["lengthFt"] > existing["lengthFt"]:
+            ribbon_best[key] = candidate
+
+    segments: list[dict] = []
+    for index, candidate in enumerate(
+        sorted(ribbon_best.values(), key=lambda entry: (-entry["lengthFt"], entry["orientation"])),
+        start=1,
+    ):
+        segments.append(
+            {
+                "id": f"road-segment-{index}",
+                "lengthFt": candidate["lengthFt"],
+                "label": candidate["label"],
+                "orientation": candidate["orientation"],
+                "source": candidate["source"],
+                "x": candidate["x"],
+                "y": candidate["y"],
+                "imageX": candidate["imageX"],
+                "imageY": candidate["imageY"],
+            }
+        )
+
+    row_half_width_ft = DEFAULT_ROW_HALF_WIDTH_FT
+    row_width_ft = row_half_width_ft * 2
+    centerline_lf = sum(segment["lengthFt"] for segment in segments)
+    road_sqft = centerline_lf * row_width_ft
+
+    return {
+        "method": "plat-annotation-centerline",
+        "rowHalfWidthFt": row_half_width_ft,
+        "rowWidthFt": row_width_ft,
+        "rowMarkerCount": len(row_markers),
+        "candidateCount": len(candidates),
+        "segmentCount": len(segments),
+        "centerlineLf": round(centerline_lf, 1),
+        "roadSqFt": round(road_sqft),
+        "roadAcres": round(road_sqft / 43560, 2),
+        "formula": "Road area = sum(centerline segment lengths) × ROW width (30' each side = 60' total)",
+        "notes": (
+            "Segments parsed from plat length annotations in road corridors and near 30' ROW "
+            "markers. Ribbon de-duplication keeps one segment per street row/column."
+        ),
+        "rowMarkers": row_markers,
+        "segments": segments,
+    }
+
+
 def classify_site_area_label(content: str) -> str | None:
     for pattern, area_type in SITE_AREA_LABEL_RULES:
         if pattern.search(content):
@@ -947,6 +1138,9 @@ def process_sheet(
     if sheet_number == 1:
         commercial_units = extract_commercial_units(page)
     site_areas = extract_site_areas(page, lots, commercial_units)
+    road_segments: dict | None = None
+    if sheet_number == 1:
+        road_segments = extract_road_segments(page, lots, commercial_units)
     if skip_tiles:
         pixel_width = int(page.rect.width * RENDER_SCALE)
         pixel_height = int(page.rect.height * RENDER_SCALE)
@@ -959,11 +1153,19 @@ def process_sheet(
         commercial_path.write_text(json.dumps(commercial_units, indent=2), encoding="utf-8")
     site_areas_path = DATA_DIR / f"{sheet_id}-site-areas.json"
     site_areas_path.write_text(json.dumps(site_areas, indent=2), encoding="utf-8")
+    if road_segments is not None:
+        road_segments_path = DATA_DIR / f"{sheet_id}-road-segments.json"
+        road_segments_path.write_text(json.dumps(road_segments, indent=2), encoding="utf-8")
 
     print(
         f"  kept {len(preserved_lots)} legacy lots, extracted {len(new_lots)} townhome lots, "
         f"{len(commercial_units)} phase {COMMERCIAL_PHASE} commercial units, "
         f"{len(roads)} road labels, {len(site_areas)} site areas"
+        + (
+            f", {road_segments['segmentCount']} road segments ({road_segments['roadAcres']} ac)"
+            if road_segments
+            else ""
+        )
     )
     sheet_meta = {
         "id": sheet_id,
@@ -986,6 +1188,11 @@ def process_sheet(
         sheet_meta["commercialFile"] = f"data/{sheet_id}-commercial.json"
         sheet_meta["commercialCount"] = len(commercial_units)
         sheet_meta["commercialPhase"] = COMMERCIAL_PHASE
+        if road_segments is not None:
+            sheet_meta["roadSegmentsFile"] = f"data/{sheet_id}-road-segments.json"
+            sheet_meta["roadSegmentCount"] = road_segments["segmentCount"]
+            sheet_meta["roadAcres"] = road_segments["roadAcres"]
+            sheet_meta["roadCenterlineLf"] = road_segments["centerlineLf"]
     return sheet_meta
 
 

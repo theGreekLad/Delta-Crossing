@@ -2,6 +2,15 @@ import { computeBuildingEnvelope } from '../utils/buildingEnvelope';
 import { computeFeetPerPixel, createCoordinateTransform } from '../data/platGeometry';
 import { getAssumptionMap } from './assumptions';
 
+/** Fixed dimensions from Ord. 2025-317 (ST-103, ST-113, ST-131). ROW width comes from the plat. */
+const ORDINANCE_SPECS = {
+  pavementWidthFt: 24,
+  sidewalkWidthFt: 5,
+  sewerManholeSpacingFt: 350,
+  stormManholeSpacingFt: 400,
+  stormNetworkCoveragePct: 0.85,
+};
+
 function sum(values) {
   return values.reduce((total, value) => total + value, 0);
 }
@@ -67,86 +76,118 @@ function computeVerticalCost(dwellingSqFt, map) {
   return dwellingSqFt * base * (1 + waste) * (1 + labor);
 }
 
+function computeWaterRights({ sfLots, townhomeLots, commercialCount }, map) {
+  const afPerLot = getValue(map, 'water_rights_af_per_lot', 1.0);
+  const afPerCommercial = getValue(map, 'water_rights_af_per_commercial', 1.0);
+  const costPerAcreFoot = getValue(map, 'water_rights_cost_per_acre_foot', 10000);
+
+  const sfAcreFeet = sfLots * afPerLot;
+  const townhomeAcreFeet = townhomeLots * afPerLot;
+  const commercialAcreFeet = commercialCount * afPerCommercial;
+  const totalAcreFeet = sfAcreFeet + townhomeAcreFeet + commercialAcreFeet;
+  const total = totalAcreFeet * costPerAcreFoot;
+
+  return {
+    sfLots,
+    townhomeLots,
+    commercialCount,
+    afPerLot,
+    afPerCommercial,
+    sfAcreFeet,
+    townhomeAcreFeet,
+    commercialAcreFeet,
+    totalAcreFeet,
+    costPerAcreFoot,
+    total,
+    formula:
+      'Culinary water rights = (SF lots + townhome lots + commercial) × AF/lot × city purchase rate',
+    ordinanceRef:
+      'Millard County Subdivision Ord. § 11-1-20 — minimum 1.0 AF dedicated per platted lot',
+    notes:
+      'Plat approval requires culinary water rights at 1.0 acre-foot per lot (Millard County). ' +
+      'Rights are purchased through Delta City at the per-acre-foot rate below.',
+  };
+}
+
 function computeHomeCost(lot, shared, map) {
   const dwellingSqFt = lot.dwellingSqFt;
   const verticalHard = computeVerticalCost(dwellingSqFt, map);
-  const soft = verticalHard * getValue(map, 'soft_cost_pct', 0.08);
-  const direct =
+  const total =
     shared.landPerHome +
     shared.engineeringPerHome +
     shared.studiesPerHome +
+    shared.waterRightsPerHome +
     shared.infraPerHome +
-    verticalHard +
-    soft;
-  const contingency = direct * getValue(map, 'contingency_pct', 0.05);
+    verticalHard;
   return {
     dwellingSqFt,
     land: shared.landPerHome,
     engineering: shared.engineeringPerHome,
     studies: shared.studiesPerHome,
+    waterRights: shared.waterRightsPerHome,
     infrastructure: shared.infraPerHome,
     verticalHard,
-    soft,
-    contingency,
-    total: direct + contingency,
+    total,
   };
 }
 
 
-function computeRoadAreaSubtraction({ lots, map }) {
-  const totalSiteSqFt = getValue(map, 'total_site_acres', 52) * 43560;
-  const sfSqFt = sum(
-    lots.filter((lot) => lot.lotType === 'single-family').map((lot) => lot.squareFeet || 0),
-  );
-  const thSqFt = sum(
-    lots.filter((lot) => lot.lotType === 'townhome').map((lot) => lot.squareFeet || 0),
-  );
-  const commercialSqFt = getValue(map, 'commercial_site_acres', 4) * 43560;
-  const designatedSqFt = getValue(map, 'designated_site_acres', 0) * 43560;
-  const residentialSqFt = sfSqFt + thSqFt;
-  const parcelSqFt = residentialSqFt + commercialSqFt + designatedSqFt;
-  const roadSqFt = Math.max(0, totalSiteSqFt - parcelSqFt);
+function computeRoadAreaFromSegments(roadSegments) {
+  if (!roadSegments?.segments?.length) {
+    return {
+      method: 'missing',
+      roadSqFt: 0,
+      centerlineLf: 0,
+      rowHalfWidthFt: 30,
+      rowWidthFt: 60,
+      segmentCount: 0,
+      segments: [],
+      rowMarkerCount: 0,
+      warning: 'Road segment data not loaded. Run extract_plat to generate sheet1-road-segments.json.',
+      formula: 'Road area = sum(centerline segment lengths from plat) × ROW width',
+      notes: null,
+    };
+  }
+
+  const rowWidthFt = roadSegments.rowWidthFt || 60;
+  const centerlineLf = roadSegments.centerlineLf || sum(roadSegments.segments.map((s) => s.lengthFt || 0));
+  const roadSqFt = roadSegments.roadSqFt || centerlineLf * rowWidthFt;
 
   return {
-    totalSiteSqFt,
-    sfSqFt,
-    thSqFt,
-    residentialSqFt,
-    commercialSqFt,
-    designatedSqFt,
-    parcelSqFt,
+    method: 'plat-annotation',
     roadSqFt,
-    warning:
-      parcelSqFt > totalSiteSqFt
-        ? 'Parcel areas exceed total site acreage — the plat lot annotations may nearly fill the ~52 ac assembly; reduce commercial/designated assumptions or adjust total slightly.'
-        : roadSqFt < 43560
-          ? 'Road remainder is small — lot annotations account for most of the site. Adjust assumptions if survey shows more street area.'
-          : null,
+    centerlineLf,
+    rowHalfWidthFt: roadSegments.rowHalfWidthFt || rowWidthFt / 2,
+    rowWidthFt,
+    segmentCount: roadSegments.segmentCount || roadSegments.segments.length,
+    segments: roadSegments.segments,
+    rowMarkerCount: roadSegments.rowMarkerCount || 0,
+    warning: null,
     formula:
-      'Road area = total plat acreage − single-family − townhome − commercial − designated areas',
+      roadSegments.formula ||
+      'Road area = sum(centerline segment lengths from plat) × ROW width (30\' each side = 60\' total)',
     notes:
-      'Total site (~52 ac) is the project parcel assembly. Study documents may cite different scopes.',
+      roadSegments.notes ||
+      'Parsed from plat PDF length annotations in road corridors with 30\' ROW markers.',
   };
 }
 
 function computeInfrastructureDetail(roadArea, map) {
-  const rowWidth = getValue(map, 'row_width_ft', 50);
-  const pavementWidth = getValue(map, 'pavement_width_ft', 24);
-  const sidewalkWidth = getValue(map, 'sidewalk_width_ft', 5);
-  const sewerSpacing = getValue(map, 'sewer_manhole_spacing_ft', 350);
-  const stormCoverage = getValue(map, 'storm_network_coverage_pct', 0.85);
+  const rowWidthFt = roadArea.rowWidthFt || 60;
+  const { pavementWidthFt, sidewalkWidthFt, sewerManholeSpacingFt, stormManholeSpacingFt, stormNetworkCoveragePct } =
+    ORDINANCE_SPECS;
 
   const roadSqFt = roadArea.roadSqFt;
-  const centerlineLf = rowWidth > 0 ? roadSqFt / rowWidth : 0;
-  const pavementSqFt = centerlineLf * pavementWidth;
-  const sidewalkSqFt = centerlineLf * 2 * sidewalkWidth;
+  const centerlineLf = roadArea.centerlineLf || 0;
+  const pavementSqFt = centerlineLf * pavementWidthFt;
+  const sidewalkSqFt = centerlineLf * 2 * sidewalkWidthFt;
   const curbGutterLf = centerlineLf * 2;
   const waterMainLf = centerlineLf;
   const sewerMainLf = centerlineLf;
-  const stormDrainLf = centerlineLf * stormCoverage;
+  const stormDrainLf = centerlineLf * stormNetworkCoveragePct;
   const utilityTrenchLf = centerlineLf;
-  const sewerManholes = Math.ceil(sewerMainLf / sewerSpacing);
-  const stormManholes = Math.ceil(stormDrainLf / 400);
+  const sewerManholes = Math.ceil(sewerMainLf / sewerManholeSpacingFt);
+  const stormManholes = Math.ceil(stormDrainLf / stormManholeSpacingFt);
 
   const lineItems = [
     {
@@ -238,6 +279,10 @@ function computeInfrastructureDetail(roadArea, map) {
 
   return {
     roadArea,
+    ordinanceSpecs: {
+      rowWidthFt,
+      ...ORDINANCE_SPECS,
+    },
     totalRoadSqFt: roadSqFt,
     totalRoadLf: centerlineLf,
     pavementSqFt,
@@ -247,7 +292,264 @@ function computeInfrastructureDetail(roadArea, map) {
     lineItems,
     totalInfraBudget,
     ordinanceNote:
-      'Quantities derived from road area and Ord. 2025-317 typical sections (ST-103 50\' ROW, ST-113 utility placement, ST-131 sidewalks). Costs use cited unit-rate assumptions.',
+      `Quantities from plat centerline (${formatLf(centerlineLf)}) and Ord. 2025-317: ` +
+      `${rowWidthFt}' ROW (plat), ${pavementWidthFt}' pavement (ST-103), ` +
+      `${sidewalkWidthFt}' sidewalks both sides (ST-131), utilities in ROW (ST-113). ` +
+      'Unit costs are editable assumptions.',
+  };
+}
+
+function formatLf(value) {
+  return `${Math.round(value).toLocaleString()} LF`;
+}
+
+function npvAtRate(rate, cashFlows) {
+  return cashFlows.reduce((total, cf, month) => total + cf / (1 + rate) ** month, 0);
+}
+
+function computeIrr(cashFlows) {
+  if (!cashFlows.length || cashFlows.every((cf) => Math.abs(cf) < 1)) return null;
+
+  // Search realistic monthly rate bands only. A wide lower bound near -1 creates spurious roots.
+  const bands = [
+    [0, 0.25],
+    [-0.2, 0],
+    [0.25, 0.75],
+  ];
+
+  for (const [low, high] of bands) {
+    const monthlyRate = bisectMonthlyRate(cashFlows, low, high);
+    if (monthlyRate != null) {
+      return (1 + monthlyRate) ** 12 - 1;
+    }
+  }
+
+  return null;
+}
+
+function bisectMonthlyRate(cashFlows, low, high) {
+  let lowNpv = npvAtRate(low, cashFlows);
+  let highNpv = npvAtRate(high, cashFlows);
+  if (lowNpv * highNpv > 0) return null;
+
+  for (let i = 0; i < 80; i += 1) {
+    const mid = (low + high) / 2;
+    const midNpv = npvAtRate(mid, cashFlows);
+    if (Math.abs(midNpv) < 1) return mid;
+    if (midNpv * lowNpv > 0) {
+      low = mid;
+      lowNpv = midNpv;
+    } else {
+      high = mid;
+      highNpv = midNpv;
+    }
+  }
+
+  return (low + high) / 2;
+}
+
+function coverCashShortfall(cash, debt, loanAdvance) {
+  if (cash >= 0) {
+    return { cash, debt, equityInjection: 0, loanDraw: 0 };
+  }
+
+  const shortfall = -cash;
+  const loanDraw = shortfall * loanAdvance;
+  const equityInjection = shortfall - loanDraw;
+  return {
+    cash: cash + loanDraw + equityInjection,
+    debt: debt + loanDraw,
+    equityInjection,
+    loanDraw,
+  };
+}
+
+function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, waterfall) {
+  const initialEquity = getValue(map, 'initial_equity', 500000);
+  const loanRate = getValue(map, 'construction_loan_rate', 0.085);
+  const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
+  const salesRate = getValue(map, 'homes_sold_per_month', 3);
+  const monthsToBuild = getValue(map, 'months_to_build_home', 3);
+  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 6);
+  const discountRate = 0.1;
+
+  let cash = initialEquity;
+  let debt = 0;
+  let month = 0;
+  let totalEquityInvested = initialEquity;
+  let totalInterest = 0;
+  let peakDebt = 0;
+  let totalLoanDraws = 0;
+  let totalSaleProceeds = 0;
+  let totalEquityDistributions = 0;
+  let paybackMonth = null;
+  let cumulativeEquityReturn = 0;
+
+  const equityCashFlows = [-initialEquity];
+  const monthlyRows = [];
+  const phaseTimeline = [];
+
+  phaseResults.forEach((phase) => {
+    const sellable = phase.homes.filter((home) => home.disposition === 'sale');
+    const buildMonths = Math.max(1, Math.ceil(phase.homeCount / parallelHomes) * monthsToBuild);
+    const saleMonths = Math.max(1, Math.ceil(sellable.length / salesRate));
+    const monthlyBuildCost = phase.totalCost / buildMonths;
+    const phaseStartMonth = month + 1;
+
+    for (let buildMonth = 0; buildMonth < buildMonths; buildMonth += 1) {
+      month += 1;
+      const monthlyInterest = debt * (loanRate / 12);
+      totalInterest += monthlyInterest;
+      cash -= monthlyBuildCost + monthlyInterest;
+      debt += monthlyInterest;
+
+      const coverage = coverCashShortfall(cash, debt, loanAdvance);
+      cash = coverage.cash;
+      debt = coverage.debt;
+      totalEquityInvested += coverage.equityInjection;
+      totalLoanDraws += coverage.loanDraw;
+      peakDebt = Math.max(peakDebt, debt);
+
+      let equityFlow = -coverage.equityInjection;
+      cumulativeEquityReturn += equityFlow;
+      equityCashFlows.push(equityFlow);
+
+      monthlyRows.push({
+        month,
+        phase: phase.phase,
+        stage: 'construction',
+        label: `Phase ${phase.phase} construction`,
+        equityFlow,
+        equityInjection: coverage.equityInjection,
+        loanDraw: coverage.loanDraw,
+        interest: monthlyInterest,
+        buildSpend: monthlyBuildCost,
+        saleProceeds: 0,
+        debt,
+        cash,
+        cumulativeEquityReturn,
+      });
+    }
+
+    let soldSoFar = 0;
+    for (let saleMonth = 0; saleMonth < saleMonths; saleMonth += 1) {
+      month += 1;
+      const monthlyInterest = debt * (loanRate / 12);
+      totalInterest += monthlyInterest;
+      cash -= monthlyInterest;
+      debt += monthlyInterest;
+
+      const batch = sellable.slice(soldSoFar, soldSoFar + salesRate);
+      soldSoFar += batch.length;
+      const monthProceeds = sum(batch.map((home) => home.salePrice));
+      totalSaleProceeds += monthProceeds;
+      cash += monthProceeds;
+
+      const paydown = Math.min(debt, monthProceeds * 0.85);
+      debt -= paydown;
+      const netToEquity = monthProceeds - paydown;
+      totalEquityDistributions += netToEquity;
+      cumulativeEquityReturn += netToEquity;
+
+      if (paybackMonth == null && cumulativeEquityReturn >= 0) {
+        paybackMonth = month;
+      }
+
+      peakDebt = Math.max(peakDebt, debt);
+
+      monthlyRows.push({
+        month,
+        phase: phase.phase,
+        stage: 'sales',
+        label: `Phase ${phase.phase} sales (${batch.length} homes)`,
+        equityFlow: netToEquity,
+        equityInjection: 0,
+        loanDraw: 0,
+        interest: monthlyInterest,
+        buildSpend: 0,
+        saleProceeds: monthProceeds,
+        debtPaydown: paydown,
+        debt,
+        cash,
+        cumulativeEquityReturn,
+      });
+    }
+
+    phaseTimeline.push({
+      phase: phase.phase,
+      startMonth: phaseStartMonth,
+      buildMonths,
+      saleMonths,
+      endMonth: month,
+      homeCount: phase.homeCount,
+      sellableCount: sellable.length,
+      totalCost: phase.totalCost,
+      totalRevenue: phase.totalRevenue,
+    });
+  });
+
+  const rentalTerminalValue =
+    rentalHoldout.activated && rentalHoldout.potentialAnnualNoi > 0
+      ? rentalHoldout.potentialAnnualNoi / 0.05
+      : 0;
+  const exitEquity = cash - debt + rentalTerminalValue;
+  if (Math.abs(exitEquity) > 1) {
+    equityCashFlows.push(exitEquity);
+    cumulativeEquityReturn += exitEquity;
+    month += 1;
+    monthlyRows.push({
+      month,
+      phase: null,
+      stage: 'exit',
+      label: rentalTerminalValue > 0 ? 'Exit — cash, debt retirement & rental value' : 'Exit — remaining equity',
+      equityFlow: exitEquity,
+      equityInjection: 0,
+      loanDraw: 0,
+      interest: 0,
+      buildSpend: 0,
+      saleProceeds: 0,
+      debt,
+      cash,
+      cumulativeEquityReturn,
+      rentalTerminalValue,
+    });
+  }
+
+  const irr = computeIrr(equityCashFlows);
+  const netProfit = exitEquity - totalEquityInvested;
+  const equityMultiple =
+    totalEquityInvested > 0 ? Math.max(exitEquity, 0) / totalEquityInvested : null;
+  const returnOnCost =
+    projectTotals.totalDevelopmentCost > 0
+      ? netProfit / projectTotals.totalDevelopmentCost
+      : null;
+  const profitMargin =
+    projectTotals.totalSaleRevenue > 0
+      ? projectTotals.totalGrossMargin / projectTotals.totalSaleRevenue
+      : null;
+  const npv = npvAtRate(discountRate / 12, equityCashFlows);
+
+  return {
+    irr,
+    equityMultiple,
+    returnOnCost,
+    profitMargin,
+    netProfit,
+    totalEquityInvested,
+    totalInterest,
+    totalLoanDraws,
+    totalSaleProceeds,
+    peakDebt,
+    projectDurationMonths: month,
+    paybackMonth,
+    exitEquity,
+    rentalTerminalValue,
+    endingCash: waterfall.endingCash,
+    endingDebt: waterfall.endingDebt,
+    npvAt10Pct: npv,
+    equityCashFlows,
+    monthlyRows,
+    phaseTimeline,
   };
 }
 
@@ -351,7 +653,7 @@ export function computeProforma({
   defaults,
   lots,
   commercial = [],
-  siteAreas = [],
+  roadSegments = null,
   sheet,
   phaseOrder,
 }) {
@@ -373,16 +675,22 @@ export function computeProforma({
     dwellingSqFt: estimateDwellingSqFt(lot, roads, transform),
   }));
 
-  const roadArea = computeRoadAreaSubtraction({
-    lots: residentialLots,
-    map,
-  });
+  const roadArea = computeRoadAreaFromSegments(roadSegments);
   const infrastructure = computeInfrastructureDetail(roadArea, map);
+  const waterRights = computeWaterRights(
+    {
+      sfLots: sfLots.length,
+      townhomeLots: townhomeLots.length,
+      commercialCount: commercial.length,
+    },
+    map,
+  );
 
   const shared = {
-    landPerHome: getValue(map, 'land_cost_total', 1835000) / Math.max(totalHomes, 1),
+    landPerHome: getValue(map, 'land_cost_total', 4000000) / Math.max(totalHomes, 1),
     engineeringPerHome: getValue(map, 'engineering_total', 110000) / Math.max(totalHomes, 1),
     studiesPerHome: getValue(map, 'studies_total', 17500) / Math.max(totalHomes, 1),
+    waterRightsPerHome: waterRights.total / Math.max(totalHomes, 1),
     infraPerHome:
       infrastructure.totalInfraBudget / Math.max(sfLots.length + townhomeLots.length, 1),
   };
@@ -460,13 +768,23 @@ export function computeProforma({
     totalDevelopmentCost: sum(homeRows.map((row) => row.costs.total)),
     totalSaleRevenue: sum(forSaleHomes.map((row) => row.salePrice)),
     totalGrossMargin: sum(forSaleHomes.map((row) => row.grossMargin)),
+    waterRightsTotal: waterRights.total,
     avgCostPerHome: homeRows.length ? sum(homeRows.map((row) => row.costs.total)) / homeRows.length : 0,
     avgDwellingSqFt: homeRows.length ? sum(homeRows.map((row) => row.dwellingSqFt)) / homeRows.length : 0,
   };
 
+  const financials = computeFinancials(
+    phaseResults,
+    map,
+    rentalHoldout,
+    projectTotals,
+    waterfall,
+  );
+
   return {
     map,
     shared,
+    waterRights,
     infrastructure,
     homeRows,
     forSaleHomes,
@@ -474,6 +792,7 @@ export function computeProforma({
     phaseResults,
     waterfall,
     rentalHoldout,
+    financials,
     projectTotals,
     meta: {
       model: defaults.model,

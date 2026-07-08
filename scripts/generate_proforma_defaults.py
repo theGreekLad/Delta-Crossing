@@ -47,29 +47,30 @@ def assumption(
 
 def compute_plat_area_defaults() -> dict:
     lots = json.loads((DATA / "sheet1-lots.json").read_text(encoding="utf-8"))
+    road_segments_path = DATA / "sheet1-road-segments.json"
 
     sf_sqft = sum(lot["squareFeet"] for lot in lots if lot.get("lotType") == "single-family")
     th_sqft = sum(lot["squareFeet"] for lot in lots if lot.get("lotType") == "townhome")
     residential_sqft = sf_sqft + th_sqft
 
-    # Project parcel assembly (~52 ac). Market-study / study-doc acreages may
-    # cover different portions (e.g. commercial zoning excluded).
-    total_sqft = 52.0 * 43560
-    commercial_sqft = 0.0
-    designated_sqft = 0.0
-    road_sqft = max(0.0, total_sqft - residential_sqft - commercial_sqft - designated_sqft)
+    road_acres = 0.0
+    road_centerline_lf = 0.0
+    if road_segments_path.exists():
+        road_segments = json.loads(road_segments_path.read_text(encoding="utf-8"))
+        road_acres = road_segments.get("roadAcres", 0.0)
+        road_centerline_lf = road_segments.get("centerlineLf", 0.0)
 
     return {
         "sf_acres": round(sf_sqft / 43560, 2),
         "th_acres": round(th_sqft / 43560, 2),
         "residential_acres": round(residential_sqft / 43560, 2),
-        "commercial_acres": 0.0,
-        "designated_acres": 0.0,
-        "total_site_acres": 52.0,
-        "road_acres": round(road_sqft / 43560, 2),
+        "road_acres": road_acres,
+        "road_centerline_lf": road_centerline_lf,
+        "total_project_acres": 52.0,
         "notes": (
-            "Total site is the ~52 ac residential parcel assembly. Commercial (~4 ac) and "
-            "designated areas are editable assumptions; study documents may cite different scopes."
+            "Road area from plat PDF centerline annotations (sheet1-road-segments.json). "
+            "Lot areas from plat S.F. labels and polygon scaling. "
+            "Total project acreage (~52 ac) for reference; water rights budgeted per lot at 1.0 AF/lot."
         ),
     }
 
@@ -85,6 +86,16 @@ def main() -> None:
         "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
         "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks.",
     )
+    millard_water = source(
+        "Millard County Subdivision Ordinance § 11-1-20",
+        "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
+        "Minimum 1.0 acre-foot of culinary water dedicated to each proposed lot at plat approval.",
+    )
+    delta_water = source(
+        "Delta City culinary water & water rights",
+        "Supporting Docs/Delta/Utilities/Culinary/Water Rights/",
+        "Culinary water rights purchased through Delta City for new connections.",
+    )
     project_parcels = source(
         "Delta Crossings project parcel assembly",
         "Supporting Docs/Delta/",
@@ -97,50 +108,21 @@ def main() -> None:
         "model": "for-sale",
         "description": (
             "For-sale proforma with ordinance-based infrastructure costing. "
-            "Road area = total site acreage minus single-family, townhome, commercial, "
-            "and designated areas."
+            "Road area and centerline length from plat PDF annotations; "
+            "quantities per Ord. 2025-317 (ST-103, ST-113, ST-131)."
         ),
         "phaseOrder": [1, 3, 4, 5, 6, 7],
         "platAreas": area_defaults,
         "ordinanceRef": {
             "title": "Ordinance 2025-317 — Delta City Design & Construction Standards",
             "path": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
-            "drawings": ["ST-103 Local Roads (50' ROW)", "ST-113 Utility Locations", "ST-131 Sidewalks"],
+            "drawings": [
+                "ST-103 Local Roads (24' pavement; plat ROW 60')",
+                "ST-113 Utility Locations",
+                "ST-131 Sidewalks",
+            ],
         },
         "assumptions": [
-            assumption(
-                "total_site_acres",
-                "Total plat acreage",
-                52.0,
-                "acres",
-                "site_area",
-                project_parcels,
-                description=(
-                    "~52 ac project parcel assembly. Study documents may cite different "
-                    f"scopes (SF+TH lots annotate to {area_defaults['residential_acres']} ac)."
-                ),
-            ),
-            assumption(
-                "commercial_site_acres",
-                "Commercial area (within project)",
-                0.0,
-                "acres",
-                "site_area",
-                project_parcels,
-                description=(
-                    "~4 ac commercial zoning, often outside the 52 ac residential assembly "
-                    "and excluded from study-doc totals. Set if within the 52 ac site."
-                ),
-            ),
-            assumption(
-                "designated_site_acres",
-                "Designated area (canal, parks, open space)",
-                0.0,
-                "acres",
-                "site_area",
-                project_parcels,
-                description="Non-lot designated parcels within the site. Set per survey if known.",
-            ),
             assumption(
                 "initial_equity",
                 "Starting equity / cash",
@@ -153,7 +135,7 @@ def main() -> None:
             assumption(
                 "land_cost_total",
                 "Land acquisition (total)",
-                1_835_000,
+                4_000_000,
                 "USD",
                 "development",
                 project_xlsx,
@@ -173,6 +155,36 @@ def main() -> None:
                 "USD",
                 "development",
                 project_xlsx,
+            ),
+            assumption(
+                "water_rights_af_per_lot",
+                "Culinary water requirement (per residential lot)",
+                1.0,
+                "AF/lot",
+                "development",
+                millard_water,
+                description=(
+                    "Millard County requires 1.0 acre-foot dedicated per platted lot "
+                    "for culinary water feasibility at subdivision approval."
+                ),
+            ),
+            assumption(
+                "water_rights_af_per_commercial",
+                "Culinary water requirement (per commercial connection)",
+                1.0,
+                "AF/connection",
+                "development",
+                millard_water,
+                description="Acre-feet required per commercial water connection (default 1.0 AF).",
+            ),
+            assumption(
+                "water_rights_cost_per_acre_foot",
+                "Culinary water rights purchase (city rate)",
+                10_000,
+                "USD/AF",
+                "development",
+                delta_water,
+                description="Cost to purchase culinary water rights from Delta City per acre-foot.",
             ),
             assumption(
                 "sf_sale_price",
@@ -253,23 +265,6 @@ def main() -> None:
                 ),
             ),
             assumption(
-                "soft_cost_pct",
-                "Soft costs (% of hard costs)",
-                0.08,
-                "ratio",
-                "soft_costs",
-                project_xlsx,
-                description="Permits, insurance, legal, project management.",
-            ),
-            assumption(
-                "contingency_pct",
-                "Contingency (% of direct costs)",
-                0.05,
-                "ratio",
-                "soft_costs",
-                project_xlsx,
-            ),
-            assumption(
                 "construction_loan_rate",
                 "Construction loan interest rate",
                 0.085,
@@ -304,7 +299,7 @@ def main() -> None:
             assumption(
                 "months_to_build_home",
                 "Months to build one home",
-                6,
+                3,
                 "months",
                 "schedule",
                 source(
@@ -321,52 +316,7 @@ def main() -> None:
                 "schedule",
                 project_xlsx,
             ),
-            # Ordinance dimensions (ST-103, ST-131, ST-113)
-            assumption(
-                "row_width_ft",
-                "Right-of-way width (local road, ST-103)",
-                50,
-                "feet",
-                "infrastructure",
-                ordinance,
-                description="50' local road typical section per Ord. 2025-317 ST-103.",
-            ),
-            assumption(
-                "pavement_width_ft",
-                "Pavement width (local road, ST-103)",
-                24,
-                "feet",
-                "infrastructure",
-                ordinance,
-            ),
-            assumption(
-                "sidewalk_width_ft",
-                "Sidewalk width (ST-131)",
-                5,
-                "feet",
-                "infrastructure",
-                ordinance,
-                description='4" concrete sidewalk against curb per ST-131.',
-            ),
-            assumption(
-                "sewer_manhole_spacing_ft",
-                "Max sewer manhole spacing",
-                350,
-                "feet",
-                "infrastructure",
-                ordinance,
-                description="PVC sewer mains; max 350' between manholes per Ord. 2025-317.",
-            ),
-            assumption(
-                "storm_network_coverage_pct",
-                "Storm drain coverage (% of road network)",
-                0.85,
-                "ratio",
-                "infrastructure",
-                ordinance,
-                description="Share of road centerline receiving storm drain per typical subdivision layout.",
-            ),
-            # Unit costs — cited installed pricing
+            # Infrastructure unit costs — ordinance dimensions are fixed in computeProforma.js
             assumption(
                 "asphalt_paving_per_sqft",
                 "Asphalt pavement (installed)",

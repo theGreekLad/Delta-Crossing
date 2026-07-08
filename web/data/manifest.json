@@ -78,7 +78,11 @@
       "lotCount": 215,
       "commercialFile": "data/sheet1-commercial.json",
       "commercialCount": 5,
-      "commercialPhase": 2
+      "commercialPhase": 2,
+      "roadSegmentsFile": "data/sheet1-road-segments.json",
+      "roadSegmentCount": 27,
+      "roadAcres": 8.72,
+      "roadCenterlineLf": 6332.3
     },
     {
       "id": "sheet2",
