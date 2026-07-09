@@ -16,6 +16,7 @@ function SceneContent({
   showSatelliteOverlay,
   controlsRef,
   selectedLot,
+  placements,
 }) {
   const { cx, cz, span } = cameraTargetFromBounds(site.bounds);
   const maxDistance = span * 2.8;
@@ -81,6 +82,7 @@ function SceneContent({
         onSelect={onSelect}
         onHover={onHover}
         hoveredId={hoveredId}
+        placements={placements}
       />
       <Trees trees={site.trees} />
 
@@ -127,7 +129,15 @@ function FocusOnLot({ lot, controlsRef }) {
   return null;
 }
 
-export default function Scene3D({ site, selectedLot, onSelect, onHover, hoveredId, showSatelliteOverlay }) {
+export default function Scene3D({
+  site,
+  selectedLot,
+  onSelect,
+  onHover,
+  hoveredId,
+  showSatelliteOverlay,
+  placements = {},
+}) {
   const controlsRef = useRef();
 
   return (
@@ -142,6 +152,7 @@ export default function Scene3D({ site, selectedLot, onSelect, onHover, hoveredI
           showSatelliteOverlay={showSatelliteOverlay}
           controlsRef={controlsRef}
           selectedLot={selectedLot}
+          placements={placements}
         />
       </Suspense>
     </Canvas>

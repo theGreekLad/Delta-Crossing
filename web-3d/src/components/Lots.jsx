@@ -1,15 +1,24 @@
 import React, { useMemo } from 'react';
 import { polygonShapeOnGround, polygonCentroid } from '../utils/geometry';
+import FourplexModel from './buildings/FourplexModel';
+import { getDesignById } from '../data/buildingCatalog';
+import { computePlacementTransform } from '../data/buildingPlacements';
 
-function Home({ lot, selected, hovered, onSelect, onHover }) {
+function Home({ lot, selected, hovered, onSelect, onHover, placement }) {
   const lotPoly = lot.polygon;
   const building = lot.building;
   const highlight = selected ? '#5bbfb0' : hovered ? '#7ecfc3' : lot.color;
   const isTownhome = lot.type === 'townhome';
 
   const hasFootprint = building && building.width > 1 && building.depth > 1;
-  const [cx, cz] = hasFootprint ? building.center : polygonCentroid(lotPoly);
-  const rotation = hasFootprint ? building.rotation : 0;
+  const design = placement?.designId ? getDesignById(placement.designId) : null;
+  const placedTransform =
+    hasFootprint && placement?.designId
+      ? computePlacementTransform(building, placement)
+      : null;
+
+  const [cx, cz] = placedTransform?.center ?? (hasFootprint ? building.center : polygonCentroid(lotPoly));
+  const rotation = placedTransform?.rotation ?? (hasFootprint ? building.rotation : 0);
   const width = hasFootprint ? building.width : 0;
   const depth = hasFootprint ? building.depth : 0;
   const wall = hasFootprint ? building.wallHeight : 12;
@@ -19,15 +28,17 @@ function Home({ lot, selected, hovered, onSelect, onHover }) {
 
   const footprintOutline = useMemo(() => {
     if (!hasFootprint) return null;
-    const halfW = width / 2;
-    const halfD = depth / 2;
+    const outlineWidth = design?.width ?? width;
+    const outlineDepth = design?.depth ?? depth;
+    const halfW = outlineWidth / 2;
+    const halfD = outlineDepth / 2;
     return [
       [-halfW, -halfD],
       [halfW, -halfD],
       [halfW, halfD],
       [-halfW, halfD],
     ];
-  }, [hasFootprint, width, depth]);
+  }, [hasFootprint, design, width, depth]);
 
   return (
     <group
@@ -55,7 +66,29 @@ function Home({ lot, selected, hovered, onSelect, onHover }) {
         />
       </mesh>
 
-      {hasFootprint && (
+      {hasFootprint && design && placedTransform && (
+        <>
+          <group position={[cx, 0, cz]} rotation={[0, rotation, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+              <shapeGeometry args={[polygonShapeOnGround(footprintOutline)]} />
+              <meshBasicMaterial color="#4a90a4" transparent opacity={0.22} />
+            </mesh>
+          </group>
+          <FourplexModel
+            designId={placement.designId}
+            center={placedTransform.center}
+            rotation={placedTransform.rotation}
+          />
+          {(selected || hovered) && (
+            <mesh position={[cx, (design.style.wallHeight || wall) + 6, cz]}>
+              <sphereGeometry args={[2, 8, 8]} />
+              <meshStandardMaterial color="#d4a853" emissive="#d4a853" emissiveIntensity={0.4} />
+            </mesh>
+          )}
+        </>
+      )}
+
+      {hasFootprint && !design && (
         <group position={[cx, 0, cz]} rotation={[0, rotation, 0]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
             <shapeGeometry args={[polygonShapeOnGround(footprintOutline)]} />
@@ -87,7 +120,7 @@ function Home({ lot, selected, hovered, onSelect, onHover }) {
   );
 }
 
-export default function Lots({ lots, selectedId, onSelect, onHover, hoveredId }) {
+export default function Lots({ lots, selectedId, onSelect, onHover, hoveredId, placements = {} }) {
   return (
     <group>
       {lots.map((lot) => (
@@ -98,6 +131,7 @@ export default function Lots({ lots, selectedId, onSelect, onHover, hoveredId })
           hovered={hoveredId === lot.id}
           onSelect={onSelect}
           onHover={onHover}
+          placement={placements[lot.id]}
         />
       ))}
     </group>

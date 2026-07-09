@@ -3,6 +3,14 @@ import Scene3D from './components/Scene3D';
 import LotPanel from './components/LotPanel';
 import { usePlatSite } from './data/usePlatSite';
 import { platUrl, appUrl } from './data/platUrls';
+import {
+  adjustPlacement,
+  clampPlacement,
+  loadPlacements,
+  savePlacements,
+  YAW_STEP,
+  NUDGE_STEP,
+} from './data/buildingPlacements';
 
 export default function App() {
   const { site, error, loading } = usePlatSite('sheet1');
@@ -11,6 +19,11 @@ export default function App() {
   const [showSatelliteOverlay, setShowSatelliteOverlay] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [placements, setPlacements] = useState(() => loadPlacements());
+
+  useEffect(() => {
+    savePlacements(placements);
+  }, [placements]);
 
   useEffect(() => {
     if (!site) return;
@@ -82,6 +95,44 @@ export default function App() {
     window.location.href = window.location.pathname;
   }, []);
 
+  const handlePlaceDesign = useCallback((lotId, designId) => {
+    setPlacements((current) => ({
+      ...current,
+      [lotId]: clampPlacement({ designId, yawOffset: 0, nudge: [0, 0] }),
+    }));
+  }, []);
+
+  const handleAdjustPlacement = useCallback((lotId, delta) => {
+    setPlacements((current) => {
+      const existing = current[lotId];
+      if (!existing) return current;
+      return {
+        ...current,
+        [lotId]: adjustPlacement(existing, delta),
+      };
+    });
+  }, []);
+
+  const handleClearPlacement = useCallback((lotId) => {
+    setPlacements((current) => {
+      if (!current[lotId]) return current;
+      const next = { ...current };
+      delete next[lotId];
+      return next;
+    });
+  }, []);
+
+  const handleResetPlacementOrientation = useCallback((lotId) => {
+    setPlacements((current) => {
+      const existing = current[lotId];
+      if (!existing) return current;
+      return {
+        ...current,
+        [lotId]: clampPlacement({ ...existing, yawOffset: 0, nudge: [0, 0] }),
+      };
+    });
+  }, []);
+
   if (loading) {
     return (
       <div className="app loading-screen">
@@ -135,6 +186,9 @@ export default function App() {
           <a className="btn btn-primary" href={platUrl('index.html')}>
             Plat Map
           </a>
+          <a className="btn btn-primary" href={appUrl('concepts.html')}>
+            Conceptual Drawings
+          </a>
           <a className="btn btn-primary" href={appUrl('proforma.html')}>
             Proforma
           </a>
@@ -149,6 +203,7 @@ export default function App() {
           onHover={setHoveredId}
           hoveredId={hoveredId}
           showSatelliteOverlay={showSatelliteOverlay}
+          placements={placements}
         />
 
         {showWelcome && (
@@ -177,7 +232,17 @@ export default function App() {
           {stats.zoning && <div className="stat-chip">{stats.zoning} setbacks</div>}
         </div>
 
-        <LotPanel lot={selectedLot} onClose={handleClose} />
+        <LotPanel
+          lot={selectedLot}
+          onClose={handleClose}
+          placement={selectedLot ? placements[selectedLot.id] : null}
+          onPlaceDesign={handlePlaceDesign}
+          onAdjustPlacement={handleAdjustPlacement}
+          onClearPlacement={handleClearPlacement}
+          onResetPlacementOrientation={handleResetPlacementOrientation}
+          yawStep={YAW_STEP}
+          nudgeStep={NUDGE_STEP}
+        />
 
         <div className="legend">
           <h3>Legend</h3>
