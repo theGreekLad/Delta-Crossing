@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/3d", "destination": "/3d/index.html" }
+    { "source": "/3d", "destination": "/3d/index.html" },
+    { "source": "/3d/proforma", "destination": "/3d/proforma.html" },
+    { "source": "/3d/design-viewer", "destination": "/3d/design-viewer.html" },
+    { "source": "/3d/layouts", "destination": "/3d/layouts.html" },
+    { "source": "/3d/area-info", "destination": "/3d/area-info.html" }
   ]
 }

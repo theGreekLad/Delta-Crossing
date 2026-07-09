@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { platUrl, appUrl } from '../data/platUrls';
+import SiteNav from '../components/SiteNav';
+import { platUrl } from '../data/platUrls';
 import {
   clearOverrides,
   formatCurrency,
@@ -507,17 +508,15 @@ export default function ProformaPage() {
           <h1>Delta Crossings Proforma</h1>
           <p>For-sale single-family & townhomes · Phase-funded development · {result.meta.ordinanceRef.title}</p>
         </div>
-        <div className="proforma-header-actions">
-          <a className="btn btn-primary" href={platUrl('index.html')}>
-            Plat Map
-          </a>
-          <a className="btn btn-primary" href={appUrl('index.html')}>
-            3D View
-          </a>
-          <button type="button" className="btn" onClick={handleReset}>
-            Reset Assumptions
-          </button>
-        </div>
+        <SiteNav
+          current="proforma"
+          className="proforma-header-actions"
+          extra={
+            <button type="button" className="btn" onClick={handleReset}>
+              Reset Assumptions
+            </button>
+          }
+        />
       </header>
 
       <div className={`proforma-layout ${assumptionsOpen ? 'assumptions-open' : 'assumptions-collapsed'}`}>

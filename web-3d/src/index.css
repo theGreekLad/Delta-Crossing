@@ -160,11 +160,11 @@ button {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: min(380px, calc(100vw - 2rem));
+  width: min(560px, calc(100vw - 2rem));
   background: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: 14px;
-  padding: 1.25rem;
+  padding: 1.35rem 1.4rem 1.5rem;
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
   z-index: 5;
@@ -277,14 +277,14 @@ button {
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .catalog-card {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.35rem;
+  gap: 0.4rem;
+  padding: 0.45rem;
   border-radius: 10px;
   border: 1px solid var(--surface-border);
   background: rgba(255, 255, 255, 0.03);
@@ -310,9 +310,9 @@ button {
 }
 
 .catalog-card-name {
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--text);
 }
 
@@ -339,16 +339,34 @@ button {
 .placement-preview a {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.45rem;
   text-decoration: none;
   color: var(--accent-light);
-  font-size: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.placement-preview-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
 }
 
 .placement-preview img {
   width: 100%;
   border-radius: 8px;
   border: 1px solid var(--surface-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.placement-preview-stack img:first-child {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.placement-preview-stack img:last-child {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
 }
 
 .adjust-group {
@@ -588,6 +606,6 @@ button {
     right: 0;
     width: 100%;
     border-radius: 14px 14px 0 0;
-    max-height: 45vh;
+    max-height: 70vh;
   }
 }

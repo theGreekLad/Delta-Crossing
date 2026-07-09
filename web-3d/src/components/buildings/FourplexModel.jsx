@@ -126,7 +126,7 @@ function FourplexUnit({ unitWidth, depth, style, isEndUnit, unitIndex }) {
 
 export default function FourplexModel({ designId, center, rotation }) {
   const design = getDesignById(designId);
-  if (!design) return null;
+  if (!design || design.category === 'single-family') return null;
 
   const { style, unitWidths, width, depth } = design;
   const [cx, cz] = center;

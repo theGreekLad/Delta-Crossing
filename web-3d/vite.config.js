@@ -57,6 +57,10 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         proforma: path.resolve(__dirname, 'proforma.html'),
+        // concepts.html kept in repo but not shipped in the live build for now.
+        'design-viewer': path.resolve(__dirname, 'design-viewer.html'),
+        layouts: path.resolve(__dirname, 'layouts.html'),
+        'area-info': path.resolve(__dirname, 'area-info.html'),
       },
     },
   },

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { polygonShapeOnGround, polygonCentroid } from '../utils/geometry';
-import FourplexModel from './buildings/FourplexModel';
+import PlacedBuilding from './buildings/PlacedBuilding';
 import { getDesignById } from '../data/buildingCatalog';
 import { computePlacementTransform } from '../data/buildingPlacements';
 
@@ -74,7 +74,7 @@ function Home({ lot, selected, hovered, onSelect, onHover, placement }) {
               <meshBasicMaterial color="#4a90a4" transparent opacity={0.22} />
             </mesh>
           </group>
-          <FourplexModel
+          <PlacedBuilding
             designId={placement.designId}
             center={placedTransform.center}
             rotation={placedTransform.rotation}

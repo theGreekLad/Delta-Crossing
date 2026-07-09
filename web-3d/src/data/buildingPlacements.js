@@ -87,3 +87,63 @@ export function adjustPlacement(placement, delta) {
     ],
   });
 }
+
+/**
+ * Deterministic pick so the same lot gets a stable "random" design across reloads
+ * until the user changes it.
+ * @param {string} lotId
+ * @param {number} optionCount
+ */
+function seededIndex(lotId, optionCount) {
+  if (optionCount <= 0) return 0;
+  let hash = 0;
+  for (let i = 0; i < lotId.length; i += 1) {
+    hash = (hash * 31 + lotId.charCodeAt(i)) >>> 0;
+  }
+  return hash % optionCount;
+}
+
+/**
+ * Ensure every residential lot has a placement from the matching catalog.
+ * Keeps existing placements when the design still matches the lot type.
+ *
+ * @param {Array<{ id: string, type?: string }>} lots
+ * @param {Record<string, LotPlacement>} existing
+ * @param {(lot: { id: string, type?: string }) => Array<{ id: string, category: string }>} getCatalogForLot
+ * @param {(designId: string) => { category?: string } | undefined} getDesignById
+ * @returns {Record<string, LotPlacement>}
+ */
+export function seedRandomPlacements(lots, existing, getCatalogForLot, getDesignById) {
+  const next = { ...existing };
+  let changed = false;
+
+  for (const lot of lots) {
+    if (lot.type === 'commercial') {
+      if (next[lot.id]) {
+        delete next[lot.id];
+        changed = true;
+      }
+      continue;
+    }
+
+    const catalog = getCatalogForLot(lot);
+    if (!catalog.length) continue;
+
+    const current = next[lot.id];
+    const currentDesign = current?.designId ? getDesignById(current.designId) : null;
+    const stillValid =
+      currentDesign && catalog.some((design) => design.id === current.designId);
+
+    if (stillValid) continue;
+
+    const pick = catalog[seededIndex(lot.id, catalog.length)];
+    next[lot.id] = clampPlacement({
+      designId: pick.id,
+      yawOffset: 0,
+      nudge: [0, 0],
+    });
+    changed = true;
+  }
+
+  return changed ? next : existing;
+}

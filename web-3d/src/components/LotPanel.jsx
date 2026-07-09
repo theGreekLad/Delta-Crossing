@@ -1,5 +1,6 @@
 import React from 'react';
-import { BUILDING_CATALOG, getDesignById, lotFitsFourplex } from '../data/buildingCatalog';
+import { getCatalogForLot, getDesignById, getFitWarning } from '../data/buildingCatalog';
+import { appUrl } from '../data/platUrls';
 
 export default function LotPanel({
   lot,
@@ -23,8 +24,16 @@ export default function LotPanel({
   const typeLabel = typeLabels[lot.type] || lot.type;
   const building = lot.building;
   const selectedDesign = placement?.designId ? getDesignById(placement.designId) : null;
-  const showCatalog = lot.type !== 'commercial';
-  const fitsFourplex = lotFitsFourplex(lot);
+  const catalog = getCatalogForLot(lot);
+  const showCatalog = catalog.length > 0;
+  const fitWarning = getFitWarning(lot);
+
+  const designSummary =
+    selectedDesign?.category === 'single-family'
+      ? `${selectedDesign.width}' × ${selectedDesign.depth}' · ${selectedDesign.dwellingSqFt} · 3 Bed | 2.5 Bath | 2-Car`
+      : selectedDesign
+        ? `${selectedDesign.width}' × ${selectedDesign.depth}' · End ${selectedDesign.endUnitSqFt} · Middle ${selectedDesign.middleUnitSqFt}`
+        : '';
 
   return (
     <div className="side-panel">
@@ -82,13 +91,9 @@ export default function LotPanel({
       {showCatalog && (
         <section className="building-catalog">
           <h3 className="catalog-heading">Building Designs</h3>
-          {!fitsFourplex && (
-            <p className="panel-note catalog-warning">
-              Buildable pad may be narrow for a 108&apos; fourplex — placement is allowed but verify setbacks.
-            </p>
-          )}
+          {fitWarning && <p className="panel-note catalog-warning">{fitWarning}</p>}
           <div className="catalog-grid">
-            {BUILDING_CATALOG.map((design) => {
+            {catalog.map((design) => {
               const isSelected = placement?.designId === design.id;
               return (
                 <button
@@ -108,17 +113,29 @@ export default function LotPanel({
             <div className="placement-controls">
               <div className="placement-summary">
                 <strong>{selectedDesign.name}</strong>
-                <span>
-                  {selectedDesign.width}&apos; × {selectedDesign.depth}&apos; · End {selectedDesign.endUnitSqFt} · Middle{' '}
-                  {selectedDesign.middleUnitSqFt}
-                </span>
+                <span>{designSummary}</span>
                 <p>{selectedDesign.description}</p>
               </div>
 
               <div className="placement-preview">
-                <a href={selectedDesign.layoutUrl} target="_blank" rel="noreferrer">
-                  <img src={selectedDesign.layoutUrl} alt={`${selectedDesign.name} layout`} loading="lazy" />
-                  <span>View floor plan layout</span>
+                <a
+                  href={`${appUrl('design-viewer.html')}?design=${encodeURIComponent(selectedDesign.id)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <div className="placement-preview-stack">
+                    <img
+                      src={selectedDesign.renderingUrl}
+                      alt={`${selectedDesign.name} rendering`}
+                      loading="lazy"
+                    />
+                    <img
+                      src={selectedDesign.layoutUrl}
+                      alt={`${selectedDesign.name} layout`}
+                      loading="lazy"
+                    />
+                  </div>
+                  <span>Open rendering + layout</span>
                 </a>
               </div>
 

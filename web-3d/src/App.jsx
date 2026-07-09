@@ -1,16 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Scene3D from './components/Scene3D';
 import LotPanel from './components/LotPanel';
+import SiteNav from './components/SiteNav';
 import { usePlatSite } from './data/usePlatSite';
-import { platUrl, appUrl } from './data/platUrls';
 import {
   adjustPlacement,
   clampPlacement,
   loadPlacements,
   savePlacements,
+  seedRandomPlacements,
   YAW_STEP,
   NUDGE_STEP,
 } from './data/buildingPlacements';
+import { getCatalogForLot, getDesignById } from './data/buildingCatalog';
 
 export default function App() {
   const { site, error, loading } = usePlatSite('sheet1');
@@ -27,6 +29,10 @@ export default function App() {
 
   useEffect(() => {
     if (!site) return;
+
+    setPlacements((current) =>
+      seedRandomPlacements(site.lots, current, getCatalogForLot, getDesignById),
+    );
 
     const params = new URLSearchParams(window.location.search);
     const lotParam = parseInt(params.get('lot') || '', 10);
@@ -160,39 +166,35 @@ export default function App() {
             {project.phase} · {project.location}
           </p>
         </div>
-        <div className="header-actions">
-          <label className="search-box">
-            <span className="sr-only">Find lot</span>
-            <input
-              type="search"
-              placeholder="Find lot # or CU #..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              onKeyDown={handleSearch}
-              autoComplete="off"
-            />
-          </label>
-          <button
-            type="button"
-            className={`btn ${showSatelliteOverlay ? 'active' : ''}`}
-            onClick={() => setShowSatelliteOverlay((value) => !value)}
-            disabled={!site.satelliteOverlay}
-          >
-            Satellite Overlay
-          </button>
-          <button type="button" className="btn" onClick={resetView}>
-            Reset View
-          </button>
-          <a className="btn btn-primary" href={platUrl('index.html')}>
-            Plat Map
-          </a>
-          <a className="btn btn-primary" href={appUrl('concepts.html')}>
-            Conceptual Drawings
-          </a>
-          <a className="btn btn-primary" href={appUrl('proforma.html')}>
-            Proforma
-          </a>
-        </div>
+        <SiteNav
+          current="3d"
+          extra={
+            <>
+              <label className="search-box">
+                <span className="sr-only">Find lot</span>
+                <input
+                  type="search"
+                  placeholder="Find lot # or CU #..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={handleSearch}
+                  autoComplete="off"
+                />
+              </label>
+              <button
+                type="button"
+                className={`btn ${showSatelliteOverlay ? 'active' : ''}`}
+                onClick={() => setShowSatelliteOverlay((value) => !value)}
+                disabled={!site.satelliteOverlay}
+              >
+                Satellite Overlay
+              </button>
+              <button type="button" className="btn" onClick={resetView}>
+                Reset View
+              </button>
+            </>
+          }
+        />
       </header>
 
       <div className="viewer-wrap">
