@@ -104,7 +104,7 @@ def main() -> None:
     area_defaults = compute_plat_area_defaults()
 
     defaults = {
-        "version": 2,
+        "version": 3,
         "model": "for-sale",
         "description": (
             "For-sale proforma with ordinance-based infrastructure costing. "
@@ -318,6 +318,19 @@ def main() -> None:
             ),
             # Infrastructure unit costs — ordinance dimensions are fixed in computeProforma.js
             assumption(
+                "infrastructure_safety_factor",
+                "Infrastructure safety factor",
+                1.0,
+                "x",
+                "infrastructure",
+                source(
+                    "Planning contingency multiplier",
+                    "",
+                    "Default 1.0 = no adjustment. Flat multiplies all infrastructure line items (e.g. 1.15 = +15%).",
+                ),
+                description="Flat multiplier applied to all infrastructure line items. Use >1.0 for contingency / higher bids, <1.0 to stress cheaper costs.",
+            ),
+            assumption(
                 "asphalt_paving_per_sqft",
                 "Asphalt pavement (installed)",
                 4.50,
@@ -348,9 +361,9 @@ def main() -> None:
                 "USD/sqft",
                 "infrastructure",
                 source(
-                    "RSMeans / Utah concrete flatwork benchmarks",
-                    "https://www.rsmeans.com/2026-square-foot-costs-book",
-                    "4\" sidewalk with base course per ST-131.",
+                    "ProMatcher Salt Lake City concrete report",
+                    "https://concrete.promatcher.com/cost/salt-lake-city-ut-concrete-costs-prices.aspx",
+                    "Public report shows $6.43/sqft (4\" reinforced sidewalk); default is higher for base course per ST-131.",
                 ),
             ),
             assumption(
@@ -372,9 +385,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Utah water main installation benchmarks",
-                    "https://www.rsmeans.com/2026-square-foot-costs-book",
-                    "AWWA C900 PVC blue pipe per Ord. 2025-317; one side of street.",
+                    "Ogden City — Monroe Water Line bid tabulation",
+                    "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
+                    "Bid item 121: 8\" PVC C900 DR-18 installed $108–$149/LF (2023); default is mid-range planning value.",
                 ),
             ),
             assumption(
@@ -384,9 +397,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Utah sewer main installation benchmarks",
-                    "https://www.rsmeans.com/2026-square-foot-costs-book",
-                    "PVC sewer opposite water line per ST-113.",
+                    "ProMatcher Utah sewer cost report",
+                    "https://sewers.promatcher.com/cost/utah.aspx",
+                    "Public report shows $63.18/LF ($55–$71) for trench replacement; default higher for new subdivision main per ST-113.",
                 ),
             ),
             assumption(
@@ -396,9 +409,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Utah storm drain installation benchmarks",
-                    "https://www.rsmeans.com/2026-square-foot-costs-book",
-                    "Black corrugated HDPE per Ord. 2025-317.",
+                    "Ogden City — Monroe Water Line storm bid tabulation",
+                    "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
+                    "Bid schedule 2 item 203: 15\" storm drain RCP installed $114–$155/LF (2023); comparable installed storm pipe cost.",
                 ),
             ),
             assumption(
@@ -407,7 +420,11 @@ def main() -> None:
                 4_500,
                 "USD/each",
                 "infrastructure",
-                ordinance,
+                source(
+                    "Moab City — North Sewer Line bid tabulation",
+                    "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
+                    "Bid items A8/A9: 4'–5' precast sewer manholes $5,393–$7,005 each (2019); spacing per Ord. 2025-317 ST-103.",
+                ),
             ),
             assumption(
                 "storm_manhole_each",
@@ -415,18 +432,82 @@ def main() -> None:
                 5_500,
                 "USD/each",
                 "infrastructure",
-                ordinance,
+                source(
+                    "Ogden City — Monroe Water Line storm bid tabulation",
+                    "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
+                    "Bid item 202: 60\" precast storm drain manhole $8,050–$11,238 each (2023); spacing per Ord. 2025-317.",
+                ),
             ),
             assumption(
                 "utility_trench_per_lf",
-                "Gas / power / telecom trenching",
+                "Joint utility trenching (gas / power / telecom)",
                 35,
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Utah utility trenching benchmarks",
-                    "https://www.rsmeans.com/2026-square-foot-costs-book",
-                    "Joint trench allowance along road corridor.",
+                    "Moab City — North Sewer Line bid tabulation",
+                    "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
+                    "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70–$130/LF (2019) informed lower joint-trench allowance.",
+                ),
+            ),
+            assumption(
+                "gas_main_per_lf",
+                "Natural gas main PE (pipe & fittings)",
+                55,
+                "USD/LF",
+                "infrastructure",
+                source(
+                    "Utah subdivision dry-utility planning allowances",
+                    "Supporting Docs/Delta/",
+                    "2–4\" PE gas main material + install in open joint trench (trench cost separate). Planning mid-range $45–$70/LF.",
+                ),
+            ),
+            assumption(
+                "electric_conduit_per_lf",
+                "Electric primary/secondary conduit",
+                32,
+                "USD/LF",
+                "infrastructure",
+                source(
+                    "Utah subdivision dry-utility planning allowances",
+                    "Supporting Docs/Delta/",
+                    "PVC conduit bank for power distribution (excl. trench). Cable often utility-furnished; default is developer conduit contribution.",
+                ),
+            ),
+            assumption(
+                "telecom_conduit_per_lf",
+                "Telecom / fiber conduit",
+                18,
+                "USD/LF",
+                "infrastructure",
+                source(
+                    "Utah subdivision dry-utility planning allowances",
+                    "Supporting Docs/Delta/",
+                    "Empty telecom/fiber conduit in joint trench (excl. trench). ISP may pull fiber later.",
+                ),
+            ),
+            assumption(
+                "electric_transformer_each",
+                "Pad-mount transformer (installed)",
+                12_000,
+                "USD/each",
+                "infrastructure",
+                source(
+                    "Utah subdivision dry-utility planning allowances",
+                    "Supporting Docs/Delta/",
+                    "Pad-mount transformer contribution ~1 per 8 lots. Often utility-owned with developer contribution; $8k–$18k planning range.",
+                ),
+            ),
+            assumption(
+                "street_light_each",
+                "Street light (pole, fixture & base)",
+                4_500,
+                "USD/each",
+                "infrastructure",
+                source(
+                    "Utah subdivision street lighting allowances",
+                    "Supporting Docs/Delta/",
+                    "Pole, LED fixture, foundation, and wiring stub. Quantity at ~175' centerline spacing.",
                 ),
             ),
             assumption(

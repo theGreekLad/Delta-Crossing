@@ -172,7 +172,7 @@ function computeRoadAreaFromSegments(roadSegments) {
   };
 }
 
-function computeInfrastructureDetail(roadArea, map) {
+function computeInfrastructureDetail(roadArea, map, options = {}) {
   const rowWidthFt = roadArea.rowWidthFt || 60;
   const { pavementWidthFt, sidewalkWidthFt, sewerManholeSpacingFt, stormManholeSpacingFt, stormNetworkCoveragePct } =
     ORDINANCE_SPECS;
@@ -188,6 +188,14 @@ function computeInfrastructureDetail(roadArea, map) {
   const utilityTrenchLf = centerlineLf;
   const sewerManholes = Math.ceil(sewerMainLf / sewerManholeSpacingFt);
   const stormManholes = Math.ceil(stormDrainLf / stormManholeSpacingFt);
+
+  const residentialLots = Math.max(0, Math.round(options.residentialLots || 0));
+  const streetLightSpacingFt = 175;
+  const streetLights = Math.max(1, Math.ceil(centerlineLf / streetLightSpacingFt));
+  // Pad-mount transformers: ~1 per 8 homes (planning allowance; often utility-owned with developer contribution).
+  const transformers =
+    residentialLots > 0 ? Math.max(1, Math.ceil(residentialLots / 8)) : Math.max(1, Math.ceil(centerlineLf / 400));
+  const safetyFactor = Math.max(0, getValue(map, 'infrastructure_safety_factor', 1));
 
   const lineItems = [
     {
@@ -264,17 +272,64 @@ function computeInfrastructureDetail(roadArea, map) {
     },
     {
       id: 'utilities',
-      label: 'Gas / power / telecom trenching',
+      label: 'Joint utility trenching (gas / power / telecom)',
       quantity: utilityTrenchLf,
       unit: 'LF',
       unitCost: getValue(map, 'utility_trench_per_lf', 35),
-      ordinanceRef: 'Joint utility corridor',
+      ordinanceRef: 'Joint trench excavation only — hardware below',
     },
-  ].map((item) => ({
-    ...item,
-    amount: item.quantity * item.unitCost,
-  }));
+    {
+      id: 'gas_main',
+      label: 'Natural gas main (PE pipe & fittings)',
+      quantity: centerlineLf,
+      unit: 'LF',
+      unitCost: getValue(map, 'gas_main_per_lf', 55),
+      ordinanceRef: '2–4" PE main in joint trench (excl. trench)',
+    },
+    {
+      id: 'electric_conduit',
+      label: 'Electric primary/secondary conduit',
+      quantity: centerlineLf,
+      unit: 'LF',
+      unitCost: getValue(map, 'electric_conduit_per_lf', 32),
+      ordinanceRef: 'PVC conduit bank for power (excl. trench)',
+    },
+    {
+      id: 'telecom_conduit',
+      label: 'Telecom / fiber conduit',
+      quantity: centerlineLf,
+      unit: 'LF',
+      unitCost: getValue(map, 'telecom_conduit_per_lf', 18),
+      ordinanceRef: 'Empty conduit for ISP / fiber (excl. trench)',
+    },
+    {
+      id: 'transformers',
+      label: 'Pad-mount transformers',
+      quantity: transformers,
+      unit: 'each',
+      unitCost: getValue(map, 'electric_transformer_each', 12000),
+      ordinanceRef: residentialLots
+        ? `~1 per 8 lots (${residentialLots} residential lots)`
+        : '~1 per 400 LF corridor',
+    },
+    {
+      id: 'street_lights',
+      label: 'Street lights (pole, fixture & base)',
+      quantity: streetLights,
+      unit: 'each',
+      unitCost: getValue(map, 'street_light_each', 4500),
+      ordinanceRef: `~${streetLightSpacingFt}' spacing along centerline`,
+    },
+  ].map((item) => {
+    const baseAmount = item.quantity * item.unitCost;
+    return {
+      ...item,
+      baseAmount,
+      amount: baseAmount * safetyFactor,
+    };
+  });
 
+  const totalInfraBase = sum(lineItems.map((item) => item.baseAmount));
   const totalInfraBudget = sum(lineItems.map((item) => item.amount));
 
   return {
@@ -282,6 +337,7 @@ function computeInfrastructureDetail(roadArea, map) {
     ordinanceSpecs: {
       rowWidthFt,
       ...ORDINANCE_SPECS,
+      streetLightSpacingFt,
     },
     totalRoadSqFt: roadSqFt,
     totalRoadLf: centerlineLf,
@@ -289,12 +345,19 @@ function computeInfrastructureDetail(roadArea, map) {
     sidewalkLf: centerlineLf * 2,
     sidewalkSqFt,
     curbGutterLf,
+    transformers,
+    streetLights,
+    residentialLots,
+    safetyFactor,
     lineItems,
+    totalInfraBase,
     totalInfraBudget,
     ordinanceNote:
       `Quantities from plat centerline (${formatLf(centerlineLf)}) and Ord. 2025-317: ` +
       `${rowWidthFt}' ROW (plat), ${pavementWidthFt}' pavement (ST-103), ` +
       `${sidewalkWidthFt}' sidewalks both sides (ST-131), utilities in ROW (ST-113). ` +
+      'Dry utilities include joint trench plus gas main, electric/telecom conduit, transformers, and street lights. ' +
+      `Infrastructure safety factor ×${safetyFactor.toFixed(2)} applied to all line items. ` +
       'Unit costs are editable assumptions.',
   };
 }
@@ -315,6 +378,7 @@ function computeIrr(cashFlows) {
     [0, 0.25],
     [-0.2, 0],
     [0.25, 0.75],
+    [-0.5, -0.2],
   ];
 
   for (const [low, high] of bands) {
@@ -364,6 +428,33 @@ function coverCashShortfall(cash, debt, loanAdvance) {
   };
 }
 
+function sumHomeCost(homes, key) {
+  return sum(homes.map((home) => home.costs[key] || 0));
+}
+
+function buildPhaseCostBreakdown(phaseHomes) {
+  const land = sumHomeCost(phaseHomes, 'land');
+  const engineering = sumHomeCost(phaseHomes, 'engineering');
+  const studies = sumHomeCost(phaseHomes, 'studies');
+  const waterRights = sumHomeCost(phaseHomes, 'waterRights');
+  const infrastructure = sumHomeCost(phaseHomes, 'infrastructure');
+  const verticalHard = sumHomeCost(phaseHomes, 'verticalHard');
+  return {
+    land,
+    engineering,
+    studies,
+    waterRights,
+    infrastructure,
+    verticalHard,
+    /** Paid at phase start: site infrastructure + culinary water for that phase's lots. */
+    phaseUpfront: infrastructure + waterRights,
+    /** Paid across construction months only. */
+    vertical: verticalHard,
+    /** Allocated to homes for margin math; cash-flowed at project acquisition instead. */
+    projectAllocated: land + engineering + studies,
+  };
+}
+
 function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, waterfall) {
   const initialEquity = getValue(map, 'initial_equity', 500000);
   const loanRate = getValue(map, 'construction_loan_rate', 0.085);
@@ -389,89 +480,186 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
   const monthlyRows = [];
   const phaseTimeline = [];
 
-  phaseResults.forEach((phase) => {
-    const sellable = phase.homes.filter((home) => home.disposition === 'sale');
-    const buildMonths = Math.max(1, Math.ceil(phase.homeCount / parallelHomes) * monthsToBuild);
-    const saleMonths = Math.max(1, Math.ceil(sellable.length / salesRate));
-    const monthlyBuildCost = phase.totalCost / buildMonths;
-    const phaseStartMonth = month + 1;
+  const runMonth = ({
+    phase,
+    stage,
+    label,
+    spend = 0,
+    spendBreakdown = null,
+    batch = [],
+    financeShortfall = true,
+  }) => {
+    month += 1;
 
-    for (let buildMonth = 0; buildMonth < buildMonths; buildMonth += 1) {
-      month += 1;
-      const monthlyInterest = debt * (loanRate / 12);
-      totalInterest += monthlyInterest;
-      cash -= monthlyBuildCost + monthlyInterest;
-      debt += monthlyInterest;
+    const monthlyInterest = debt * (loanRate / 12);
+    totalInterest += monthlyInterest;
+    cash -= spend + monthlyInterest;
+    debt += monthlyInterest;
 
+    let equityInjection = 0;
+    let loanDraw = 0;
+    if (financeShortfall && spend > 0) {
       const coverage = coverCashShortfall(cash, debt, loanAdvance);
       cash = coverage.cash;
       debt = coverage.debt;
-      totalEquityInvested += coverage.equityInjection;
-      totalLoanDraws += coverage.loanDraw;
-      peakDebt = Math.max(peakDebt, debt);
-
-      let equityFlow = -coverage.equityInjection;
-      cumulativeEquityReturn += equityFlow;
-      equityCashFlows.push(equityFlow);
-
-      monthlyRows.push({
-        month,
-        phase: phase.phase,
-        stage: 'construction',
-        label: `Phase ${phase.phase} construction`,
-        equityFlow,
-        equityInjection: coverage.equityInjection,
-        loanDraw: coverage.loanDraw,
-        interest: monthlyInterest,
-        buildSpend: monthlyBuildCost,
-        saleProceeds: 0,
-        debt,
-        cash,
-        cumulativeEquityReturn,
-      });
+      equityInjection = coverage.equityInjection;
+      loanDraw = coverage.loanDraw;
+      totalEquityInvested += equityInjection;
+      totalLoanDraws += loanDraw;
     }
 
-    let soldSoFar = 0;
-    for (let saleMonth = 0; saleMonth < saleMonths; saleMonth += 1) {
-      month += 1;
-      const monthlyInterest = debt * (loanRate / 12);
-      totalInterest += monthlyInterest;
-      cash -= monthlyInterest;
-      debt += monthlyInterest;
+    const monthProceeds = sum(batch.map((home) => home.salePrice));
+    totalSaleProceeds += monthProceeds;
+    cash += monthProceeds;
 
-      const batch = sellable.slice(soldSoFar, soldSoFar + salesRate);
-      soldSoFar += batch.length;
-      const monthProceeds = sum(batch.map((home) => home.salePrice));
-      totalSaleProceeds += monthProceeds;
-      cash += monthProceeds;
+    const paydown = Math.min(debt, monthProceeds * 0.85);
+    debt -= paydown;
+    // Proceeds net of required debt paydown stay in project cash (not distributed).
+    // Counting them as equity inflows here AND again in exitEquity double-counted IRR.
+    const netToEquity = monthProceeds - paydown;
+    totalEquityDistributions += netToEquity;
 
-      const paydown = Math.min(debt, monthProceeds * 0.85);
-      debt -= paydown;
-      const netToEquity = monthProceeds - paydown;
-      totalEquityDistributions += netToEquity;
-      cumulativeEquityReturn += netToEquity;
+    // IRR cash flows: only actual equity in/out. Intermediate sale surplus stays invested.
+    const equityFlow = -equityInjection;
+    equityCashFlows.push(equityFlow);
 
-      if (paybackMonth == null && cumulativeEquityReturn >= 0) {
-        paybackMonth = month;
+    // Unrealized equity P&L vs capital contributed (NAV − invested).
+    cumulativeEquityReturn = cash - debt - totalEquityInvested;
+
+    if (paybackMonth == null && cumulativeEquityReturn >= 0) {
+      paybackMonth = month;
+    }
+
+    peakDebt = Math.max(peakDebt, debt);
+
+    monthlyRows.push({
+      month,
+      phase,
+      stage,
+      label,
+      equityFlow,
+      equityInjection,
+      loanDraw,
+      interest: monthlyInterest,
+      buildSpend: spend,
+      spendBreakdown,
+      saleProceeds: monthProceeds,
+      debtPaydown: paydown,
+      retainedSaleSurplus: netToEquity,
+      debt,
+      cash,
+      cumulativeEquityReturn,
+    });
+  };
+
+  // Project acquisition: land + engineering + studies (+ any commercial water rights share).
+  const acquisition = projectTotals.acquisitionCosts || {
+    land: 0,
+    engineering: 0,
+    studies: 0,
+    commercialWaterRights: 0,
+    total: 0,
+  };
+  if (acquisition.total > 0) {
+    runMonth({
+      phase: null,
+      stage: 'acquisition',
+      label: 'Project acquisition — land, engineering & studies',
+      spend: acquisition.total,
+      spendBreakdown: {
+        land: acquisition.land,
+        engineering: acquisition.engineering,
+        studies: acquisition.studies,
+        waterRights: acquisition.commercialWaterRights,
+        infrastructure: 0,
+        vertical: 0,
+      },
+    });
+  }
+
+  phaseResults.forEach((phase) => {
+    const sellable = phase.homes.filter((home) => home.disposition === 'sale');
+    const costs = phase.costBreakdown || buildPhaseCostBreakdown(phase.homes);
+    const waves = [];
+    for (let i = 0; i < phase.homes.length; i += parallelHomes) {
+      waves.push(phase.homes.slice(i, i + parallelHomes));
+    }
+    const buildMonths = Math.max(1, waves.length * monthsToBuild);
+    const monthlyVertical = costs.vertical / buildMonths;
+    const phaseStartMonth = month + 1;
+
+    // Sales begin as each construction wave finishes (not after the whole phase).
+    const inventory = [];
+    let soldCount = 0;
+    let phaseMonth = 0;
+    let salesStartOffset = null;
+    let monthsWithSales = 0;
+    let phaseUpfrontPaid = false;
+
+    while (phaseMonth < buildMonths || soldCount < sellable.length) {
+      phaseMonth += 1;
+
+      const isBuilding = phaseMonth <= buildMonths;
+      let spend = 0;
+      let spendBreakdown = {
+        land: 0,
+        engineering: 0,
+        studies: 0,
+        waterRights: 0,
+        infrastructure: 0,
+        vertical: 0,
+      };
+
+      // Phase infrastructure + water rights paid in full on the first month of the phase.
+      if (!phaseUpfrontPaid) {
+        spend += costs.phaseUpfront;
+        spendBreakdown.infrastructure = costs.infrastructure;
+        spendBreakdown.waterRights = costs.waterRights;
+        phaseUpfrontPaid = true;
       }
 
-      peakDebt = Math.max(peakDebt, debt);
+      if (isBuilding) {
+        spend += monthlyVertical;
+        spendBreakdown.vertical = monthlyVertical;
+      }
 
-      monthlyRows.push({
-        month,
+      if (isBuilding && phaseMonth % monthsToBuild === 0) {
+        const wave = waves[phaseMonth / monthsToBuild - 1] || [];
+        for (const home of wave) {
+          if (home.disposition === 'sale') inventory.push(home);
+        }
+      }
+
+      const batch = inventory.splice(0, Math.min(salesRate, inventory.length));
+      soldCount += batch.length;
+      if (batch.length > 0) {
+        if (salesStartOffset == null) salesStartOffset = phaseMonth;
+        monthsWithSales += 1;
+      }
+
+      const hasUpfront = spendBreakdown.infrastructure > 0 || spendBreakdown.waterRights > 0;
+      const hasVertical = spendBreakdown.vertical > 0;
+      let stage;
+      if (hasUpfront && batch.length > 0) stage = 'both';
+      else if (hasUpfront && hasVertical) stage = 'sitework';
+      else if (hasUpfront) stage = 'sitework';
+      else if (hasVertical && batch.length > 0) stage = 'both';
+      else if (hasVertical) stage = 'construction';
+      else stage = 'sales';
+
+      const labelParts = [];
+      if (hasUpfront) labelParts.push('sitework (infra + water)');
+      if (hasVertical) labelParts.push('construction');
+      if (batch.length > 0) labelParts.push(`sales (${batch.length})`);
+
+      runMonth({
         phase: phase.phase,
-        stage: 'sales',
-        label: `Phase ${phase.phase} sales (${batch.length} homes)`,
-        equityFlow: netToEquity,
-        equityInjection: 0,
-        loanDraw: 0,
-        interest: monthlyInterest,
-        buildSpend: 0,
-        saleProceeds: monthProceeds,
-        debtPaydown: paydown,
-        debt,
-        cash,
-        cumulativeEquityReturn,
+        stage,
+        label: `Phase ${phase.phase} ${labelParts.join(' + ')}`,
+        spend,
+        spendBreakdown,
+        batch,
+        financeShortfall: spend > 0 || isBuilding,
       });
     }
 
@@ -479,11 +667,17 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
       phase: phase.phase,
       startMonth: phaseStartMonth,
       buildMonths,
-      saleMonths,
+      saleMonths: monthsWithSales,
+      salesStartOffset: salesStartOffset ?? buildMonths + 1,
+      durationMonths: phaseMonth,
       endMonth: month,
       homeCount: phase.homeCount,
       sellableCount: sellable.length,
       totalCost: phase.totalCost,
+      phaseUpfront: costs.phaseUpfront,
+      verticalCost: costs.vertical,
+      infrastructure: costs.infrastructure,
+      waterRights: costs.waterRights,
       totalRevenue: phase.totalRevenue,
     });
   });
@@ -495,8 +689,11 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
   const exitEquity = cash - debt + rentalTerminalValue;
   if (Math.abs(exitEquity) > 1) {
     equityCashFlows.push(exitEquity);
-    cumulativeEquityReturn += exitEquity;
+    cumulativeEquityReturn = exitEquity - totalEquityInvested;
     month += 1;
+    if (paybackMonth == null && cumulativeEquityReturn >= 0) {
+      paybackMonth = month;
+    }
     monthlyRows.push({
       month,
       phase: null,
@@ -550,10 +747,45 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
     equityCashFlows,
     monthlyRows,
     phaseTimeline,
+    acquisitionCosts: projectTotals.acquisitionCosts || null,
   };
 }
 
-function simulatePhaseWaterfall(phaseResults, map) {
+function estimatePhaseSchedule(phase, map) {
+  const salesRate = getValue(map, 'homes_sold_per_month', 3);
+  const monthsToBuild = getValue(map, 'months_to_build_home', 3);
+  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 6);
+  const sellable = phase.homes.filter((home) => home.disposition === 'sale');
+  const waveCount = Math.max(1, Math.ceil(phase.homeCount / parallelHomes));
+  const buildMonths = Math.max(1, waveCount * monthsToBuild);
+
+  const inventory = [];
+  let soldCount = 0;
+  let phaseMonth = 0;
+  let monthsWithSales = 0;
+  let homeCursor = 0;
+
+  while (phaseMonth < buildMonths || soldCount < sellable.length) {
+    phaseMonth += 1;
+    const isBuilding = phaseMonth <= buildMonths;
+    if (isBuilding && phaseMonth % monthsToBuild === 0) {
+      const waveEnd = Math.min(homeCursor + parallelHomes, phase.homes.length);
+      for (; homeCursor < waveEnd; homeCursor += 1) {
+        if (phase.homes[homeCursor].disposition === 'sale') {
+          inventory.push(phase.homes[homeCursor]);
+        }
+      }
+    }
+    const soldThisMonth = Math.min(salesRate, inventory.length);
+    inventory.splice(0, soldThisMonth);
+    soldCount += soldThisMonth;
+    if (soldThisMonth > 0) monthsWithSales += 1;
+  }
+
+  return { buildMonths, saleMonths: monthsWithSales, durationMonths: phaseMonth, sellable };
+}
+
+function simulatePhaseWaterfall(phaseResults, map, acquisitionCosts = null) {
   let cash = getValue(map, 'initial_equity', 500000);
   let debt = 0;
   const loanRate = getValue(map, 'construction_loan_rate', 0.085);
@@ -561,25 +793,55 @@ function simulatePhaseWaterfall(phaseResults, map) {
   const salesRate = getValue(map, 'homes_sold_per_month', 3);
 
   const timeline = [];
+  const acquisition = acquisitionCosts || { total: 0 };
 
-  phaseResults.forEach((phase) => {
-    const phaseCost = phase.totalCost;
-    const sellable = phase.homes.filter((home) => home.disposition === 'sale');
-    const saleMonths = Math.max(1, Math.ceil(sellable.length / salesRate));
-
-    const financingNeed = Math.max(0, phaseCost - cash);
+  if (acquisition.total > 0) {
+    const financingNeed = Math.max(0, acquisition.total - cash);
     const draw = financingNeed * loanAdvance;
     debt += draw;
     cash += draw;
-    cash -= phaseCost;
+    cash -= acquisition.total;
+    timeline.push({
+      phase: null,
+      stage: 'acquisition',
+      label: 'Project acquisition',
+      totalCost: acquisition.total,
+      sellableCount: 0,
+      reservedCount: 0,
+      saleMonths: 0,
+      durationMonths: 1,
+      saleProceeds: 0,
+      financingDraw: draw,
+      interest: 0,
+      cashAfterPhase: cash,
+      debtAfterPhase: debt,
+      netProfit: -acquisition.total,
+      costBreakdown: acquisition,
+    });
+  }
 
-    const interest = debt * loanRate * (saleMonths / 12);
+  phaseResults.forEach((phase) => {
+    const costs = phase.costBreakdown || buildPhaseCostBreakdown(phase.homes);
+    // Land/engineering/studies already paid at acquisition; phase cash cost is sitework + vertical.
+    const phaseCashCost = costs.phaseUpfront + costs.vertical;
+    const schedule = estimatePhaseSchedule(phase, map);
+    const { sellable, saleMonths, durationMonths } = schedule;
+
+    const financingNeed = Math.max(0, phaseCashCost - cash);
+    const draw = financingNeed * loanAdvance;
+    debt += draw;
+    cash += draw;
+    cash -= phaseCashCost;
+
+    // Interest over overlapping build+sell duration (sales start as waves complete).
+    const interest = debt * loanRate * (durationMonths / 12);
     cash -= interest;
     debt += interest;
 
     let proceeds = 0;
     let soldSoFar = 0;
-    for (let month = 1; month <= saleMonths; month += 1) {
+    const saleLoops = Math.max(1, Math.ceil(sellable.length / Math.max(salesRate, 1)));
+    for (let m = 1; m <= saleLoops; m += 1) {
       const batch = sellable.slice(soldSoFar, soldSoFar + salesRate);
       soldSoFar += batch.length;
       const monthProceeds = sum(batch.map((home) => home.salePrice));
@@ -594,16 +856,19 @@ function simulatePhaseWaterfall(phaseResults, map) {
       sellableCount: sellable.length,
       reservedCount: phase.homeCount - sellable.length,
       saleMonths,
+      durationMonths,
       saleProceeds: proceeds,
       financingDraw: draw,
       interest,
       cashAfterPhase: cash,
       debtAfterPhase: debt,
-      netProfit: proceeds - phaseCost - interest,
+      netProfit: proceeds - phaseCashCost - interest,
+      phaseCashCost,
+      costBreakdown: costs,
     });
   });
 
-  return { timeline, endingCash: cash, endingDebt: debt };
+  return { timeline, endingCash: cash, endingDebt: debt, acquisitionCosts: acquisition };
 }
 
 function computeRentalHoldout(reservedHomes, map, endingDebt, endingCash) {
@@ -676,7 +941,9 @@ export function computeProforma({
   }));
 
   const roadArea = computeRoadAreaFromSegments(roadSegments);
-  const infrastructure = computeInfrastructureDetail(roadArea, map);
+  const infrastructure = computeInfrastructureDetail(roadArea, map, {
+    residentialLots: sfLots.length + townhomeLots.length,
+  });
   const waterRights = computeWaterRights(
     {
       sfLots: sfLots.length,
@@ -730,6 +997,7 @@ export function computeProforma({
   const phaseResults = phasesWithHomes.map((phase) => {
     const phaseHomes = homeRows.filter((row) => row.phase === phase);
     const sellable = phaseHomes.filter((row) => row.disposition === 'sale');
+    const costBreakdown = buildPhaseCostBreakdown(phaseHomes);
     const totalCost = sum(phaseHomes.map((row) => row.costs.total));
     const totalRevenue = sum(sellable.map((row) => row.salePrice));
     const totalMargin = totalRevenue - totalCost;
@@ -739,6 +1007,7 @@ export function computeProforma({
       sellableCount: sellable.length,
       reservedCount: phaseHomes.length - sellable.length,
       homes: phaseHomes,
+      costBreakdown,
       totalCost,
       totalRevenue,
       totalMargin,
@@ -747,7 +1016,20 @@ export function computeProforma({
     };
   });
 
-  const waterfall = simulatePhaseWaterfall(phaseResults, map);
+  const landTotal = getValue(map, 'land_cost_total', 4000000);
+  const engineeringTotal = getValue(map, 'engineering_total', 110000);
+  const studiesTotal = getValue(map, 'studies_total', 17500);
+  const residentialWaterRights = sum(homeRows.map((row) => row.costs.waterRights));
+  const commercialWaterRights = Math.max(0, waterRights.total - residentialWaterRights);
+  const acquisitionCosts = {
+    land: landTotal,
+    engineering: engineeringTotal,
+    studies: studiesTotal,
+    commercialWaterRights,
+    total: landTotal + engineeringTotal + studiesTotal + commercialWaterRights,
+  };
+
+  const waterfall = simulatePhaseWaterfall(phaseResults, map, acquisitionCosts);
   const rentalHoldout = computeRentalHoldout(
     reservedHomes,
     map,
@@ -765,10 +1047,16 @@ export function computeProforma({
     sfReserved: reservedHomes.filter((row) => row.lotType === 'single-family').length,
     townhomeForSale: forSaleHomes.filter((row) => row.lotType === 'townhome').length,
     townhomeReserved: reservedHomes.filter((row) => row.lotType === 'townhome').length,
-    totalDevelopmentCost: sum(homeRows.map((row) => row.costs.total)),
+    totalDevelopmentCost:
+      landTotal +
+      engineeringTotal +
+      studiesTotal +
+      waterRights.total +
+      sum(homeRows.map((row) => row.costs.infrastructure + row.costs.verticalHard)),
     totalSaleRevenue: sum(forSaleHomes.map((row) => row.salePrice)),
     totalGrossMargin: sum(forSaleHomes.map((row) => row.grossMargin)),
     waterRightsTotal: waterRights.total,
+    acquisitionCosts,
     avgCostPerHome: homeRows.length ? sum(homeRows.map((row) => row.costs.total)) / homeRows.length : 0,
     avgDwellingSqFt: homeRows.length ? sum(homeRows.map((row) => row.dwellingSqFt)) / homeRows.length : 0,
   };

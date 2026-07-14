@@ -26,18 +26,18 @@ export function buildCalculations(result, merged) {
     calcs.irr = calc(
       'irr',
       'Project IRR',
-      'IRR(monthly equity cash flows), annualized to yearly rate',
+      'IRR on equity inflows/outflows only: capital calls (negative) and terminal exit equity (positive). Sale surplus retained in the project is not counted twice.',
       financials.irr,
       'pct',
       [
-        step('Initial equity (month 0)', -financials.totalEquityInvested + (map.initial_equity ?? 0), 'currency'),
+        step('Initial equity (month 0)', -(map.initial_equity ?? 0), 'currency'),
         step('Additional equity injections', financials.totalEquityInvested - (map.initial_equity ?? 0), 'currency'),
         step('Total equity invested', financials.totalEquityInvested, 'currency'),
         step('Exit equity value', financials.exitEquity, 'currency'),
         step('Cash flow periods', financials.equityCashFlows?.length ?? 0, 'number'),
       ],
       ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct', 'homes_sold_per_month', 'months_to_build_home', 'parallel_homes_per_phase'],
-      'IRR is solved numerically from the monthly equity cash flow series (construction draws, sale distributions, exit value).',
+      'Monthly IRR series = equity injections as outflows, then exit equity as the terminal inflow. Intermediate sale proceeds stay in project cash and appear only in the exit value.',
     );
 
     calcs.equityMultiple = calc(
@@ -159,10 +159,34 @@ export function buildCalculations(result, merged) {
       financials.projectDurationMonths,
       'months',
       financials.phaseTimeline.map((p) =>
-        step(`Phase ${p.phase}`, p.buildMonths + p.saleMonths, 'months', `${p.homeCount} homes`),
+        step(
+          `Phase ${p.phase}`,
+          p.durationMonths ?? p.buildMonths + p.saleMonths,
+          'months',
+          `${p.homeCount} homes · infra/water upfront, sales overlap build`,
+        ),
       ),
       ['months_to_build_home', 'parallel_homes_per_phase', 'homes_sold_per_month'],
     );
+
+    if (projectTotals.acquisitionCosts?.total > 0) {
+      const acq = projectTotals.acquisitionCosts;
+      calcs.acquisitionCosts = calc(
+        'acquisitionCosts',
+        'Project Acquisition Costs',
+        'Land, engineering, and studies paid in month 1 before phase construction',
+        acq.total,
+        'currency',
+        [
+          step('Land', acq.land, 'currency'),
+          step('Engineering', acq.engineering, 'currency'),
+          step('Studies', acq.studies, 'currency'),
+          step('Commercial water rights', acq.commercialWaterRights, 'currency'),
+          step('Total acquisition', acq.total, 'currency'),
+        ],
+        ['land_cost_total', 'engineering_total', 'studies_total'],
+      );
+    }
 
     calcs.paybackMonth = calc(
       'paybackMonth',
@@ -341,10 +365,14 @@ export function buildCalculations(result, merged) {
     'currency',
     [
       step('Initial equity', map.initial_equity ?? 0, 'currency'),
-      ...waterfall.timeline.flatMap((row) => [
-        step(`Phase ${row.phase} — proceeds`, row.saleProceeds, 'currency'),
-        step(`Phase ${row.phase} — costs & interest`, -(row.totalCost + row.interest), 'currency'),
-      ]),
+      ...waterfall.timeline.flatMap((row) => {
+        const label = row.phase == null ? 'Acquisition' : `Phase ${row.phase}`;
+        const cost = row.phaseCashCost ?? row.totalCost ?? 0;
+        return [
+          step(`${label} — proceeds`, row.saleProceeds || 0, 'currency'),
+          step(`${label} — costs & interest`, -(cost + (row.interest || 0)), 'currency'),
+        ];
+      }),
       step('Ending cash', waterfall.endingCash, 'currency'),
     ],
     ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct'],
@@ -465,27 +493,49 @@ export function buildCalculations(result, merged) {
   calcs.totalInfraBudget = calc(
     'totalInfraBudget',
     'Total Infrastructure Cost',
-    'Sum of all ordinance line items (quantity × unit cost)',
+    'Sum of all ordinance line items (quantity × unit cost × safety factor)',
     infrastructure.totalInfraBudget,
     'currency',
-    infrastructure.lineItems.map((item) =>
-      step(item.label, item.amount, 'currency', `${item.quantity.toLocaleString()} ${item.unit} × ${item.unitCost.toLocaleString()}`),
-    ),
-    infrastructure.lineItems.flatMap((item) => {
-      const mapKeys = {
-        grading: 'road_grading_per_sqft',
-        asphalt: 'asphalt_paving_per_sqft',
-        curb: 'curb_gutter_per_lf',
-        sidewalk: 'sidewalk_concrete_per_sqft',
-        water: 'water_main_per_lf',
-        sewer: 'sewer_main_per_lf',
-        sewer_manholes: 'sewer_manhole_each',
-        storm: 'storm_drain_per_lf',
-        storm_manholes: 'storm_manhole_each',
-        utilities: 'utility_trench_per_lf',
-      };
-      return mapKeys[item.id] ? [mapKeys[item.id]] : [];
-    }),
+    [
+      ...infrastructure.lineItems.map((item) =>
+        step(
+          item.label,
+          item.amount,
+          'currency',
+          `${item.quantity.toLocaleString()} ${item.unit} × ${item.unitCost.toLocaleString()}${
+            infrastructure.safetyFactor !== 1
+              ? ` × ${infrastructure.safetyFactor.toFixed(2)} safety`
+              : ''
+          }`,
+        ),
+      ),
+      step('Safety factor', infrastructure.safetyFactor ?? 1, 'number', '× multiplier'),
+      step('Unadjusted subtotal', infrastructure.totalInfraBase ?? infrastructure.totalInfraBudget, 'currency'),
+      step('Total with safety factor', infrastructure.totalInfraBudget, 'currency'),
+    ],
+    [
+      ...infrastructure.lineItems.flatMap((item) => {
+        const mapKeys = {
+          grading: 'road_grading_per_sqft',
+          asphalt: 'asphalt_paving_per_sqft',
+          curb: 'curb_gutter_per_lf',
+          sidewalk: 'sidewalk_concrete_per_sqft',
+          water: 'water_main_per_lf',
+          sewer: 'sewer_main_per_lf',
+          sewer_manholes: 'sewer_manhole_each',
+          storm: 'storm_drain_per_lf',
+          storm_manholes: 'storm_manhole_each',
+          utilities: 'utility_trench_per_lf',
+          gas_main: 'gas_main_per_lf',
+          electric_conduit: 'electric_conduit_per_lf',
+          telecom_conduit: 'telecom_conduit_per_lf',
+          transformers: 'electric_transformer_each',
+          street_lights: 'street_light_each',
+        };
+        return mapKeys[item.id] ? [mapKeys[item.id]] : [];
+      }),
+      'infrastructure_safety_factor',
+    ],
   );
 
   infrastructure.lineItems.forEach((item) => {
@@ -618,7 +668,7 @@ export function buildCalculations(result, merged) {
         wf.financingDraw,
         'currency',
         [
-          step('Phase cost', wf.totalCost, 'currency'),
+          step('Phase cash cost (infra + water + vertical)', wf.phaseCashCost ?? wf.totalCost, 'currency'),
           step('Loan advance %', map.construction_loan_advance_pct ?? 0, 'pct'),
           step('Loan draw', wf.financingDraw, 'currency'),
         ],
@@ -628,12 +678,12 @@ export function buildCalculations(result, merged) {
       calcs[`${prefix}_interest`] = calc(
         `${prefix}_interest`,
         `Phase ${phase.phase} Interest`,
-        'Outstanding debt × loan rate × (sale months ÷ 12)',
+        'Outstanding debt × loan rate × (overlapping phase duration ÷ 12)',
         wf.interest,
         'currency',
         [
           step('Loan rate', map.construction_loan_rate ?? 0, 'pct'),
-          step('Sale months', wf.saleMonths, 'number'),
+          step('Phase duration (months)', wf.durationMonths ?? wf.saleMonths, 'number'),
           step('Interest', wf.interest, 'currency'),
         ],
         ['construction_loan_rate', 'homes_sold_per_month'],
@@ -642,12 +692,12 @@ export function buildCalculations(result, merged) {
       calcs[`${prefix}_netProfit`] = calc(
         `${prefix}_netProfit`,
         `Phase ${phase.phase} Net Profit`,
-        'Sale proceeds − phase cost − interest',
+        'Sale proceeds − phase cash cost (infra + water + vertical) − interest',
         wf.netProfit,
         'currency',
         [
           step('Sale proceeds', wf.saleProceeds, 'currency'),
-          step('Phase cost', wf.totalCost, 'currency'),
+          step('Phase cash cost', wf.phaseCashCost ?? wf.totalCost, 'currency'),
           step('Interest', wf.interest, 'currency'),
           step('Net profit', wf.netProfit, 'currency'),
         ],

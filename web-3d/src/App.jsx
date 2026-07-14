@@ -151,10 +151,20 @@ export default function App() {
         />
 
         {showWelcome && (
-          <div className="welcome-overlay" onAnimationEnd={() => setShowWelcome(false)}>
-            <div className="welcome-card">
-              <h2>Delta Crossings</h2>
-              <p>Explore the plat in 3D — click any lot or commercial block for details</p>
+          <div
+            className="welcome-overlay"
+            onAnimationEnd={(event) => {
+              if (event.animationName === 'welcomeDissolve') {
+                setShowWelcome(false);
+              }
+            }}
+          >
+            <div className="welcome-hero">
+              <img
+                src={`${import.meta.env.BASE_URL}building-assets/entry-rendering.png`}
+                alt="Delta Crossing entry rendering"
+              />
+              <div className="welcome-hero-vignette" aria-hidden="true" />
             </div>
           </div>
         )}

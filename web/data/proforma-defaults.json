@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "model": "for-sale",
   "description": "For-sale proforma with ordinance-based infrastructure costing. Road area and centerline length from plat PDF annotations; quantities per Ord. 2025-317 (ST-103, ST-113, ST-131).",
   "phaseOrder": [
@@ -334,6 +334,22 @@
       "overridable": true
     },
     {
+      "id": "infrastructure_safety_factor",
+      "label": "Infrastructure safety factor",
+      "value": 1.0,
+      "default": 1.0,
+      "unit": "x",
+      "category": "infrastructure",
+      "description": "Flat multiplier applied to all infrastructure line items. Use >1.0 for contingency / higher bids, <1.0 to stress cheaper costs.",
+      "source": {
+        "name": "Planning contingency multiplier",
+        "url": "",
+        "retrieved": "2026-07-14",
+        "notes": "Default 1.0 = no adjustment. 1.15 = +15% contingency on all infra."
+      },
+      "overridable": true
+    },
+    {
       "id": "asphalt_paving_per_sqft",
       "label": "Asphalt pavement (installed)",
       "value": 4.5,
@@ -374,10 +390,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "RSMeans / Utah concrete flatwork benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "ProMatcher Salt Lake City concrete report",
+        "url": "https://concrete.promatcher.com/cost/salt-lake-city-ut-concrete-costs-prices.aspx",
         "retrieved": "2026-07-07",
-        "notes": "4\" sidewalk with base course per ST-131."
+        "notes": "Public report shows $6.43/sqft (4\" reinforced sidewalk); default is higher for base course per ST-131."
       },
       "overridable": true
     },
@@ -406,10 +422,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah water main installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Ogden City \u2014 Monroe Water Line bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "AWWA C900 PVC blue pipe per Ord. 2025-317; one side of street."
+        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108\u2013$149/LF (2023); default is mid-range planning value."
       },
       "overridable": true
     },
@@ -422,10 +438,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah sewer main installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "ProMatcher Utah sewer cost report",
+        "url": "https://sewers.promatcher.com/cost/utah.aspx",
         "retrieved": "2026-07-07",
-        "notes": "PVC sewer opposite water line per ST-113."
+        "notes": "Public report shows $63.18/LF ($55\u2013$71) for trench replacement; default higher for new subdivision main per ST-113."
       },
       "overridable": true
     },
@@ -438,10 +454,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Utah storm drain installation benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Black corrugated HDPE per Ord. 2025-317."
+        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114\u2013$155/LF (2023); comparable installed storm pipe cost."
       },
       "overridable": true
     },
@@ -454,10 +470,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
-        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+        "notes": "Bid items A8/A9: 4'\u20135' precast sewer manholes $5,393\u2013$7,005 each (2019); spacing per Ord. 2025-317 ST-103."
       },
       "overridable": true
     },
@@ -470,26 +486,106 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ord. 2025-317 \u2014 Delta City Design & Construction Standards",
-        "url": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
+        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks."
+        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050\u2013$11,238 each (2023); spacing per Ord. 2025-317."
       },
       "overridable": true
     },
     {
       "id": "utility_trench_per_lf",
-      "label": "Gas / power / telecom trenching",
+      "label": "Joint utility trenching (gas / power / telecom)",
       "value": 35,
       "default": 35,
       "unit": "USD/LF",
       "category": "infrastructure",
-      "description": "",
+      "description": "Excavation and backfill for the joint dry-utility trench only. Gas, power, and telecom hardware are separate line items.",
       "source": {
-        "name": "Utah utility trenching benchmarks",
-        "url": "https://www.rsmeans.com/2026-square-foot-costs-book",
+        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "Joint trench allowance along road corridor."
+        "notes": "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70\u2013$130/LF (2019) informed lower joint-trench allowance."
+      },
+      "overridable": true
+    },
+    {
+      "id": "gas_main_per_lf",
+      "label": "Natural gas main PE (pipe & fittings)",
+      "value": 55,
+      "default": 55,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "2\u20134\" PE gas main material and install in the open joint trench (trench cost separate).",
+      "source": {
+        "name": "Utah subdivision dry-utility planning allowances",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-14",
+        "notes": "Planning mid-range $45\u2013$70/LF for PE main pipe & fittings excluding trench."
+      },
+      "overridable": true
+    },
+    {
+      "id": "electric_conduit_per_lf",
+      "label": "Electric primary/secondary conduit",
+      "value": 32,
+      "default": 32,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "PVC conduit bank for power distribution. Cable is often utility-furnished; this is the developer conduit contribution.",
+      "source": {
+        "name": "Utah subdivision dry-utility planning allowances",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-14",
+        "notes": "Conduit bank excl. trench; typical developer contribution when utility provides cable."
+      },
+      "overridable": true
+    },
+    {
+      "id": "telecom_conduit_per_lf",
+      "label": "Telecom / fiber conduit",
+      "value": 18,
+      "default": 18,
+      "unit": "USD/LF",
+      "category": "infrastructure",
+      "description": "Empty telecom/fiber conduit in the joint trench (trench cost separate).",
+      "source": {
+        "name": "Utah subdivision dry-utility planning allowances",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-14",
+        "notes": "Empty conduit for ISP/fiber pull; planning mid-range $12\u2013$25/LF."
+      },
+      "overridable": true
+    },
+    {
+      "id": "electric_transformer_each",
+      "label": "Pad-mount transformer (installed)",
+      "value": 12000,
+      "default": 12000,
+      "unit": "USD/each",
+      "category": "infrastructure",
+      "description": "Developer contribution toward pad-mount transformers (~1 per 8 residential lots).",
+      "source": {
+        "name": "Utah subdivision dry-utility planning allowances",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-14",
+        "notes": "Often utility-owned with developer contribution; $8k\u2013$18k planning range."
+      },
+      "overridable": true
+    },
+    {
+      "id": "street_light_each",
+      "label": "Street light (pole, fixture & base)",
+      "value": 4500,
+      "default": 4500,
+      "unit": "USD/each",
+      "category": "infrastructure",
+      "description": "Pole, LED fixture, foundation, and wiring stub. Quantity at ~175' centerline spacing.",
+      "source": {
+        "name": "Utah subdivision street lighting allowances",
+        "url": "Supporting Docs/Delta/",
+        "retrieved": "2026-07-14",
+        "notes": "Complete street light assembly; spacing ~175 LF along road centerline."
       },
       "overridable": true
     },

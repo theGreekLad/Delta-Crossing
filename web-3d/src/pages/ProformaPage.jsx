@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { platUrl, appUrl } from '../data/platUrls';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import SiteNav from '../components/SiteNav';
+import { platUrl } from '../data/platUrls';
 import {
   clearOverrides,
   formatCurrency,
@@ -7,6 +8,7 @@ import {
   formatPct,
   mergeAssumptions,
   setOverride,
+  isRatioUnit,
 } from '../proforma/assumptions';
 import { computeProforma } from '../proforma/computeProforma';
 import { buildCalculations } from '../proforma/buildCalculations';
@@ -18,9 +20,9 @@ import {
 } from '../proforma/CalculationPanel';
 
 function AssumptionField({ entry, onChange, highlighted }) {
-  const isPct = entry.unit === 'ratio';
+  const isPct = isRatioUnit(entry.unit);
   const isCount = entry.unit === 'units';
-  const displayValue = isPct ? (entry.value * 100).toFixed(1) : entry.value;
+  const displayValue = isPct ? (entry.value * 100).toFixed(2) : entry.value;
   const isOverridden = entry.value !== entry.default;
 
   return (
@@ -97,6 +99,40 @@ function formatMonths(value) {
   return `${years} yr ${months} mo`;
 }
 
+function formatSpendBreakdown(breakdown) {
+  if (!breakdown) return undefined;
+  const parts = [
+    ['Land', breakdown.land],
+    ['Engineering', breakdown.engineering],
+    ['Studies', breakdown.studies],
+    ['Water rights', breakdown.waterRights],
+    ['Infrastructure', breakdown.infrastructure],
+    ['Vertical', breakdown.vertical],
+  ]
+    .filter(([, amount]) => amount > 0)
+    .map(([label, amount]) => `${label}: ${formatCurrency(amount)}`);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
+async function readJsonResponse(response, label) {
+  const url = response.url || label;
+  if (!response.ok) {
+    throw new Error(`${label} failed (${response.status}) at ${url}`);
+  }
+
+  const text = await response.text();
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('json') && text.trimStart().startsWith('<')) {
+    throw new Error(`${label} returned HTML instead of JSON at ${url}. Use the Vite dev server (npm run dev in web-3d).`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${label} returned invalid JSON at ${url}`);
+  }
+}
+
 function FinancialsView({ financials, onShowCalc }) {
   if (!financials) {
     return (
@@ -108,6 +144,12 @@ function FinancialsView({ financials, onShowCalc }) {
   }
 
   const totalMonths = Math.max(financials.projectDurationMonths, 1);
+  const maxPhaseMonths = Math.max(
+    ...financials.phaseTimeline.map(
+      (phase) => phase.durationMonths ?? phase.endMonth - phase.startMonth + 1,
+    ),
+    1,
+  );
   const maxReturn = Math.max(
     ...financials.monthlyRows.map((row) => Math.abs(row.cumulativeEquityReturn)),
     1,
@@ -117,8 +159,9 @@ function FinancialsView({ financials, onShowCalc }) {
     <section className="proforma-section financials-section">
       <h2>Financial Returns</h2>
       <p className="section-lead">
-        Levered equity returns based on phase construction, monthly absorption, and exit value including
-        reserved rental units at a 5% cap rate.
+        Levered equity returns with land/engineering/studies at project start, phase infrastructure and
+        water rights upfront per phase, vertical during construction, and sales as build waves finish.
+        Exit value includes reserved rental units at a 5% cap rate.
       </p>
 
       <div className="financials-hero">
@@ -206,24 +249,55 @@ function FinancialsView({ financials, onShowCalc }) {
           <span>Month {totalMonths}</span>
         </div>
         <div className="timeline-track">
+          {financials.acquisitionCosts?.total > 0 ? (
+            <div
+              className="timeline-phase timeline-acquisition"
+              style={{
+                left: '0%',
+                width: `${(1 / totalMonths) * 100}%`,
+                '--phase-mobile-width': `${(1 / maxPhaseMonths) * 100}%`,
+              }}
+              title={`Acquisition — land & soft costs · ${formatCurrency(financials.acquisitionCosts.total)}`}
+            >
+              <div className="timeline-phase-bar">
+                <div className="timeline-acquire" style={{ width: '100%' }} />
+              </div>
+            </div>
+          ) : null}
           {financials.phaseTimeline.map((phase, index) => {
+            const phaseMonths = phase.durationMonths ?? phase.endMonth - phase.startMonth + 1;
             const leftPct = ((phase.startMonth - 1) / totalMonths) * 100;
-            const widthPct = ((phase.endMonth - phase.startMonth + 1) / totalMonths) * 100;
-            const buildPct = (phase.buildMonths / (phase.buildMonths + phase.saleMonths)) * 100;
+            const widthPct = (phaseMonths / totalMonths) * 100;
+            const mobileWidthPct = (phaseMonths / maxPhaseMonths) * 100;
+            const siteworkPct = phaseMonths > 0 ? (1 / phaseMonths) * 100 : 0;
+            const buildPct = (phase.buildMonths / phaseMonths) * 100;
+            const sellStartPct =
+              (((phase.salesStartOffset ?? phase.buildMonths + 1) - 1) / phaseMonths) * 100;
+            const sellPct = Math.max(0, 100 - sellStartPct);
             return (
               <div
                 key={phase.phase}
                 className="timeline-phase"
-                style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                style={{
+                  left: `${leftPct}%`,
+                  width: `${widthPct}%`,
+                  '--phase-mobile-width': `${mobileWidthPct}%`,
+                }}
+                title={`Phase ${phase.phase}`}
               >
                 <div className="timeline-phase-bar">
+                  <div className="timeline-sitework" style={{ width: `${siteworkPct}%` }} />
                   <div className="timeline-build" style={{ width: `${buildPct}%` }} />
-                  <div className="timeline-sell" style={{ width: `${100 - buildPct}%` }} />
+                  {phase.saleMonths > 0 ? (
+                    <div
+                      className="timeline-sell"
+                      style={{ left: `${sellStartPct}%`, width: `${sellPct}%` }}
+                    />
+                  ) : null}
                 </div>
                 <div className="timeline-phase-label">
-                  <strong>Phase {phase.phase}</strong>
                   <span>
-                    {phase.homeCount} homes · {formatMonths(phase.buildMonths + phase.saleMonths)}
+                    {phase.homeCount} homes · {formatMonths(phaseMonths)}
                   </span>
                 </div>
                 {index < financials.phaseTimeline.length - 1 ? (
@@ -235,7 +309,13 @@ function FinancialsView({ financials, onShowCalc }) {
         </div>
         <div className="timeline-legend">
           <span>
-            <i className="legend-swatch build" /> Construction
+            <i className="legend-swatch acquire" /> Land & soft costs
+          </span>
+          <span>
+            <i className="legend-swatch sitework" /> Phase infra / water
+          </span>
+          <span>
+            <i className="legend-swatch build" /> Vertical construction
           </span>
           <span>
             <i className="legend-swatch sell" /> Home sales
@@ -268,7 +348,7 @@ function FinancialsView({ financials, onShowCalc }) {
             <th>Phase</th>
             <th>Stage</th>
             <th>Equity Flow</th>
-            <th>Build Spend</th>
+            <th>Dev Spend</th>
             <th>Sales</th>
             <th>Interest</th>
             <th>Debt</th>
@@ -286,7 +366,9 @@ function FinancialsView({ financials, onShowCalc }) {
               <td className={row.equityFlow >= 0 ? 'pos' : 'neg'}>
                 {formatCurrency(row.equityFlow)}
               </td>
-              <td>{row.buildSpend ? formatCurrency(row.buildSpend) : '—'}</td>
+              <td title={formatSpendBreakdown(row.spendBreakdown)}>
+                {row.buildSpend ? formatCurrency(row.buildSpend) : '—'}
+              </td>
               <td>{row.saleProceeds ? formatCurrency(row.saleProceeds) : '—'}</td>
               <td>{row.interest ? formatCurrency(row.interest) : '—'}</td>
               <td>{formatCurrency(row.debt)}</td>
@@ -324,9 +406,9 @@ export default function ProformaPage() {
   const [highlightAssumptionId, setHighlightAssumptionId] = useState(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(() => {
     try {
-      return localStorage.getItem('proforma-assumptions-open') !== 'false';
+      return localStorage.getItem('proforma-assumptions-open') === 'true';
     } catch {
-      return true;
+      return false;
     }
   });
 
@@ -345,7 +427,7 @@ export default function ProformaPage() {
     async function load() {
       try {
         const [defaultsRes, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
-          fetch(platUrl('data/proforma-defaults.json')),
+          fetch(`${platUrl('data/proforma-defaults.json')}?v=3`),
           fetch(platUrl('data/manifest.json')),
           fetch(platUrl('data/sheet1-lots.json')),
           fetch(platUrl('data/sheet1-commercial.json')),
@@ -357,12 +439,31 @@ export default function ProformaPage() {
         }
 
         const [defaultsJson, manifest, lots, commercial, roadSegments] = await Promise.all([
-          defaultsRes.json(),
-          manifestRes.json(),
-          lotsRes.json(),
-          commercialRes.ok ? commercialRes.json() : [],
-          roadSegmentsRes.ok ? roadSegmentsRes.json() : null,
+          readJsonResponse(defaultsRes, 'Proforma defaults'),
+          readJsonResponse(manifestRes, 'Plat manifest'),
+          readJsonResponse(lotsRes, 'Sheet1 lots'),
+          commercialRes.ok ? readJsonResponse(commercialRes, 'Commercial lots') : [],
+          roadSegmentsRes.ok ? readJsonResponse(roadSegmentsRes, 'Road segments') : null,
         ]);
+
+        if (!Array.isArray(defaultsJson?.assumptions) || defaultsJson.assumptions.length < 1) {
+          throw new Error('Proforma defaults missing assumptions list');
+        }
+        const requiredIds = [
+          'infrastructure_safety_factor',
+          'gas_main_per_lf',
+          'electric_conduit_per_lf',
+          'telecom_conduit_per_lf',
+          'electric_transformer_each',
+          'street_light_each',
+        ];
+        const loadedIds = new Set(defaultsJson.assumptions.map((a) => a.id));
+        const missing = requiredIds.filter((id) => !loadedIds.has(id));
+        if (missing.length) {
+          throw new Error(
+            `Stale proforma defaults (missing ${missing.join(', ')}). Hard-refresh or clear cache.`,
+          );
+        }
 
         const sheet = manifest.sheets.find((entry) => entry.id === 'sheet1');
         if (!sheet) throw new Error('Sheet1 not found in manifest');
@@ -477,17 +578,15 @@ export default function ProformaPage() {
           <h1>Delta Crossings Proforma</h1>
           <p>For-sale single-family & townhomes · Phase-funded development · {result.meta.ordinanceRef.title}</p>
         </div>
-        <div className="proforma-header-actions">
-          <a className="btn" href={platUrl('index.html')}>
-            Plat Map
-          </a>
-          <a className="btn btn-primary" href={appUrl('index.html')}>
-            3D View
-          </a>
-          <button type="button" className="btn" onClick={handleReset}>
-            Reset Assumptions
-          </button>
-        </div>
+        <SiteNav
+          current="proforma"
+          className="proforma-header-actions"
+          extra={
+            <button type="button" className="btn" onClick={handleReset}>
+              Reset Assumptions
+            </button>
+          }
+        />
       </header>
 
       <div className={`proforma-layout ${assumptionsOpen ? 'assumptions-open' : 'assumptions-collapsed'}`}>
@@ -524,10 +623,18 @@ export default function ProformaPage() {
               type="button"
               className="assumptions-expand-tab"
               onClick={() => toggleAssumptions(true)}
-              aria-label="Show assumptions panel"
-              title="Show assumptions"
+              aria-label="Expand assumptions panel"
+              aria-expanded="false"
+              title="Expand assumptions"
             >
-              Assumptions ›
+              <span className="assumptions-expand-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M3 4.5h12M3 9h8M3 13.5h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M14.5 7.5v5M12 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </span>
+              <span className="assumptions-expand-label">Assumptions</span>
+              <span className="assumptions-expand-chevron" aria-hidden="true">›</span>
             </button>
           ) : null}
           <nav className="proforma-tabs" aria-label="Proforma views">
@@ -883,6 +990,21 @@ export default function ProformaPage() {
                       )}{' '}
                       LF
                     </td>
+                  </tr>
+                  <tr>
+                    <td>Joint utility trench + gas / electric / telecom hardware</td>
+                    <td>{formatNumber(result.infrastructure.totalRoadLf)} LF</td>
+                  </tr>
+                  <tr>
+                    <td>Pad-mount transformers (~1 per 8 lots)</td>
+                    <td>{formatNumber(result.infrastructure.transformers)} each</td>
+                  </tr>
+                  <tr>
+                    <td>
+                      Street lights (~{formatNumber(result.infrastructure.ordinanceSpecs.streetLightSpacingFt, 0)}
+                      &apos; spacing)
+                    </td>
+                    <td>{formatNumber(result.infrastructure.streetLights)} each</td>
                   </tr>
                 </tbody>
               </table>
