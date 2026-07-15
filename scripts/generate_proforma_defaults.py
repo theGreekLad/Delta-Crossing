@@ -291,13 +291,13 @@ def main() -> None:
             assumption(
                 "months_to_build_home",
                 "Months to build one home",
-                3,
+                6,
                 "months",
                 "schedule",
                 source(
                     "Production home builder cycle",
                     "https://www.nahb.org/",
-                    "Standard stick-built production timeline.",
+                    "Census/NAHB production built-for-sale average ~6–8 months; default 6 months.",
                 ),
             ),
             assumption(
@@ -312,13 +312,13 @@ def main() -> None:
             assumption(
                 "infrastructure_safety_factor",
                 "Infrastructure safety factor",
-                1.0,
+                1.5,
                 "x",
                 "infrastructure",
                 source(
                     "Planning contingency multiplier",
                     "",
-                    "Default 1.0 = no adjustment. Flat multiplies all infrastructure line items (e.g. 1.15 = +15%).",
+                    "Default 1.5 = +50% contingency on all infrastructure line items.",
                 ),
                 description="Flat multiplier applied to all infrastructure line items. Use >1.0 for contingency / higher bids, <1.0 to stress cheaper costs.",
             ),
@@ -373,13 +373,13 @@ def main() -> None:
             assumption(
                 "water_main_per_lf",
                 "Culinary water main 8\" PVC (installed)",
-                85,
+                129,
                 "USD/LF",
                 "infrastructure",
                 source(
                     "Ogden City â€” Monroe Water Line bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid item 121: 8\" PVC C900 DR-18 installed $108â€“$149/LF (2023); default is mid-range planning value.",
+                    "Bid item 121: 8\" PVC C900 DR-18 installed $108â€“$149/LF (2023); default is mid-range planning value ($129).",
                 ),
             ),
             assumption(
@@ -397,37 +397,37 @@ def main() -> None:
             assumption(
                 "storm_drain_per_lf",
                 "Storm drain HDPE (installed)",
-                75,
+                135,
                 "USD/LF",
                 "infrastructure",
                 source(
                     "Ogden City â€” Monroe Water Line storm bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid schedule 2 item 203: 15\" storm drain RCP installed $114â€“$155/LF (2023); comparable installed storm pipe cost.",
+                    "Bid schedule 2 item 203: 15\" storm drain RCP installed $114â€“$155/LF (2023); default mid-range ($135).",
                 ),
             ),
             assumption(
                 "sewer_manhole_each",
                 "Sewer manhole (precast)",
-                4_500,
+                6_200,
                 "USD/each",
                 "infrastructure",
                 source(
                     "Moab City â€” North Sewer Line bid tabulation",
                     "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
-                    "Bid items A8/A9: 4'â€“5' precast sewer manholes $5,393â€“$7,005 each (2019); spacing per Ord. 2025-317 ST-103.",
+                    "Bid items A8/A9: 4'â€“5' precast sewer manholes $5,393â€“$7,005 each (2019); default mid-range ($6,200). Spacing per Ord. 2025-317 ST-103.",
                 ),
             ),
             assumption(
                 "storm_manhole_each",
                 "Storm drain manhole (precast)",
-                5_500,
+                9_650,
                 "USD/each",
                 "infrastructure",
                 source(
                     "Ogden City â€” Monroe Water Line storm bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid item 202: 60\" precast storm drain manhole $8,050â€“$11,238 each (2023); spacing per Ord. 2025-317.",
+                    "Bid item 202: 60\" precast storm drain manhole $8,050â€“$11,238 each (2023); default mid-range ($9,650). Spacing per Ord. 2025-317.",
                 ),
             ),
             assumption(

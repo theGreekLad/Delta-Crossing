@@ -256,16 +256,16 @@
     {
       "id": "months_to_build_home",
       "label": "Months to build one home",
-      "value": 3,
-      "default": 3,
+      "value": 6,
+      "default": 6,
       "unit": "months",
       "category": "schedule",
       "description": "",
       "source": {
         "name": "Production home builder cycle",
         "url": "https://www.nahb.org/",
-        "retrieved": "2026-07-07",
-        "notes": "Standard stick-built production timeline."
+        "retrieved": "2026-07-14",
+        "notes": "Census/NAHB production built-for-sale average ~6–8 months; default 6 months."
       },
       "overridable": true
     },
@@ -288,8 +288,8 @@
     {
       "id": "infrastructure_safety_factor",
       "label": "Infrastructure safety factor",
-      "value": 1,
-      "default": 1,
+      "value": 1.5,
+      "default": 1.5,
       "unit": "x",
       "category": "infrastructure",
       "description": "Flat multiplier applied to all infrastructure line items. Use >1.0 for contingency / higher bids, <1.0 to stress cheaper costs.",
@@ -297,7 +297,7 @@
         "name": "Planning contingency multiplier",
         "url": "",
         "retrieved": "2026-07-14",
-        "notes": "Default 1.0 = no adjustment. 1.15 = +15% contingency on all infra."
+        "notes": "Default 1.5 = +50% contingency on all infrastructure line items."
       },
       "overridable": true
     },
@@ -368,8 +368,8 @@
     {
       "id": "water_main_per_lf",
       "label": "Culinary water main 8\" PVC (installed)",
-      "value": 85,
-      "default": 85,
+      "value": 129,
+      "default": 129,
       "unit": "USD/LF",
       "category": "infrastructure",
       "description": "",
@@ -377,7 +377,7 @@
         "name": "Ogden City — Monroe Water Line bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108–$149/LF (2023); default is mid-range planning value."
+        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108–$149/LF (2023); default is mid-range planning value ($129)."
       },
       "overridable": true
     },
@@ -400,8 +400,8 @@
     {
       "id": "storm_drain_per_lf",
       "label": "Storm drain HDPE (installed)",
-      "value": 75,
-      "default": 75,
+      "value": 135,
+      "default": 135,
       "unit": "USD/LF",
       "category": "infrastructure",
       "description": "",
@@ -409,15 +409,15 @@
         "name": "Ogden City — Monroe Water Line storm bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114–$155/LF (2023); comparable installed storm pipe cost."
+        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114–$155/LF (2023); default mid-range ($135)."
       },
       "overridable": true
     },
     {
       "id": "sewer_manhole_each",
       "label": "Sewer manhole (precast)",
-      "value": 4500,
-      "default": 4500,
+      "value": 6200,
+      "default": 6200,
       "unit": "USD/each",
       "category": "infrastructure",
       "description": "",
@@ -425,15 +425,15 @@
         "name": "Moab City — North Sewer Line bid tabulation",
         "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "Bid items A8/A9: 4'–5' precast sewer manholes $5,393–$7,005 each (2019); spacing per Ord. 2025-317 ST-103."
+        "notes": "Bid items A8/A9: 4'–5' precast sewer manholes $5,393–$7,005 each (2019); default mid-range ($6,200). Spacing per Ord. 2025-317 ST-103."
       },
       "overridable": true
     },
     {
       "id": "storm_manhole_each",
       "label": "Storm drain manhole (precast)",
-      "value": 5500,
-      "default": 5500,
+      "value": 9650,
+      "default": 9650,
       "unit": "USD/each",
       "category": "infrastructure",
       "description": "",
@@ -441,7 +441,7 @@
         "name": "Ogden City — Monroe Water Line storm bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050–$11,238 each (2023); spacing per Ord. 2025-317."
+        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050–$11,238 each (2023); default mid-range ($9,650). Spacing per Ord. 2025-317."
       },
       "overridable": true
     },
