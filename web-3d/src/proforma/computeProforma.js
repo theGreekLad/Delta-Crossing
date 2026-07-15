@@ -2,6 +2,10 @@ import { computeBuildingEnvelope } from '../utils/buildingEnvelope';
 import { computeFeetPerPixel, createCoordinateTransform } from '../data/platGeometry';
 import { getAssumptionMap } from './assumptions';
 
+/** Soft costs from source proforma — fixed model constants (not editable assumptions). */
+const FIXED_ENGINEERING_TOTAL = 110000;
+const FIXED_STUDIES_TOTAL = 17500;
+
 /** Fixed dimensions from Ord. 2025-317 (ST-103, ST-113, ST-131). ROW width comes from the plat. */
 const ORDINANCE_SPECS = {
   pavementWidthFt: 24,
@@ -76,36 +80,32 @@ function computeVerticalCost(dwellingSqFt, map) {
   return dwellingSqFt * base * (1 + waste) * (1 + labor);
 }
 
-function computeWaterRights({ sfLots, townhomeLots, commercialCount }, map) {
+function computeWaterRights({ sfLots, townhomeLots }, map) {
   const afPerLot = getValue(map, 'water_rights_af_per_lot', 1.0);
-  const afPerCommercial = getValue(map, 'water_rights_af_per_commercial', 1.0);
   const costPerAcreFoot = getValue(map, 'water_rights_cost_per_acre_foot', 10000);
 
   const sfAcreFeet = sfLots * afPerLot;
   const townhomeAcreFeet = townhomeLots * afPerLot;
-  const commercialAcreFeet = commercialCount * afPerCommercial;
-  const totalAcreFeet = sfAcreFeet + townhomeAcreFeet + commercialAcreFeet;
+  const totalAcreFeet = sfAcreFeet + townhomeAcreFeet;
   const total = totalAcreFeet * costPerAcreFoot;
 
   return {
     sfLots,
     townhomeLots,
-    commercialCount,
     afPerLot,
-    afPerCommercial,
     sfAcreFeet,
     townhomeAcreFeet,
-    commercialAcreFeet,
     totalAcreFeet,
     costPerAcreFoot,
     total,
     formula:
-      'Culinary water rights = (SF lots + townhome lots + commercial) × AF/lot × city purchase rate',
+      'Culinary water rights = (SF lots + townhome lots) × AF/lot × city purchase rate',
     ordinanceRef:
       'Millard County Subdivision Ord. § 11-1-20 — minimum 1.0 AF dedicated per platted lot',
     notes:
-      'Plat approval requires culinary water rights at 1.0 acre-foot per lot (Millard County). ' +
-      'Rights are purchased through Delta City at the per-acre-foot rate below.',
+      'Plat approval requires culinary water rights at 1.0 acre-foot per residential lot (Millard County). ' +
+      'Rights are purchased through Delta City at the per-acre-foot rate below. ' +
+      'Commercial blocks are excluded from residential water-rights budgeting.',
   };
 }
 
@@ -190,11 +190,14 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
   const stormManholes = Math.ceil(stormDrainLf / stormManholeSpacingFt);
 
   const residentialLots = Math.max(0, Math.round(options.residentialLots || 0));
+  // Planning placeholders — not mandated by Ord. 2025-317.
   const streetLightSpacingFt = 175;
+  const transformersPerLots = 8;
   const streetLights = Math.max(1, Math.ceil(centerlineLf / streetLightSpacingFt));
-  // Pad-mount transformers: ~1 per 8 homes (planning allowance; often utility-owned with developer contribution).
   const transformers =
-    residentialLots > 0 ? Math.max(1, Math.ceil(residentialLots / 8)) : Math.max(1, Math.ceil(centerlineLf / 400));
+    residentialLots > 0
+      ? Math.max(1, Math.ceil(residentialLots / transformersPerLots))
+      : Math.max(1, Math.ceil(centerlineLf / 400));
   const safetyFactor = Math.max(0, getValue(map, 'infrastructure_safety_factor', 1));
 
   const lineItems = [
@@ -205,6 +208,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'sqft',
       unitCost: getValue(map, 'road_grading_per_sqft', 1.25),
       ordinanceRef: 'ST-103 base course & granular borrow',
+      quantityBasis: `Centerline × ${rowWidthFt}' ROW`,
+      quantitySource: 'Plat PDF centerline annotations × plat ROW width',
     },
     {
       id: 'asphalt',
@@ -213,6 +218,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'sqft',
       unitCost: getValue(map, 'asphalt_paving_per_sqft', 4.5),
       ordinanceRef: 'ST-103 hot mix asphalt',
+      quantityBasis: `Centerline × ${pavementWidthFt}' pavement`,
+      quantitySource: 'Ord. 2025-317 ST-103 (24\' local-road pavement)',
     },
     {
       id: 'curb',
@@ -221,6 +228,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'curb_gutter_per_lf', 27),
       ordinanceRef: 'ST-121 curb & gutter',
+      quantityBasis: 'Centerline × 2 sides',
+      quantitySource: 'Ord. 2025-317 ST-121 (both sides of roadway)',
     },
     {
       id: 'sidewalk',
@@ -229,6 +238,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'sqft',
       unitCost: getValue(map, 'sidewalk_concrete_per_sqft', 12),
       ordinanceRef: 'ST-131 4" sidewalk against curb',
+      quantityBasis: `Centerline × 2 × ${sidewalkWidthFt}'`,
+      quantitySource: 'Ord. 2025-317 ST-131 (5\' sidewalks both sides)',
     },
     {
       id: 'water',
@@ -237,6 +248,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'water_main_per_lf', 85),
       ordinanceRef: 'ST-113 / AWWA C900 PVC',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Ord. 2025-317 ST-113 (utilities in ROW along centerline)',
     },
     {
       id: 'sewer',
@@ -245,6 +258,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'sewer_main_per_lf', 95),
       ordinanceRef: 'ST-113 opposite water line',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Ord. 2025-317 ST-113 (utilities in ROW along centerline)',
     },
     {
       id: 'sewer_manholes',
@@ -253,6 +268,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'each',
       unitCost: getValue(map, 'sewer_manhole_each', 4500),
       ordinanceRef: 'Max 350\' spacing per Ord. 2025-317',
+      quantityBasis: `ceil(sewer LF ÷ ${sewerManholeSpacingFt}')`,
+      quantitySource: 'Ord. 2025-317 — max 350\' sewer manhole spacing',
     },
     {
       id: 'storm',
@@ -261,6 +278,9 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'storm_drain_per_lf', 75),
       ordinanceRef: 'Black corrugated HDPE',
+      quantityBasis: `Centerline × ${(stormNetworkCoveragePct * 100).toFixed(0)}% coverage`,
+      quantitySource:
+        'Planning estimate — 85% of centerline assumed storm-networked (not an ordinance %).',
     },
     {
       id: 'storm_manholes',
@@ -269,6 +289,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'each',
       unitCost: getValue(map, 'storm_manhole_each', 5500),
       ordinanceRef: 'Precast eccentric cone',
+      quantityBasis: `ceil(storm LF ÷ ${stormManholeSpacingFt}')`,
+      quantitySource: 'Ord. 2025-317 spacing practice (400\' storm manholes)',
     },
     {
       id: 'utilities',
@@ -277,6 +299,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'utility_trench_per_lf', 35),
       ordinanceRef: 'Joint trench excavation only — hardware below',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Planning layout — joint dry-utility trench along ROW',
     },
     {
       id: 'gas_main',
@@ -285,6 +309,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'gas_main_per_lf', 55),
       ordinanceRef: '2–4" PE main in joint trench (excl. trench)',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Planning layout — PE gas main in joint trench along ROW',
     },
     {
       id: 'electric_conduit',
@@ -293,6 +319,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'electric_conduit_per_lf', 32),
       ordinanceRef: 'PVC conduit bank for power (excl. trench)',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Planning layout — power conduit bank along ROW',
     },
     {
       id: 'telecom_conduit',
@@ -301,6 +329,8 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'LF',
       unitCost: getValue(map, 'telecom_conduit_per_lf', 18),
       ordinanceRef: 'Empty conduit for ISP / fiber (excl. trench)',
+      quantityBasis: '1 × centerline LF',
+      quantitySource: 'Planning layout — empty telecom/fiber conduit along ROW',
     },
     {
       id: 'transformers',
@@ -309,8 +339,13 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'each',
       unitCost: getValue(map, 'electric_transformer_each', 12000),
       ordinanceRef: residentialLots
-        ? `~1 per 8 lots (${residentialLots} residential lots)`
+        ? `~1 per ${transformersPerLots} lots (${residentialLots} residential lots)`
         : '~1 per 400 LF corridor',
+      quantityBasis: residentialLots
+        ? `ceil(${residentialLots} lots ÷ ${transformersPerLots})`
+        : 'ceil(centerline ÷ 400\')',
+      quantitySource:
+        'Planning placeholder — ~1 pad-mount per 8 homes (not city-code mandated; often utility-owned with developer contribution)',
     },
     {
       id: 'street_lights',
@@ -319,6 +354,9 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       unit: 'each',
       unitCost: getValue(map, 'street_light_each', 4500),
       ordinanceRef: `~${streetLightSpacingFt}' spacing along centerline`,
+      quantityBasis: `ceil(centerline ÷ ${streetLightSpacingFt}')`,
+      quantitySource:
+        'Planning placeholder — ~175\' spacing along centerline (not an Ord. 2025-317 mandated spacing)',
     },
   ].map((item) => {
     const baseAmount = item.quantity * item.unitCost;
@@ -338,6 +376,7 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       rowWidthFt,
       ...ORDINANCE_SPECS,
       streetLightSpacingFt,
+      transformersPerLots,
     },
     totalRoadSqFt: roadSqFt,
     totalRoadLf: centerlineLf,
@@ -357,6 +396,7 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
       `${rowWidthFt}' ROW (plat), ${pavementWidthFt}' pavement (ST-103), ` +
       `${sidewalkWidthFt}' sidewalks both sides (ST-131), utilities in ROW (ST-113). ` +
       'Dry utilities include joint trench plus gas main, electric/telecom conduit, transformers, and street lights. ' +
+      `Street lights (~${streetLightSpacingFt}' spacing) and transformers (~1 per ${transformersPerLots} lots) are planning placeholders, not ordinance-mandated. ` +
       `Infrastructure safety factor ×${safetyFactor.toFixed(2)} applied to all line items. ` +
       'Unit costs are editable assumptions.',
   };
@@ -455,7 +495,7 @@ function buildPhaseCostBreakdown(phaseHomes) {
   };
 }
 
-function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, waterfall) {
+function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
   const initialEquity = getValue(map, 'initial_equity', 500000);
   const loanRate = getValue(map, 'construction_loan_rate', 0.085);
   const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
@@ -491,14 +531,17 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
   }) => {
     month += 1;
 
+    // Construction-loan interest is capitalized onto the loan balance and repaid
+    // from sale proceeds. It must NOT also be subtracted from cash — doing both
+    // charges the same interest twice and understates ending equity.
     const monthlyInterest = debt * (loanRate / 12);
     totalInterest += monthlyInterest;
-    cash -= spend + monthlyInterest;
+    cash -= spend;
     debt += monthlyInterest;
 
     let equityInjection = 0;
     let loanDraw = 0;
-    if (financeShortfall && spend > 0) {
+    if (financeShortfall && cash < 0) {
       const coverage = coverCashShortfall(cash, debt, loanAdvance);
       cash = coverage.cash;
       debt = coverage.debt;
@@ -514,6 +557,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
 
     const paydown = Math.min(debt, monthProceeds * 0.85);
     debt -= paydown;
+    cash -= paydown;
     // Proceeds net of required debt paydown stay in project cash (not distributed).
     // Counting them as equity inflows here AND again in exitEquity double-counted IRR.
     const netToEquity = monthProceeds - paydown;
@@ -557,7 +601,6 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
     land: 0,
     engineering: 0,
     studies: 0,
-    commercialWaterRights: 0,
     total: 0,
   };
   if (acquisition.total > 0) {
@@ -570,7 +613,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
         land: acquisition.land,
         engineering: acquisition.engineering,
         studies: acquisition.studies,
-        waterRights: acquisition.commercialWaterRights,
+        waterRights: 0,
         infrastructure: 0,
         vertical: 0,
       },
@@ -682,8 +725,11 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
     });
   });
 
+  // Terminal rental value only when monthly model has retired construction debt.
+  const debtRetired = debt <= 0;
+  const rentalActivated = debtRetired && (rentalHoldout.units || 0) > 0;
   const rentalTerminalValue =
-    rentalHoldout.activated && rentalHoldout.potentialAnnualNoi > 0
+    rentalActivated && rentalHoldout.potentialAnnualNoi > 0
       ? rentalHoldout.potentialAnnualNoi / 0.05
       : 0;
   const exitEquity = cash - debt + rentalTerminalValue;
@@ -741,8 +787,10 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals, wate
     paybackMonth,
     exitEquity,
     rentalTerminalValue,
-    endingCash: waterfall.endingCash,
-    endingDebt: waterfall.endingDebt,
+    // Same cash/debt balances used in exitEquity = cash − debt + rental terminal.
+    endingCash: cash,
+    endingDebt: debt,
+    rentalActivated,
     npvAt10Pct: npv,
     equityCashFlows,
     monthlyRows,
@@ -834,8 +882,9 @@ function simulatePhaseWaterfall(phaseResults, map, acquisitionCosts = null) {
     cash -= phaseCashCost;
 
     // Interest over overlapping build+sell duration (sales start as waves complete).
+    // Capitalized onto the loan balance only — not also deducted from cash (that
+    // would double-charge interest, as in the monthly model).
     const interest = debt * loanRate * (durationMonths / 12);
-    cash -= interest;
     debt += interest;
 
     let proceeds = 0;
@@ -849,6 +898,7 @@ function simulatePhaseWaterfall(phaseResults, map, acquisitionCosts = null) {
       cash += monthProceeds;
       const paydown = Math.min(debt, monthProceeds * 0.85);
       debt -= paydown;
+      cash -= paydown;
     }
 
     timeline.push({
@@ -932,8 +982,8 @@ export function computeProforma({
   const townhomeLots = residentialLots.filter((lot) => lot.lotType === 'townhome');
   const totalHomes = sfLots.length + townhomeLots.length + commercial.length;
 
-  const sfSalePrice = getValue(map, 'sf_sale_price', 485000);
-  const townhomeSalePrice = getValue(map, 'townhome_sale_price', 385000);
+  const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 220);
+  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 252);
 
   const enrichedLots = residentialLots.map((lot) => ({
     ...lot,
@@ -948,25 +998,27 @@ export function computeProforma({
     {
       sfLots: sfLots.length,
       townhomeLots: townhomeLots.length,
-      commercialCount: commercial.length,
     },
     map,
   );
 
+  const residentialHomeCount = sfLots.length + townhomeLots.length;
   const shared = {
     landPerHome: getValue(map, 'land_cost_total', 4000000) / Math.max(totalHomes, 1),
-    engineeringPerHome: getValue(map, 'engineering_total', 110000) / Math.max(totalHomes, 1),
-    studiesPerHome: getValue(map, 'studies_total', 17500) / Math.max(totalHomes, 1),
-    waterRightsPerHome: waterRights.total / Math.max(totalHomes, 1),
-    infraPerHome:
-      infrastructure.totalInfraBudget / Math.max(sfLots.length + townhomeLots.length, 1),
+    engineeringPerHome: FIXED_ENGINEERING_TOTAL / Math.max(totalHomes, 1),
+    studiesPerHome: FIXED_STUDIES_TOTAL / Math.max(totalHomes, 1),
+    // Residential-only water rights spread across residential lots (commercial excluded).
+    waterRightsPerHome: waterRights.total / Math.max(residentialHomeCount, 1),
+    infraPerHome: infrastructure.totalInfraBudget / Math.max(residentialHomeCount, 1),
   };
 
   const orderedPhases = phaseOrder || defaults.phaseOrder || [1, 3, 4, 5, 6, 7];
 
   let homeRows = enrichedLots.map((lot) => {
     const costs = computeHomeCost(lot, shared, map);
-    const salePrice = lot.lotType === 'townhome' ? townhomeSalePrice : sfSalePrice;
+    const salePricePerSqFt =
+      lot.lotType === 'townhome' ? townhomeSalePricePerSqFt : sfSalePricePerSqFt;
+    const salePrice = costs.dwellingSqFt * salePricePerSqFt;
     return {
       lotNumber: lot.lotNumber,
       phase: lot.phase,
@@ -974,6 +1026,7 @@ export function computeProforma({
       lotSqFt: lot.squareFeet,
       dwellingSqFt: costs.dwellingSqFt,
       costs,
+      salePricePerSqFt,
       salePrice,
       grossMargin: salePrice - costs.total,
       disposition: 'sale',
@@ -1017,25 +1070,20 @@ export function computeProforma({
   });
 
   const landTotal = getValue(map, 'land_cost_total', 4000000);
-  const engineeringTotal = getValue(map, 'engineering_total', 110000);
-  const studiesTotal = getValue(map, 'studies_total', 17500);
-  const residentialWaterRights = sum(homeRows.map((row) => row.costs.waterRights));
-  const commercialWaterRights = Math.max(0, waterRights.total - residentialWaterRights);
+  const engineeringTotal = FIXED_ENGINEERING_TOTAL;
+  const studiesTotal = FIXED_STUDIES_TOTAL;
+  // Water rights are residential-only and cash-flowed per phase (phaseUpfront),
+  // so acquisition no longer carries a commercial water-rights line.
   const acquisitionCosts = {
     land: landTotal,
     engineering: engineeringTotal,
     studies: studiesTotal,
-    commercialWaterRights,
-    total: landTotal + engineeringTotal + studiesTotal + commercialWaterRights,
+    total: landTotal + engineeringTotal + studiesTotal,
   };
 
   const waterfall = simulatePhaseWaterfall(phaseResults, map, acquisitionCosts);
-  const rentalHoldout = computeRentalHoldout(
-    reservedHomes,
-    map,
-    waterfall.endingDebt,
-    waterfall.endingCash,
-  );
+  // Potential NOI/unit mix; activation is finalized from the monthly financing model.
+  const rentalHoldout = computeRentalHoldout(reservedHomes, map, 0, 0);
 
   const projectTotals = {
     singleFamilyHomes: sfLots.length,
@@ -1059,14 +1107,30 @@ export function computeProforma({
     acquisitionCosts,
     avgCostPerHome: homeRows.length ? sum(homeRows.map((row) => row.costs.total)) / homeRows.length : 0,
     avgDwellingSqFt: homeRows.length ? sum(homeRows.map((row) => row.dwellingSqFt)) / homeRows.length : 0,
+    avgSfDwellingSqFt: sfLots.length
+      ? sum(homeRows.filter((row) => row.lotType === 'single-family').map((row) => row.dwellingSqFt)) /
+        sfLots.length
+      : 0,
+    avgTownhomeDwellingSqFt: townhomeLots.length
+      ? sum(homeRows.filter((row) => row.lotType === 'townhome').map((row) => row.dwellingSqFt)) /
+        townhomeLots.length
+      : 0,
+    sfSalePricePerSqFt,
+    townhomeSalePricePerSqFt,
   };
 
-  const financials = computeFinancials(
-    phaseResults,
+  const financials = computeFinancials(phaseResults, map, rentalHoldout, projectTotals);
+
+  // Keep phase-waterfall display balances aligned with the monthly model (source of truth).
+  waterfall.endingCash = financials.endingCash;
+  waterfall.endingDebt = financials.endingDebt;
+
+  // Finalize rental holdout status from monthly ending debt (not the coarse phase waterfall).
+  const rentalHoldoutFinal = computeRentalHoldout(
+    reservedHomes,
     map,
-    rentalHoldout,
-    projectTotals,
-    waterfall,
+    financials.endingDebt,
+    financials.endingCash,
   );
 
   return {
@@ -1079,7 +1143,7 @@ export function computeProforma({
     reservedHomes,
     phaseResults,
     waterfall,
-    rentalHoldout,
+    rentalHoldout: rentalHoldoutFinal,
     financials,
     projectTotals,
     meta: {

@@ -3,7 +3,15 @@ const STORAGE_KEY = 'delta-crossings-proforma-overrides';
 export function loadOverrides() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    // Legacy fixed $/home sale prices must not be read as $/sqft.
+    delete parsed.sf_sale_price;
+    delete parsed.townhome_sale_price;
+    // Engineering / studies are fixed model constants, not editable assumptions.
+    delete parsed.engineering_total;
+    delete parsed.studies_total;
+    return parsed;
   } catch {
     return {};
   }
@@ -46,12 +54,13 @@ export function setOverride(id, value) {
   return overrides;
 }
 
-export function formatCurrency(value) {
+export function formatCurrency(value, digits = 0) {
   if (value == null || Number.isNaN(value)) return '—';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    maximumFractionDigits: 0,
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
   }).format(value);
 }
 
@@ -63,7 +72,11 @@ export function formatNumber(value, digits = 0) {
   }).format(value);
 }
 
-export function formatPct(value) {
+export function isRatioUnit(unit) {
+  return unit === 'ratio' || (typeof unit === 'string' && unit.startsWith('ratio/'));
+}
+
+export function formatPct(value, digits = 1) {
   if (value == null || Number.isNaN(value)) return '—';
-  return `${(value * 100).toFixed(1)}%`;
+  return `${(value * 100).toFixed(digits)}%`;
 }

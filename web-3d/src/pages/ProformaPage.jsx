@@ -19,34 +19,45 @@ import {
   CalculationPanel,
 } from '../proforma/CalculationPanel';
 
-function AssumptionField({ entry, onChange, highlighted }) {
+function AssumptionField({ entry, onChange, highlighted, liveHint = null, isKey = false }) {
   const isPct = isRatioUnit(entry.unit);
   const isCount = entry.unit === 'units';
   const displayValue = isPct ? (entry.value * 100).toFixed(2) : entry.value;
   const isOverridden = entry.value !== entry.default;
 
   return (
-    <div className={`assumption-row ${isOverridden ? 'overridden' : ''} ${highlighted ? 'assumption-highlight' : ''}`}>
+    <div className={`assumption-row ${isOverridden ? 'overridden' : ''} ${highlighted ? 'assumption-highlight' : ''} ${isKey ? 'is-key' : ''}`}>
       <div className="assumption-label">
-        <label htmlFor={entry.id}>{entry.label}</label>
+        <label htmlFor={entry.id}>
+          {entry.label}
+          {isKey ? (
+            <span className="assumption-key-mark" title="Key driver">
+              *
+            </span>
+          ) : null}
+        </label>
         {entry.description ? <p className="assumption-desc">{entry.description}</p> : null}
       </div>
-      <div className="assumption-input">
-        <input
-          id={entry.id}
-          type="number"
-          min={isCount ? 0 : undefined}
-          value={displayValue}
-          onChange={(event) => {
-            const raw = Number(event.target.value);
-            if (isCount) {
-              onChange(entry.id, Math.max(0, Math.round(raw)));
-              return;
-            }
-            onChange(entry.id, isPct ? raw / 100 : raw);
-          }}
-        />
-        <span className="assumption-unit">{isPct ? '%' : entry.unit}</span>
+      <div className="assumption-input-wrap">
+        <div className="assumption-input">
+          <input
+            id={entry.id}
+            type="number"
+            min={isCount ? 0 : undefined}
+            step={entry.unit === 'USD/sqft' ? 1 : undefined}
+            value={displayValue}
+            onChange={(event) => {
+              const raw = Number(event.target.value);
+              if (isCount) {
+                onChange(entry.id, Math.max(0, Math.round(raw)));
+                return;
+              }
+              onChange(entry.id, isPct ? raw / 100 : raw);
+            }}
+          />
+          <span className="assumption-unit">{isPct ? '%' : entry.unit}</span>
+        </div>
+        {liveHint ? <p className="assumption-live-hint">{liveHint}</p> : null}
       </div>
       <div className="assumption-source">
         {entry.source?.url?.startsWith('http') ? (
@@ -63,19 +74,62 @@ function AssumptionField({ entry, onChange, highlighted }) {
   );
 }
 
-function CategorySection({ title, items, onChange, highlightId }) {
+function CategorySection({
+  title,
+  items,
+  onChange,
+  highlightId,
+  liveHints = {},
+  defaultOpen = false,
+  collapseNote = null,
+  sectionId = null,
+  mainIds = new Set(),
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const containsHighlight = Boolean(highlightId && items.some((entry) => entry.id === highlightId));
+
+  useEffect(() => {
+    if (containsHighlight) setOpen(true);
+  }, [containsHighlight, highlightId]);
+
   if (!items.length) return null;
+
+  const panelId = sectionId ? `assumption-section-${sectionId}` : undefined;
+
   return (
-    <section className="assumption-section">
-      <h3>{title}</h3>
-      {items.map((entry) => (
-        <AssumptionField
-          key={entry.id}
-          entry={entry}
-          onChange={onChange}
-          highlighted={entry.id === highlightId}
-        />
-      ))}
+    <section className={`assumption-section ${open ? 'is-open' : 'is-collapsed'}`}>
+      <button
+        type="button"
+        className="assumption-section-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        aria-controls={panelId}
+      >
+        <span className="assumption-section-title">{title}</span>
+        <span className="assumption-section-meta">
+          {!open ? <span className="assumption-section-count">{items.length}</span> : null}
+          <span className="assumption-section-chevron" aria-hidden="true">
+            {open ? '▾' : '▸'}
+          </span>
+        </span>
+      </button>
+      {!open && collapseNote ? (
+        <p className="assumption-section-collapsed-note">{collapseNote}</p>
+      ) : null}
+      {open ? (
+        <div id={panelId} className="assumption-section-body">
+          {items.map((entry) => (
+            <AssumptionField
+              key={entry.id}
+              entry={entry}
+              onChange={onChange}
+              highlighted={entry.id === highlightId}
+              liveHint={liveHints[entry.id] || null}
+              isKey={mainIds.has(entry.id)}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -193,16 +247,6 @@ function FinancialsView({ financials, onShowCalc }) {
           <span>Return on Cost</span>
           <strong>{formatPct(financials.returnOnCost)}</strong>
           <p>Net profit ÷ total dev cost</p>
-          <span className="calc-hint" aria-hidden="true">ⓘ</span>
-        </button>
-        <button
-          type="button"
-          className="financials-hero-metric calc-hero"
-          onClick={() => onShowCalc?.('npvAt10Pct')}
-        >
-          <span>NPV @ 10%</span>
-          <strong>{formatCurrency(financials.npvAt10Pct)}</strong>
-          <p>Discounted equity cash flows</p>
           <span className="calc-hint" aria-hidden="true">ⓘ</span>
         </button>
       </div>
@@ -384,15 +428,38 @@ function FinancialsView({ financials, onShowCalc }) {
   );
 }
 
+const MAIN_ASSUMPTION_IDS = [
+  'land_cost_total',
+  'infrastructure_safety_factor',
+  'sf_construction_cost_per_sqft',
+  'initial_equity',
+];
+
 const CATEGORY_LABELS = {
   development: 'Land & Development',
-  infrastructure: 'Infrastructure Unit Costs',
+  revenue: 'For-Sale Revenue',
   vertical_construction: 'Vertical Construction',
   financing: 'Financing',
-  revenue: 'For-Sale Revenue',
-  rental_reserve: 'Rent vs. Sale Reserve',
+  infrastructure: 'Infrastructure Unit Costs',
+  rental: 'Rental Holdout',
   schedule: 'Schedule & Absorption',
-  rental_holdout: 'Rental Income (Reserved Units)',
+};
+
+const CATEGORY_COLLAPSE_NOTES = {
+  development:
+    'Opens water-rights AF/lot and city $/AF. Use when modeling culinary-water purchase cost separately from land.',
+  infrastructure:
+    'Opens asphalt, curb, utilities, lights, and other unit costs. Use to match contractor bids or stress individual line items beyond the safety factor.',
+  vertical_construction:
+    'Opens waste and labor overhead multipliers. Use when refining hard-cost build-up on top of the base $/sqft.',
+  financing:
+    'Opens construction loan rate and advance %. Use for leverage / interest-sensitivity cases.',
+  revenue:
+    'Opens SF and townhome sale $/sqft. Use to reprice the absorption case; live avg-home equivalents update under each input.',
+  rental:
+    'Opens reserve counts, rents, vacancy, and opex. Use for mixed sale/rent exit and rental terminal value after debt is retired.',
+  schedule:
+    'Opens build pace, parallel homes, and monthly absorption. Use when testing timeline, peak debt, and IRR duration.',
 };
 
 export default function ProformaPage() {
@@ -560,11 +627,27 @@ export default function ProformaPage() {
   }
 
   const assumptionsByCategory = merged.assumptions.reduce((acc, entry) => {
-    const key = entry.category || 'other';
+    let key = entry.category || 'other';
+    if (key === 'rental_reserve' || key === 'rental_holdout') key = 'rental';
     if (!acc[key]) acc[key] = [];
     acc[key].push(entry);
     return acc;
   }, {});
+
+  const mainAssumptionIdSet = new Set(MAIN_ASSUMPTION_IDS);
+
+  const avgSfSqFt = result.projectTotals.avgSfDwellingSqFt || 0;
+  const avgThSqFt = result.projectTotals.avgTownhomeDwellingSqFt || 0;
+  const sfRate = result.map.sf_sale_price_per_sqft ?? 0;
+  const thRate = result.map.townhome_sale_price_per_sqft ?? 0;
+  const assumptionLiveHints = {
+    sf_sale_price_per_sqft: avgSfSqFt
+      ? `≈ ${formatCurrency(avgSfSqFt * sfRate)} avg single-family (${formatNumber(avgSfSqFt)} sqft)`
+      : null,
+    townhome_sale_price_per_sqft: avgThSqFt
+      ? `≈ ${formatCurrency(avgThSqFt * thRate)} avg townhome (${formatNumber(avgThSqFt)} sqft)`
+      : null,
+  };
 
   const activePhase = view.startsWith('phase-') ? Number(view.replace('phase-', '')) : null;
   const phaseData = activePhase
@@ -604,14 +687,22 @@ export default function ProformaPage() {
             </button>
           </div>
           <div className="assumptions-panel-body">
-            <p className="panel-note">Edit any value to see live updates. Sources are cited for traceability.</p>
+            <p className="panel-note">
+              All sections start collapsed. Key drivers are marked with <strong>*</strong>. Expand a
+              section for detail inputs — collapsed notes explain what opens and when it matters.
+            </p>
             {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
               <CategorySection
                 key={key}
+                sectionId={key}
                 title={label}
                 items={assumptionsByCategory[key] || []}
                 onChange={handleOverride}
                 highlightId={highlightAssumptionId}
+                liveHints={assumptionLiveHints}
+                defaultOpen={false}
+                collapseNote={CATEGORY_COLLAPSE_NOTES[key] || null}
+                mainIds={mainAssumptionIdSet}
               />
             ))}
           </div>
@@ -735,11 +826,15 @@ export default function ProformaPage() {
                 </CalcMetricCard>
                 <CalcMetricCard calcId="endingCash" onShow={showCalc}>
                   <span>Ending cash</span>
-                  <strong>{formatCurrency(result.waterfall.endingCash)}</strong>
+                  <strong>
+                    {formatCurrency(result.financials?.endingCash ?? result.waterfall.endingCash)}
+                  </strong>
                 </CalcMetricCard>
                 <CalcMetricCard calcId="endingDebt" onShow={showCalc}>
                   <span>Ending debt</span>
-                  <strong>{formatCurrency(result.waterfall.endingDebt)}</strong>
+                  <strong>
+                    {formatCurrency(result.financials?.endingDebt ?? result.waterfall.endingDebt)}
+                  </strong>
                 </CalcMetricCard>
               </div>
 
@@ -750,13 +845,17 @@ export default function ProformaPage() {
                     <td>Land acquisition</td>
                     <CalcTd calcId="land_cost_total" onShow={showCalc}>{formatCurrency(result.map.land_cost_total)}</CalcTd>
                   </tr>
-                  <tr className="calc-row-clickable" onClick={() => showCalc('engineering_total')}>
-                    <td>Engineering &amp; design</td>
-                    <CalcTd calcId="engineering_total" onShow={showCalc}>{formatCurrency(result.map.engineering_total)}</CalcTd>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('acquisitionCosts')}>
+                    <td>Engineering &amp; design <span className="muted-note">(fixed)</span></td>
+                    <CalcTd calcId="acquisitionCosts" onShow={showCalc}>
+                      {formatCurrency(result.projectTotals.acquisitionCosts?.engineering)}
+                    </CalcTd>
                   </tr>
-                  <tr className="calc-row-clickable" onClick={() => showCalc('studies_total')}>
-                    <td>Studies &amp; reports</td>
-                    <CalcTd calcId="studies_total" onShow={showCalc}>{formatCurrency(result.map.studies_total)}</CalcTd>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('acquisitionCosts')}>
+                    <td>Studies &amp; reports <span className="muted-note">(fixed)</span></td>
+                    <CalcTd calcId="acquisitionCosts" onShow={showCalc}>
+                      {formatCurrency(result.projectTotals.acquisitionCosts?.studies)}
+                    </CalcTd>
                   </tr>
                   <tr className="calc-row-clickable" onClick={() => showCalc('waterRightsTotal')}>
                     <td>
@@ -1025,7 +1124,7 @@ export default function ProformaPage() {
                 </CalcMetricCard>
                 <CalcMetricCard calcId="totalInfraBudget" onShow={showCalc}>
                   <span>Total infrastructure cost</span>
-                  <strong>{formatCurrency(result.infrastructure.totalInfraBudget)}</strong>
+                  <strong>{formatCurrency(result.infrastructure.totalInfraBudget, 2)}</strong>
                 </CalcMetricCard>
               </div>
 
@@ -1050,11 +1149,11 @@ export default function ProformaPage() {
                       <td>{row.label}</td>
                       <td>{row.ordinanceRef}</td>
                       <td>
-                        {formatNumber(row.quantity, row.unit === 'each' ? 0 : 0)} {row.unit}
+                        {formatNumber(row.quantity, row.unit === 'each' ? 0 : 2)} {row.unit}
                       </td>
-                      <td>{formatCurrency(row.unitCost)}</td>
+                      <td>{formatCurrency(row.unitCost, 2)}</td>
                       <CalcTd calcId={`infra_${row.id}`} onShow={showCalc}>
-                        {formatCurrency(row.amount)}
+                        {formatCurrency(row.amount, 2)}
                       </CalcTd>
                     </tr>
                   ))}
@@ -1066,7 +1165,7 @@ export default function ProformaPage() {
                     </td>
                     <td>
                       <button type="button" className="calc-td-trigger" onClick={() => showCalc('totalInfraBudget')}>
-                        <strong>{formatCurrency(result.infrastructure.totalInfraBudget)}</strong>
+                        <strong>{formatCurrency(result.infrastructure.totalInfraBudget, 2)}</strong>
                       </button>
                     </td>
                   </tr>

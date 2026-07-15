@@ -16,11 +16,11 @@
     "residential_acres": 52.22,
     "road_acres": 8.72,
     "road_centerline_lf": 6332.3,
-    "total_project_acres": 52.0,
+    "total_project_acres": 52,
     "notes": "Road area from plat PDF centerline annotations (sheet1-road-segments.json). Lot areas from plat S.F. labels and polygon scaling. Total project acreage (~52 ac) for reference; water rights budgeted per lot at 1.0 AF/lot."
   },
   "ordinanceRef": {
-    "title": "Ordinance 2025-317 \u2014 Delta City Design & Construction Standards",
+    "title": "Ordinance 2025-317 — Delta City Design & Construction Standards",
     "path": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
     "drawings": [
       "ST-103 Local Roads (24' pavement; plat ROW 60')",
@@ -52,73 +52,25 @@
       "default": 4000000,
       "unit": "USD",
       "category": "development",
-      "description": "",
+      "description": "Total land acquisition budget. Intentional $4.0M basis (overrides the $1.835M line in the source proforma).",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
-      },
-      "overridable": true
-    },
-    {
-      "id": "engineering_total",
-      "label": "Engineering & design (total)",
-      "value": 110000,
-      "default": 110000,
-      "unit": "USD",
-      "category": "development",
-      "description": "",
-      "source": {
-        "name": "12_11_23 Proforma Delta.xlsx",
-        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-        "retrieved": "2026-07-07",
-        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
-      },
-      "overridable": true
-    },
-    {
-      "id": "studies_total",
-      "label": "Studies & reports (total)",
-      "value": 17500,
-      "default": 17500,
-      "unit": "USD",
-      "category": "development",
-      "description": "",
-      "source": {
-        "name": "12_11_23 Proforma Delta.xlsx",
-        "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-        "retrieved": "2026-07-07",
-        "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+        "notes": "Source proforma listed land at $1.835M; $4.0M used here as an intentional acquisition-budget override."
       },
       "overridable": true
     },
     {
       "id": "water_rights_af_per_lot",
       "label": "Culinary water requirement (per residential lot)",
-      "value": 1.0,
-      "default": 1.0,
+      "value": 1,
+      "default": 1,
       "unit": "AF/lot",
       "category": "development",
       "description": "Millard County requires 1.0 acre-foot dedicated per platted lot for culinary water feasibility at subdivision approval.",
       "source": {
-        "name": "Millard County Subdivision Ordinance \u00a7 11-1-20",
-        "url": "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
-        "retrieved": "2026-07-07",
-        "notes": "Minimum 1.0 acre-foot of culinary water dedicated to each proposed lot at plat approval."
-      },
-      "overridable": true
-    },
-    {
-      "id": "water_rights_af_per_commercial",
-      "label": "Culinary water requirement (per commercial connection)",
-      "value": 1.0,
-      "default": 1.0,
-      "unit": "AF/connection",
-      "category": "development",
-      "description": "Acre-feet required per commercial water connection (default 1.0 AF).",
-      "source": {
-        "name": "Millard County Subdivision Ordinance \u00a7 11-1-20",
+        "name": "Millard County Subdivision Ordinance § 11-1-20",
         "url": "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
         "retrieved": "2026-07-07",
         "notes": "Minimum 1.0 acre-foot of culinary water dedicated to each proposed lot at plat approval."
@@ -142,34 +94,34 @@
       "overridable": true
     },
     {
-      "id": "sf_sale_price",
+      "id": "sf_sale_price_per_sqft",
       "label": "Single-family sale price",
-      "value": 485000,
-      "default": 485000,
-      "unit": "USD/home",
+      "value": 220,
+      "default": 220,
+      "unit": "USD/sqft",
       "category": "revenue",
-      "description": "",
+      "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
       "source": {
         "name": "Delta rural new-home market estimate",
         "url": "https://buildgenius.app/construction-costs/utah",
         "retrieved": "2026-07-07",
-        "notes": "Construction ~$168/sqft \u00d7 ~2,200 sqft + land/infra margin for Millard County."
+        "notes": "≈$220/sqft preserves prior ~$485k at ~2,200 sqft; sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
     {
-      "id": "townhome_sale_price",
+      "id": "townhome_sale_price_per_sqft",
       "label": "Townhome sale price",
-      "value": 385000,
-      "default": 385000,
-      "unit": "USD/home",
+      "value": 252,
+      "default": 252,
+      "unit": "USD/sqft",
       "category": "revenue",
-      "description": "",
+      "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
       "source": {
-        "name": "12_11_23 Proforma Delta.xlsx \u2014 Unit Mix",
+        "name": "12_11_23 Proforma Delta.xlsx — Unit Mix",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Townhome unit revenue scaled to full home pricing; adjust for market."
+        "notes": "≈$252/sqft preserves prior ~$385k at ~1,525 sqft; sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
@@ -179,7 +131,7 @@
       "value": 0,
       "default": 0,
       "unit": "units",
-      "category": "rental_reserve",
+      "category": "rental",
       "description": "Held for rental income instead of sold. Reserved from latest phases first.",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
@@ -195,7 +147,7 @@
       "value": 0,
       "default": 0,
       "unit": "units",
-      "category": "rental_reserve",
+      "category": "rental",
       "description": "Held for rental income instead of sold. Reserved from latest phases first.",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
@@ -233,7 +185,7 @@
         "name": "NAHB cost breakdown guidance",
         "url": "https://www.nahb.org/",
         "retrieved": "2026-07-07",
-        "notes": "Labor represents 35\u201340% of hard costs; 10% burden on vertical."
+        "notes": "Labor represents 35–40% of hard costs; 10% burden on vertical."
       },
       "overridable": true
     },
@@ -249,7 +201,7 @@
         "name": "RSMeans residential estimating practice",
         "url": "https://www.rsmeans.com/2026-residential-costs-book",
         "retrieved": "2026-07-07",
-        "notes": "Typical 5\u201310% waste allowance on materials."
+        "notes": "Typical 5–10% waste allowance on materials."
       },
       "overridable": true
     },
@@ -294,7 +246,7 @@
       "category": "schedule",
       "description": "",
       "source": {
-        "name": "Western States Market Study \u2014 Delta Apartments",
+        "name": "Western States Market Study — Delta Apartments",
         "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
         "retrieved": "2026-07-07",
         "notes": "Market study projects ~10 units/month multifamily; for-sale assumed lower."
@@ -336,8 +288,8 @@
     {
       "id": "infrastructure_safety_factor",
       "label": "Infrastructure safety factor",
-      "value": 1.0,
-      "default": 1.0,
+      "value": 1,
+      "default": 1,
       "unit": "x",
       "category": "infrastructure",
       "description": "Flat multiplier applied to all infrastructure line items. Use >1.0 for contingency / higher bids, <1.0 to stress cheaper costs.",
@@ -361,7 +313,7 @@
         "name": "Utah asphalt paving cost guide 2026",
         "url": "https://utahasphalt.com/asphalt-paving-cost-utah-2026/",
         "retrieved": "2026-07-07",
-        "notes": "Commercial-scale paving $3\u2013$7/sqft; mid-range for subdivision streets."
+        "notes": "Commercial-scale paving $3–$7/sqft; mid-range for subdivision streets."
       },
       "overridable": true
     },
@@ -377,7 +329,7 @@
         "name": "ProMatcher Salt Lake City curbing report",
         "url": "https://curbing.promatcher.com/cost/salt-lake-city-ut-curbing-costs-prices.aspx",
         "retrieved": "2026-07-07",
-        "notes": "$24\u2013$31/LF installed concrete curb and gutter."
+        "notes": "$24–$31/LF installed concrete curb and gutter."
       },
       "overridable": true
     },
@@ -422,10 +374,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ogden City \u2014 Monroe Water Line bid tabulation",
+        "name": "Ogden City — Monroe Water Line bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108\u2013$149/LF (2023); default is mid-range planning value."
+        "notes": "Bid item 121: 8\" PVC C900 DR-18 installed $108–$149/LF (2023); default is mid-range planning value."
       },
       "overridable": true
     },
@@ -441,7 +393,7 @@
         "name": "ProMatcher Utah sewer cost report",
         "url": "https://sewers.promatcher.com/cost/utah.aspx",
         "retrieved": "2026-07-07",
-        "notes": "Public report shows $63.18/LF ($55\u2013$71) for trench replacement; default higher for new subdivision main per ST-113."
+        "notes": "Public report shows $63.18/LF ($55–$71) for trench replacement; default higher for new subdivision main per ST-113."
       },
       "overridable": true
     },
@@ -454,10 +406,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "name": "Ogden City — Monroe Water Line storm bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114\u2013$155/LF (2023); comparable installed storm pipe cost."
+        "notes": "Bid schedule 2 item 203: 15\" storm drain RCP installed $114–$155/LF (2023); comparable installed storm pipe cost."
       },
       "overridable": true
     },
@@ -470,10 +422,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "name": "Moab City — North Sewer Line bid tabulation",
         "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "Bid items A8/A9: 4'\u20135' precast sewer manholes $5,393\u2013$7,005 each (2019); spacing per Ord. 2025-317 ST-103."
+        "notes": "Bid items A8/A9: 4'–5' precast sewer manholes $5,393–$7,005 each (2019); spacing per Ord. 2025-317 ST-103."
       },
       "overridable": true
     },
@@ -486,10 +438,10 @@
       "category": "infrastructure",
       "description": "",
       "source": {
-        "name": "Ogden City \u2014 Monroe Water Line storm bid tabulation",
+        "name": "Ogden City — Monroe Water Line storm bid tabulation",
         "url": "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
         "retrieved": "2026-07-07",
-        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050\u2013$11,238 each (2023); spacing per Ord. 2025-317."
+        "notes": "Bid item 202: 60\" precast storm drain manhole $8,050–$11,238 each (2023); spacing per Ord. 2025-317."
       },
       "overridable": true
     },
@@ -502,10 +454,10 @@
       "category": "infrastructure",
       "description": "Excavation and backfill for the joint dry-utility trench only. Gas, power, and telecom hardware are separate line items.",
       "source": {
-        "name": "Moab City \u2014 North Sewer Line bid tabulation",
+        "name": "Moab City — North Sewer Line bid tabulation",
         "url": "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
         "retrieved": "2026-07-07",
-        "notes": "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70\u2013$130/LF (2019) informed lower joint-trench allowance."
+        "notes": "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70–$130/LF (2019) informed lower joint-trench allowance."
       },
       "overridable": true
     },
@@ -516,12 +468,12 @@
       "default": 55,
       "unit": "USD/LF",
       "category": "infrastructure",
-      "description": "2\u20134\" PE gas main material and install in the open joint trench (trench cost separate).",
+      "description": "2–4\" PE gas main material and install in the open joint trench (trench cost separate).",
       "source": {
         "name": "Utah subdivision dry-utility planning allowances",
         "url": "Supporting Docs/Delta/",
         "retrieved": "2026-07-14",
-        "notes": "Planning mid-range $45\u2013$70/LF for PE main pipe & fittings excluding trench."
+        "notes": "Planning mid-range $45–$70/LF for PE main pipe & fittings excluding trench."
       },
       "overridable": true
     },
@@ -553,7 +505,7 @@
         "name": "Utah subdivision dry-utility planning allowances",
         "url": "Supporting Docs/Delta/",
         "retrieved": "2026-07-14",
-        "notes": "Empty conduit for ISP/fiber pull; planning mid-range $12\u2013$25/LF."
+        "notes": "Empty conduit for ISP/fiber pull; planning mid-range $12–$25/LF."
       },
       "overridable": true
     },
@@ -569,7 +521,7 @@
         "name": "Utah subdivision dry-utility planning allowances",
         "url": "Supporting Docs/Delta/",
         "retrieved": "2026-07-14",
-        "notes": "Often utility-owned with developer contribution; $8k\u2013$18k planning range."
+        "notes": "Often utility-owned with developer contribution; $8k–$18k planning range."
       },
       "overridable": true
     },
@@ -595,10 +547,10 @@
       "value": 1750,
       "default": 1750,
       "unit": "USD/month",
-      "category": "rental_holdout",
+      "category": "rental",
       "description": "",
       "source": {
-        "name": "Western States Market Study \u2014 3-bed townhome",
+        "name": "Western States Market Study — 3-bed townhome",
         "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
         "retrieved": "2026-07-07",
         "notes": "$1,750/mo market rent for 3-bed townhome."
@@ -611,10 +563,10 @@
       "value": 2200,
       "default": 2200,
       "unit": "USD/month",
-      "category": "rental_holdout",
+      "category": "rental",
       "description": "",
       "source": {
-        "name": "Western States Market Study \u2014 comparable rents",
+        "name": "Western States Market Study — comparable rents",
         "url": "Supporting Docs/Delta/Reports/Market Study.pdf",
         "retrieved": "2026-07-07",
         "notes": "Estimated market rent for reserved single-family units."
@@ -627,7 +579,7 @@
       "value": 6000,
       "default": 6000,
       "unit": "USD/unit/year",
-      "category": "rental_holdout",
+      "category": "rental",
       "description": "",
       "source": {
         "name": "Western States Market Study",
@@ -643,7 +595,7 @@
       "value": 0.05,
       "default": 0.05,
       "unit": "ratio",
-      "category": "rental_holdout",
+      "category": "rental",
       "description": "",
       "source": {
         "name": "Western States Market Study",

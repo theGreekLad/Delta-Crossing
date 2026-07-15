@@ -136,7 +136,7 @@ export function buildCalculations(result, merged) {
         step('Total sale revenue', projectTotals.totalSaleRevenue, 'currency'),
         step('Proceeds collected in timeline', financials.totalSaleProceeds, 'currency'),
       ],
-      ['sf_sale_price', 'townhome_sale_price', 'homes_sold_per_month'],
+      ['sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft', 'homes_sold_per_month'],
     );
 
     calcs.profitMargin = calc(
@@ -149,7 +149,15 @@ export function buildCalculations(result, merged) {
         step('Total gross margin', projectTotals.totalGrossMargin, 'currency'),
         step('Total sale revenue', projectTotals.totalSaleRevenue, 'currency'),
       ],
-      ['sf_sale_price', 'townhome_sale_price', 'sf_construction_cost_per_sqft'],
+      [
+        'sf_sale_price_per_sqft',
+        'townhome_sale_price_per_sqft',
+        'sf_construction_cost_per_sqft',
+        'material_waste_pct',
+        'labor_overhead_pct',
+        'infrastructure_safety_factor',
+        'land_cost_total',
+      ],
     );
 
     calcs.projectDurationMonths = calc(
@@ -179,12 +187,12 @@ export function buildCalculations(result, merged) {
         'currency',
         [
           step('Land', acq.land, 'currency'),
-          step('Engineering', acq.engineering, 'currency'),
-          step('Studies', acq.studies, 'currency'),
-          step('Commercial water rights', acq.commercialWaterRights, 'currency'),
+          step('Engineering (fixed)', acq.engineering, 'currency', 'From 12_11_23 Proforma Delta.xlsx — not editable'),
+          step('Studies (fixed)', acq.studies, 'currency', 'From 12_11_23 Proforma Delta.xlsx — not editable'),
           step('Total acquisition', acq.total, 'currency'),
         ],
-        ['land_cost_total', 'engineering_total', 'studies_total'],
+        ['land_cost_total'],
+        'Engineering ($110k) and studies ($17.5k) are fixed soft costs from the source proforma.',
       );
     }
 
@@ -209,12 +217,21 @@ export function buildCalculations(result, merged) {
       financials.exitEquity,
       'currency',
       [
-        step('Ending cash', financials.endingCash ?? waterfall.endingCash, 'currency'),
-        step('Ending debt', financials.endingDebt ?? waterfall.endingDebt, 'currency'),
+        step('Ending cash (monthly model)', financials.endingCash, 'currency'),
+        step('Ending debt (monthly model)', financials.endingDebt, 'currency'),
         step('Rental terminal value @ 5% cap', financials.rentalTerminalValue ?? 0, 'currency'),
         step('Exit equity', financials.exitEquity, 'currency'),
       ],
-      ['initial_equity', 'sf_rent_monthly', 'townhome_rent_monthly'],
+      [
+        'initial_equity',
+        'construction_loan_rate',
+        'construction_loan_advance_pct',
+        'sf_rent_monthly',
+        'townhome_rent_monthly',
+        'rental_vacancy_pct',
+        'rental_opex_per_unit_year',
+      ],
+      'Uses the same month-by-month cash and debt balances as the financing timeline — not the coarser phase waterfall. Cap rate 5% is a fixed planning assumption (not editable).',
     );
   }
 
@@ -288,47 +305,86 @@ export function buildCalculations(result, merged) {
     [
       step('SF lots × AF/lot', waterRights.sfAcreFeet, 'number', `${waterRights.sfLots} × ${waterRights.afPerLot} AF`),
       step('Townhome lots × AF/lot', waterRights.townhomeAcreFeet, 'number', `${waterRights.townhomeLots} × ${waterRights.afPerLot} AF`),
-      step('Commercial × AF/block', waterRights.commercialAcreFeet, 'number', `${waterRights.commercialCount} × ${waterRights.afPerCommercial} AF`),
       step('Total acre-feet', waterRights.totalAcreFeet, 'number'),
       step('Cost per acre-foot', waterRights.costPerAcreFoot, 'currency'),
       step('Total cost', waterRights.total, 'currency'),
     ],
-    ['water_rights_af_per_lot', 'water_rights_af_per_commercial', 'water_rights_cost_per_acre_foot'],
+    ['water_rights_af_per_lot', 'water_rights_cost_per_acre_foot'],
     waterRights.notes,
   );
 
   calcs.totalDevelopmentCost = calc(
     'totalDevelopmentCost',
     'Total Development Cost',
-    'Sum of per-home costs (land + engineering + studies + water rights + infra + vertical) for all homes',
+    'Land + engineering + studies + water rights + infrastructure (× safety) + vertical (× waste × labor)',
     projectTotals.totalDevelopmentCost,
     'currency',
     [
       step('Land (allocated)', map.land_cost_total ?? 0, 'currency'),
-      step('Engineering', map.engineering_total ?? 0, 'currency'),
-      step('Studies', map.studies_total ?? 0, 'currency'),
+      step(
+        'Engineering (fixed)',
+        projectTotals.acquisitionCosts?.engineering ?? 0,
+        'currency',
+        'From source proforma — not an editable assumption',
+      ),
+      step(
+        'Studies (fixed)',
+        projectTotals.acquisitionCosts?.studies ?? 0,
+        'currency',
+        'From source proforma — not an editable assumption',
+      ),
       step('Water rights', waterRights.total, 'currency'),
-      step('Infrastructure', infrastructure.totalInfraBudget, 'currency'),
-      step('Vertical construction (all homes)', homeRows.reduce((s, h) => s + h.costs.verticalHard, 0), 'currency'),
+      step(
+        'Infrastructure',
+        infrastructure.totalInfraBudget,
+        'currency',
+        `base ${formatCurrencyPlain(infrastructure.totalInfraBase ?? 0)} × ${(infrastructure.safetyFactor ?? 1).toFixed(2)} safety`,
+      ),
+      step(
+        'Vertical construction (all homes)',
+        homeRows.reduce((s, h) => s + h.costs.verticalHard, 0),
+        'currency',
+        `sqft × $${baseCost}/sqft × (1+${(waste * 100).toFixed(0)}% waste) × (1+${(labor * 100).toFixed(0)}% labor)`,
+      ),
       step('Total', projectTotals.totalDevelopmentCost, 'currency'),
     ],
-    ['land_cost_total', 'engineering_total', 'studies_total', 'sf_construction_cost_per_sqft'],
+    [
+      'land_cost_total',
+      'water_rights_af_per_lot',
+      'water_rights_cost_per_acre_foot',
+      'infrastructure_safety_factor',
+      'sf_construction_cost_per_sqft',
+      'material_waste_pct',
+      'labor_overhead_pct',
+    ],
   );
 
   calcs.totalSaleRevenue = calc(
     'totalSaleRevenue',
     'Total Sale Revenue',
-    'Sum of sale prices for all for-sale homes',
+    'Sum of (dwelling sqft × sale $/sqft) for all for-sale homes',
     projectTotals.totalSaleRevenue,
     'currency',
     [
       step('SF for sale', projectTotals.sfForSale, 'number'),
       step('Townhome for sale', projectTotals.townhomeForSale, 'number'),
-      step('SF sale price', map.sf_sale_price ?? 0, 'currency'),
-      step('Townhome sale price', map.townhome_sale_price ?? 0, 'currency'),
+      step('SF sale $/sqft', map.sf_sale_price_per_sqft ?? 0, 'currency'),
+      step(
+        'Avg SF home price',
+        (projectTotals.avgSfDwellingSqFt ?? 0) * (map.sf_sale_price_per_sqft ?? 0),
+        'currency',
+        `${formatNumberPlain(projectTotals.avgSfDwellingSqFt ?? 0)} sqft × ${formatCurrencyPlain(map.sf_sale_price_per_sqft ?? 0)}`,
+      ),
+      step('Townhome sale $/sqft', map.townhome_sale_price_per_sqft ?? 0, 'currency'),
+      step(
+        'Avg townhome price',
+        (projectTotals.avgTownhomeDwellingSqFt ?? 0) * (map.townhome_sale_price_per_sqft ?? 0),
+        'currency',
+        `${formatNumberPlain(projectTotals.avgTownhomeDwellingSqFt ?? 0)} sqft × ${formatCurrencyPlain(map.townhome_sale_price_per_sqft ?? 0)}`,
+      ),
       step('Total revenue', projectTotals.totalSaleRevenue, 'currency'),
     ],
-    ['sf_sale_price', 'townhome_sale_price'],
+    ['sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft', 'sf_reserved_for_rent', 'townhome_reserved_for_rent'],
   );
 
   calcs.totalGrossMargin = calc(
@@ -341,6 +397,15 @@ export function buildCalculations(result, merged) {
       step('Total sale revenue', projectTotals.totalSaleRevenue, 'currency'),
       step('Total development cost', projectTotals.totalDevelopmentCost, 'currency'),
       step('Gross margin', projectTotals.totalGrossMargin, 'currency'),
+    ],
+    [
+      'sf_sale_price_per_sqft',
+      'townhome_sale_price_per_sqft',
+      'land_cost_total',
+      'infrastructure_safety_factor',
+      'sf_construction_cost_per_sqft',
+      'material_waste_pct',
+      'labor_overhead_pct',
     ],
   );
 
@@ -355,44 +420,75 @@ export function buildCalculations(result, merged) {
       step('Total homes', homeRows.length, 'number'),
       step('Average', projectTotals.avgCostPerHome, 'currency'),
     ],
+    [
+      'land_cost_total',
+      'infrastructure_safety_factor',
+      'sf_construction_cost_per_sqft',
+      'material_waste_pct',
+      'labor_overhead_pct',
+    ],
   );
 
   calcs.endingCash = calc(
     'endingCash',
     'Ending Cash',
-    'Cash balance after all phases complete (phase funding waterfall)',
-    waterfall.endingCash,
+    'Cash balance after the monthly financing model completes (same balance used in exit equity)',
+    financials?.endingCash ?? waterfall.endingCash,
     'currency',
     [
       step('Initial equity', map.initial_equity ?? 0, 'currency'),
-      ...waterfall.timeline.flatMap((row) => {
-        const label = row.phase == null ? 'Acquisition' : `Phase ${row.phase}`;
-        const cost = row.phaseCashCost ?? row.totalCost ?? 0;
-        return [
-          step(`${label} — proceeds`, row.saleProceeds || 0, 'currency'),
-          step(`${label} — costs & interest`, -(cost + (row.interest || 0)), 'currency'),
-        ];
-      }),
-      step('Ending cash', waterfall.endingCash, 'currency'),
+      step('Total equity invested', financials?.totalEquityInvested ?? map.initial_equity ?? 0, 'currency'),
+      step('Total sale proceeds', financials?.totalSaleProceeds ?? 0, 'currency'),
+      step('Total interest accrued', financials?.totalInterest ?? 0, 'currency'),
+      step('Ending cash', financials?.endingCash ?? waterfall.endingCash, 'currency'),
     ],
-    ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct'],
+    ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct', 'homes_sold_per_month'],
+    'Month-by-month cash after construction spend, loan draws, interest, sale proceeds, and debt paydowns.',
   );
 
   calcs.endingDebt = calc(
     'endingDebt',
     'Ending Debt',
-    'Outstanding construction debt after all sale proceeds and paydowns',
-    waterfall.endingDebt,
+    'Outstanding construction debt after all sale proceeds and paydowns (monthly model)',
+    financials?.endingDebt ?? waterfall.endingDebt,
     'currency',
     [
-      step('Peak draws across phases', waterfall.timeline.reduce((s, r) => s + r.financingDraw, 0), 'currency'),
-      step('Ending debt', waterfall.endingDebt, 'currency'),
+      step('Total loan draws', financials?.totalLoanDraws ?? 0, 'currency'),
+      step('Peak debt', financials?.peakDebt ?? 0, 'currency'),
+      step('Ending debt', financials?.endingDebt ?? waterfall.endingDebt, 'currency'),
     ],
     ['construction_loan_advance_pct'],
     '85% of each month\'s sale proceeds pay down outstanding debt.',
   );
 
   // ── Shared per-home allocations ────────────────────────────────────
+  const infraUnitCostKeys = {
+    grading: 'road_grading_per_sqft',
+    asphalt: 'asphalt_paving_per_sqft',
+    curb: 'curb_gutter_per_lf',
+    sidewalk: 'sidewalk_concrete_per_sqft',
+    water: 'water_main_per_lf',
+    sewer: 'sewer_main_per_lf',
+    sewer_manholes: 'sewer_manhole_each',
+    storm: 'storm_drain_per_lf',
+    storm_manholes: 'storm_manhole_each',
+    utilities: 'utility_trench_per_lf',
+    gas_main: 'gas_main_per_lf',
+    electric_conduit: 'electric_conduit_per_lf',
+    telecom_conduit: 'telecom_conduit_per_lf',
+    transformers: 'electric_transformer_each',
+    street_lights: 'street_light_each',
+  };
+  const costSideAssumptionRefs = [
+    'land_cost_total',
+    'water_rights_af_per_lot',
+    'water_rights_cost_per_acre_foot',
+    'infrastructure_safety_factor',
+    'sf_construction_cost_per_sqft',
+    'material_waste_pct',
+    'labor_overhead_pct',
+  ];
+
   calcs.landPerHome = calc(
     'landPerHome',
     'Land (per home)',
@@ -410,14 +506,23 @@ export function buildCalculations(result, merged) {
   calcs.infraPerHome = calc(
     'infraPerHome',
     'Infrastructure (per home)',
-    'Total infrastructure budget ÷ residential homes',
+    'Total infrastructure budget (all line items × safety factor) ÷ residential homes',
     shared.infraPerHome,
     'currency',
     [
+      step(
+        'Unadjusted infra subtotal',
+        infrastructure.totalInfraBase ?? 0,
+        'currency',
+        'Sum of quantity × unit cost before safety',
+      ),
+      step('Safety factor', infrastructure.safetyFactor ?? 1, 'number', '× multiplier on every line item'),
       step('Total infrastructure', infrastructure.totalInfraBudget, 'currency'),
       step('Residential homes', residentialHomes, 'number'),
       step('Per home', shared.infraPerHome, 'currency'),
     ],
+    ['infrastructure_safety_factor', ...Object.values(infraUnitCostKeys)],
+    'Per-home share of the full ordinance + dry-utility budget. Change any infra unit cost or the safety factor to update this.',
   );
 
   calcs.verticalHard = calc(
@@ -462,6 +567,8 @@ export function buildCalculations(result, merged) {
       step('ROW width', infrastructure.roadArea.rowWidthFt, 'number', 'ft'),
       step('Road area', infrastructure.totalRoadSqFt, 'sqft'),
     ],
+    [],
+    infrastructure.roadArea.notes || 'ROW width from plat markers; length from plat PDF annotations.',
   );
 
   calcs.pavementSqFt = calc(
@@ -475,6 +582,8 @@ export function buildCalculations(result, merged) {
       step('Pavement width', infrastructure.ordinanceSpecs.pavementWidthFt, 'number', 'ft'),
       step('Pavement area', infrastructure.pavementSqFt, 'sqft'),
     ],
+    [],
+    'Pavement width from Ord. 2025-317 ST-103 (24\' local roads). Not an editable assumption.',
   );
 
   calcs.sidewalkSqFt = calc(
@@ -488,6 +597,8 @@ export function buildCalculations(result, merged) {
       step('Sidewalk width', infrastructure.ordinanceSpecs.sidewalkWidthFt, 'number', 'ft × 2 sides'),
       step('Sidewalk area', infrastructure.sidewalkSqFt, 'sqft'),
     ],
+    [],
+    'Sidewalk width from Ord. 2025-317 ST-131 (5\' both sides). Not an editable assumption.',
   );
 
   calcs.totalInfraBudget = calc(
@@ -502,56 +613,57 @@ export function buildCalculations(result, merged) {
           item.label,
           item.amount,
           'currency',
-          `${item.quantity.toLocaleString()} ${item.unit} × ${item.unitCost.toLocaleString()}${
-            infrastructure.safetyFactor !== 1
-              ? ` × ${infrastructure.safetyFactor.toFixed(2)} safety`
-              : ''
-          }`,
+          `${formatNumberPlain(item.quantity)} ${item.unit} × ${formatCurrencyPlain(item.unitCost)} × ${
+            (infrastructure.safetyFactor ?? 1).toFixed(2)
+          } safety`,
         ),
       ),
-      step('Safety factor', infrastructure.safetyFactor ?? 1, 'number', '× multiplier'),
+      step('Safety factor', infrastructure.safetyFactor ?? 1, 'number', '× multiplier on every line item'),
       step('Unadjusted subtotal', infrastructure.totalInfraBase ?? infrastructure.totalInfraBudget, 'currency'),
       step('Total with safety factor', infrastructure.totalInfraBudget, 'currency'),
     ],
     [
-      ...infrastructure.lineItems.flatMap((item) => {
-        const mapKeys = {
-          grading: 'road_grading_per_sqft',
-          asphalt: 'asphalt_paving_per_sqft',
-          curb: 'curb_gutter_per_lf',
-          sidewalk: 'sidewalk_concrete_per_sqft',
-          water: 'water_main_per_lf',
-          sewer: 'sewer_main_per_lf',
-          sewer_manholes: 'sewer_manhole_each',
-          storm: 'storm_drain_per_lf',
-          storm_manholes: 'storm_manhole_each',
-          utilities: 'utility_trench_per_lf',
-          gas_main: 'gas_main_per_lf',
-          electric_conduit: 'electric_conduit_per_lf',
-          telecom_conduit: 'telecom_conduit_per_lf',
-          transformers: 'electric_transformer_each',
-          street_lights: 'street_light_each',
-        };
-        return mapKeys[item.id] ? [mapKeys[item.id]] : [];
-      }),
+      ...infrastructure.lineItems.flatMap((item) =>
+        infraUnitCostKeys[item.id] ? [infraUnitCostKeys[item.id]] : [],
+      ),
       'infrastructure_safety_factor',
     ],
+    infrastructure.ordinanceNote,
   );
 
   infrastructure.lineItems.forEach((item) => {
+    const safety = infrastructure.safetyFactor ?? 1;
+    const qtyFormat =
+      item.unit === 'each' ? 'number' : item.unit === 'sqft' ? 'sqft' : 'lf';
+    const unitCostKey = infraUnitCostKeys[item.id];
+    const sourceNote = [
+      item.quantityBasis ? `Quantity basis: ${item.quantityBasis}.` : null,
+      item.quantitySource ? `Source: ${item.quantitySource}.` : null,
+      item.ordinanceRef ? `Drawing/spec: ${item.ordinanceRef}.` : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
     calcs[`infra_${item.id}`] = calc(
       `infra_${item.id}`,
       item.label,
-      `${item.quantity.toLocaleString()} ${item.unit} × ${formatCurrencyPlain(item.unitCost)}`,
+      'Quantity × unit cost × infrastructure safety factor',
       item.amount,
       'currency',
       [
-        step('Quantity', item.quantity, item.unit === 'each' ? 'number' : 'lf', item.unit),
+        step('Quantity', item.quantity, qtyFormat, item.quantityBasis || item.unit),
         step('Unit cost', item.unitCost, 'currency'),
-        step('Amount', item.amount, 'currency'),
+        step('Base amount (qty × unit cost)', item.baseAmount ?? item.quantity * item.unitCost, 'currency'),
+        step('Safety factor', safety, 'number', '× multiplier'),
+        step(
+          'Final amount',
+          item.amount,
+          'currency',
+          `${formatCurrencyPlain(item.baseAmount ?? item.quantity * item.unitCost)} × ${safety.toFixed(2)}`,
+        ),
       ],
-      [],
-      item.ordinanceRef,
+      [unitCostKey, 'infrastructure_safety_factor'].filter(Boolean),
+      sourceNote || item.ordinanceRef,
     );
   });
 
@@ -610,10 +722,11 @@ export function buildCalculations(result, merged) {
     'currency',
     [
       step('Potential annual NOI', rentalHoldout.potentialAnnualNoi, 'currency'),
-      step('Cap rate', 0.05, 'pct'),
+      step('Cap rate', 0.05, 'pct', 'Fixed planning assumption — not editable'),
       step('Implied value', rentalHoldout.capValueAt5Pct, 'currency'),
     ],
-    ['sf_rent_monthly', 'townhome_rent_monthly'],
+    ['sf_rent_monthly', 'townhome_rent_monthly', 'rental_vacancy_pct', 'rental_opex_per_unit_year'],
+    '5% exit cap rate is a fixed planning placeholder, not pulled from city code.',
   );
 
   // ── Phase-level ────────────────────────────────────────────────────
@@ -622,14 +735,28 @@ export function buildCalculations(result, merged) {
     calcs[`${prefix}_totalCost`] = calc(
       `${prefix}_totalCost`,
       `Phase ${phase.phase} Development Cost`,
-      'Sum of per-home total costs in this phase',
+      'Sum of per-home total costs in this phase (land, eng, studies, water, infra × safety, vertical × waste × labor)',
       phase.totalCost,
       'currency',
       [
         step('Homes in phase', phase.homeCount, 'number'),
+        step('Land + eng + studies + water', (phase.costBreakdown?.projectAllocated ?? 0) + (phase.costBreakdown?.waterRights ?? 0), 'currency'),
+        step(
+          'Infrastructure (phase share)',
+          phase.costBreakdown?.infrastructure ?? 0,
+          'currency',
+          `includes safety ×${(infrastructure.safetyFactor ?? 1).toFixed(2)}`,
+        ),
+        step(
+          'Vertical',
+          phase.costBreakdown?.vertical ?? 0,
+          'currency',
+          `includes waste ${(waste * 100).toFixed(0)}% + labor ${(labor * 100).toFixed(0)}%`,
+        ),
         step('Total cost', phase.totalCost, 'currency'),
         step('Avg per home', phase.avgCostPerHome, 'currency'),
       ],
+      costSideAssumptionRefs,
     );
 
     calcs[`${prefix}_totalRevenue`] = calc(
@@ -642,7 +769,7 @@ export function buildCalculations(result, merged) {
         step('For-sale homes', phase.sellableCount, 'number'),
         step('Total revenue', phase.totalRevenue, 'currency'),
       ],
-      ['sf_sale_price', 'townhome_sale_price'],
+      ['sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft', 'sf_reserved_for_rent', 'townhome_reserved_for_rent'],
     );
 
     calcs[`${prefix}_totalMargin`] = calc(
@@ -656,6 +783,7 @@ export function buildCalculations(result, merged) {
         step('Development cost', phase.totalCost, 'currency'),
         step('Gross margin', phase.totalMargin, 'currency'),
       ],
+      [...costSideAssumptionRefs, 'sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft'],
     );
 
     // Waterfall row fields
@@ -664,7 +792,7 @@ export function buildCalculations(result, merged) {
       calcs[`${prefix}_financingDraw`] = calc(
         `${prefix}_financingDraw`,
         `Phase ${phase.phase} Loan Draw`,
-        'max(0, phase cost − available cash) × loan advance %',
+        'max(0, phase cash cost − available cash) × loan advance %',
         wf.financingDraw,
         'currency',
         [
@@ -672,7 +800,7 @@ export function buildCalculations(result, merged) {
           step('Loan advance %', map.construction_loan_advance_pct ?? 0, 'pct'),
           step('Loan draw', wf.financingDraw, 'currency'),
         ],
-        ['construction_loan_advance_pct'],
+        ['construction_loan_advance_pct', 'infrastructure_safety_factor'],
       );
 
       calcs[`${prefix}_interest`] = calc(
@@ -686,7 +814,7 @@ export function buildCalculations(result, merged) {
           step('Phase duration (months)', wf.durationMonths ?? wf.saleMonths, 'number'),
           step('Interest', wf.interest, 'currency'),
         ],
-        ['construction_loan_rate', 'homes_sold_per_month'],
+        ['construction_loan_rate', 'homes_sold_per_month', 'months_to_build_home', 'parallel_homes_per_phase'],
       );
 
       calcs[`${prefix}_netProfit`] = calc(
@@ -701,6 +829,13 @@ export function buildCalculations(result, merged) {
           step('Interest', wf.interest, 'currency'),
           step('Net profit', wf.netProfit, 'currency'),
         ],
+        [
+          'sf_sale_price_per_sqft',
+          'townhome_sale_price_per_sqft',
+          'construction_loan_rate',
+          'infrastructure_safety_factor',
+          'sf_construction_cost_per_sqft',
+        ],
       );
     }
 
@@ -710,7 +845,7 @@ export function buildCalculations(result, merged) {
       calcs[`${lotId}_total`] = calc(
         `${lotId}_total`,
         `Lot ${home.lotNumber} Total Cost`,
-        'Land + engineering + studies + water rights + infra + vertical',
+        'Land + engineering + studies + water rights + infra (× safety) + vertical (× waste × labor)',
         home.costs.total,
         'currency',
         [
@@ -718,22 +853,36 @@ export function buildCalculations(result, merged) {
           step('Engineering', home.costs.engineering, 'currency'),
           step('Studies', home.costs.studies, 'currency'),
           step('Water rights', home.costs.waterRights, 'currency'),
-          step('Infrastructure', home.costs.infrastructure, 'currency'),
-          step('Vertical', home.costs.verticalHard, 'currency', `${home.dwellingSqFt.toLocaleString()} sqft`),
+          step(
+            'Infrastructure',
+            home.costs.infrastructure,
+            'currency',
+            `per-home share; includes safety ×${(infrastructure.safetyFactor ?? 1).toFixed(2)}`,
+          ),
+          step(
+            'Vertical',
+            home.costs.verticalHard,
+            'currency',
+            `${home.dwellingSqFt.toLocaleString()} sqft × $${baseCost} × (1+${(waste * 100).toFixed(0)}% waste) × (1+${(labor * 100).toFixed(0)}% labor)`,
+          ),
           step('Total', home.costs.total, 'currency'),
         ],
+        costSideAssumptionRefs,
       );
 
       calcs[`${lotId}_vertical`] = calc(
         `${lotId}_vertical`,
         `Lot ${home.lotNumber} Vertical Cost`,
-        `${home.dwellingSqFt.toLocaleString()} sqft × $${baseCost} × ${(1 + waste).toFixed(2)} × ${(1 + labor).toFixed(2)}`,
+        'Dwelling sqft × cost/sqft × (1 + waste) × (1 + labor overhead)',
         home.costs.verticalHard,
         'currency',
         [
-          step('Dwelling sqft', home.dwellingSqFt, 'sqft'),
+          step('Dwelling sqft', home.dwellingSqFt, 'sqft', 'From R-4 building envelope on lot polygon (fallback 2,200 SF / 1,525 TH if envelope unavailable)'),
           step('Cost per sqft', baseCost, 'currency'),
-          step('With waste & labor', home.costs.verticalHard, 'currency'),
+          step('Material waste', waste, 'pct'),
+          step('Labor overhead', labor, 'pct'),
+          step('Effective multiplier', (1 + waste) * (1 + labor), 'number'),
+          step('Vertical cost', home.costs.verticalHard, 'currency'),
         ],
         ['sf_construction_cost_per_sqft', 'material_waste_pct', 'labor_overhead_pct'],
       );
@@ -742,15 +891,20 @@ export function buildCalculations(result, merged) {
         calcs[`${lotId}_margin`] = calc(
           `${lotId}_margin`,
           `Lot ${home.lotNumber} Gross Margin`,
-          'Sale price − total cost',
+          'Sale price (dwelling sqft × $/sqft) − total cost',
           home.grossMargin,
           'currency',
           [
+            step('Dwelling sqft', home.dwellingSqFt, 'sqft'),
+            step('Sale $/sqft', home.salePricePerSqFt ?? 0, 'currency'),
             step('Sale price', home.salePrice, 'currency'),
             step('Total cost', home.costs.total, 'currency'),
             step('Margin', home.grossMargin, 'currency'),
           ],
-          home.lotType === 'townhome' ? ['townhome_sale_price'] : ['sf_sale_price'],
+          [
+            home.lotType === 'townhome' ? 'townhome_sale_price_per_sqft' : 'sf_sale_price_per_sqft',
+            ...costSideAssumptionRefs,
+          ],
         );
       }
     });
@@ -760,27 +914,43 @@ export function buildCalculations(result, merged) {
   calcs.col_dev_cost = calc(
     'col_dev_cost',
     'Development Cost',
-    'Sum of per-home costs (land, engineering, studies, water rights, infrastructure, vertical construction)',
+    'Sum of per-home costs (land, engineering, studies, water rights, infrastructure × safety, vertical × waste × labor)',
     null,
     'text',
     [
       step('Land', shared.landPerHome, 'currency', 'per home, allocated'),
-      step('Infrastructure', shared.infraPerHome, 'currency', 'per home, allocated'),
-      step('Vertical', null, 'text', 'sqft × cost/sqft × waste × labor'),
+      step(
+        'Infrastructure',
+        shared.infraPerHome,
+        'currency',
+        `per home; includes safety ×${(infrastructure.safetyFactor ?? 1).toFixed(2)}`,
+      ),
+      step('Vertical', null, 'text', `sqft × $${baseCost}/sqft × (1+waste) × (1+labor)`),
     ],
+    costSideAssumptionRefs,
   );
 
   calcs.col_sale_revenue = calc(
     'col_sale_revenue',
     'Sale Revenue',
-    'Sum of sale prices for for-sale homes only (reserved rental units excluded)',
+    'Sum of (dwelling sqft × sale $/sqft) for for-sale homes only',
     null,
     'text',
     [
-      step('SF sale price', map.sf_sale_price ?? 0, 'currency'),
-      step('Townhome sale price', map.townhome_sale_price ?? 0, 'currency'),
+      step('SF sale $/sqft', map.sf_sale_price_per_sqft ?? 0, 'currency'),
+      step(
+        'Avg SF home',
+        (projectTotals.avgSfDwellingSqFt ?? 0) * (map.sf_sale_price_per_sqft ?? 0),
+        'currency',
+      ),
+      step('Townhome sale $/sqft', map.townhome_sale_price_per_sqft ?? 0, 'currency'),
+      step(
+        'Avg townhome',
+        (projectTotals.avgTownhomeDwellingSqFt ?? 0) * (map.townhome_sale_price_per_sqft ?? 0),
+        'currency',
+      ),
     ],
-    ['sf_sale_price', 'townhome_sale_price'],
+    ['sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft', 'sf_reserved_for_rent', 'townhome_reserved_for_rent'],
   );
 
   calcs.col_gross_margin = calc(
@@ -790,6 +960,7 @@ export function buildCalculations(result, merged) {
     null,
     'text',
     [],
+    [...costSideAssumptionRefs, 'sf_sale_price_per_sqft', 'townhome_sale_price_per_sqft'],
   );
 
   calcs.col_loan_draw = calc(
@@ -805,7 +976,7 @@ export function buildCalculations(result, merged) {
   calcs.col_interest = calc(
     'col_interest',
     'Interest',
-    'Outstanding debt × annual loan rate × (sale months ÷ 12)',
+    'Outstanding debt × annual loan rate × (phase duration months ÷ 12), capitalized onto the loan',
     null,
     'text',
     [],
@@ -828,13 +999,16 @@ export function buildCalculations(result, merged) {
   calcs.col_infra = calc(
     'col_infra',
     'Infrastructure (per lot)',
-    'Total infrastructure budget ÷ residential homes',
+    'Total infrastructure budget (× safety factor) ÷ residential homes',
     shared.infraPerHome,
     'currency',
     [
+      step('Unadjusted infra subtotal', infrastructure.totalInfraBase ?? 0, 'currency'),
+      step('Safety factor', infrastructure.safetyFactor ?? 1, 'number'),
       step('Total infrastructure', infrastructure.totalInfraBudget, 'currency'),
       step('Per home', shared.infraPerHome, 'currency'),
     ],
+    ['infrastructure_safety_factor', ...Object.values(infraUnitCostKeys)],
   );
 
   calcs.col_vertical = calc(
@@ -843,7 +1017,11 @@ export function buildCalculations(result, merged) {
     'Dwelling sqft × cost/sqft × (1 + waste) × (1 + labor)',
     null,
     'text',
-    [],
+    [
+      step('Base cost per sqft', baseCost, 'currency'),
+      step('Material waste', waste, 'pct'),
+      step('Labor overhead', labor, 'pct'),
+    ],
     ['sf_construction_cost_per_sqft', 'material_waste_pct', 'labor_overhead_pct'],
   );
 
@@ -867,5 +1045,17 @@ export function buildCalculations(result, merged) {
 }
 
 function formatCurrencyPlain(value) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatNumberPlain(value) {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  }).format(value);
 }

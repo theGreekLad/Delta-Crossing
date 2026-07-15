@@ -5,7 +5,7 @@ function formatStepValue(value, format) {
   if (value == null || (typeof value === 'number' && Number.isNaN(value))) return '—';
   switch (format) {
     case 'currency':
-      return formatCurrency(value);
+      return formatCurrency(value, 2);
     case 'pct':
       return formatPct(value);
     case 'multiple':
@@ -19,11 +19,11 @@ function formatStepValue(value, format) {
       return `${years} yr ${months} mo`;
     }
     case 'sqft':
-      return `${formatNumber(value)} sqft`;
+      return `${formatNumber(value, 2)} sqft`;
     case 'lf':
-      return `${formatNumber(value)} LF`;
+      return `${formatNumber(value, 2)} LF`;
     default:
-      if (typeof value === 'number') return formatNumber(value);
+      if (typeof value === 'number') return formatNumber(value, 2);
       return String(value);
   }
 }
@@ -133,11 +133,12 @@ export function CalculationPanel({ calcId, calculations, assumptions, onClose, o
                       >
                         <span>{entry.label}</span>
                         <span className="calc-assumption-value">
-                          {entry.unit === 'ratio'
+                          {entry.unit === 'ratio' || (typeof entry.unit === 'string' && entry.unit.startsWith('ratio/'))
                             ? formatPct(entry.value)
-                            : entry.unit === 'USD'
-                              ? formatCurrency(entry.value)
-                              : formatNumber(entry.value)}
+                            : entry.unit === 'USD' ||
+                                (typeof entry.unit === 'string' && entry.unit.startsWith('USD'))
+                              ? formatCurrency(entry.value, 2)
+                              : formatNumber(entry.value, 2)}
                         </span>
                       </button>
                     </li>

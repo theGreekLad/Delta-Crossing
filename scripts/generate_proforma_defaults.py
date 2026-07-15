@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Generate proforma-defaults.json from project spreadsheets and cited benchmarks."""
 
 from __future__ import annotations
@@ -82,12 +82,12 @@ def main() -> None:
         "Land $1.835M, engineering $110k, studies $17.5k.",
     )
     ordinance = source(
-        "Ord. 2025-317 — Delta City Design & Construction Standards",
+        "Ord. 2025-317 â€” Delta City Design & Construction Standards",
         "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
         "ST-103 local roads, ST-113 utility placement, ST-131 sidewalks.",
     )
     millard_water = source(
-        "Millard County Subdivision Ordinance § 11-1-20",
+        "Millard County Subdivision Ordinance Â§ 11-1-20",
         "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
         "Minimum 1.0 acre-foot of culinary water dedicated to each proposed lot at plat approval.",
     )
@@ -114,7 +114,7 @@ def main() -> None:
         "phaseOrder": [1, 3, 4, 5, 6, 7],
         "platAreas": area_defaults,
         "ordinanceRef": {
-            "title": "Ordinance 2025-317 — Delta City Design & Construction Standards",
+            "title": "Ordinance 2025-317 â€” Delta City Design & Construction Standards",
             "path": "Supporting Docs/City Ordinances/1760410617_Ordinance 2025-317 Construction Standards.pdf",
             "drawings": [
                 "ST-103 Local Roads (24' pavement; plat ROW 60')",
@@ -138,23 +138,16 @@ def main() -> None:
                 4_000_000,
                 "USD",
                 "development",
-                project_xlsx,
-            ),
-            assumption(
-                "engineering_total",
-                "Engineering & design (total)",
-                110_000,
-                "USD",
-                "development",
-                project_xlsx,
-            ),
-            assumption(
-                "studies_total",
-                "Studies & reports (total)",
-                17_500,
-                "USD",
-                "development",
-                project_xlsx,
+                source(
+                    "12_11_23 Proforma Delta.xlsx",
+                    "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
+                    "Source proforma listed land at $1.835M; $4.0M used here as an "
+                    "intentional acquisition-budget override.",
+                ),
+                description=(
+                    "Total land acquisition budget. Intentional $4.0M basis "
+                    "(overrides the $1.835M line in the source proforma)."
+                ),
             ),
             assumption(
                 "water_rights_af_per_lot",
@@ -169,15 +162,6 @@ def main() -> None:
                 ),
             ),
             assumption(
-                "water_rights_af_per_commercial",
-                "Culinary water requirement (per commercial connection)",
-                1.0,
-                "AF/connection",
-                "development",
-                millard_water,
-                description="Acre-feet required per commercial water connection (default 1.0 AF).",
-            ),
-            assumption(
                 "water_rights_cost_per_acre_foot",
                 "Culinary water rights purchase (city rate)",
                 10_000,
@@ -187,27 +171,35 @@ def main() -> None:
                 description="Cost to purchase culinary water rights from Delta City per acre-foot.",
             ),
             assumption(
-                "sf_sale_price",
+                "sf_sale_price_per_sqft",
                 "Single-family sale price",
-                485_000,
-                "USD/home",
+                220,
+                "USD/sqft",
                 "revenue",
                 source(
                     "Delta rural new-home market estimate",
                     "https://buildgenius.app/construction-costs/utah",
-                    "Construction ~$168/sqft × ~2,200 sqft + land/infra margin for Millard County.",
+                    "â‰ˆ$220/sqft preserves prior ~$485k at ~2,200 sqft; sale price = dwelling sqft Ã— this rate.",
+                ),
+                description=(
+                    "Sale price per dwelling square foot. Each home is priced as "
+                    "dwelling sqft Ã— this rate."
                 ),
             ),
             assumption(
-                "townhome_sale_price",
+                "townhome_sale_price_per_sqft",
                 "Townhome sale price",
-                385_000,
-                "USD/home",
+                252,
+                "USD/sqft",
                 "revenue",
                 source(
-                    "12_11_23 Proforma Delta.xlsx — Unit Mix",
+                    "12_11_23 Proforma Delta.xlsx â€” Unit Mix",
                     "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-                    "Townhome unit revenue scaled to full home pricing; adjust for market.",
+                    "â‰ˆ$252/sqft preserves prior ~$385k at ~1,525 sqft; sale price = dwelling sqft Ã— this rate.",
+                ),
+                description=(
+                    "Sale price per dwelling square foot. Each home is priced as "
+                    "dwelling sqft Ã— this rate."
                 ),
             ),
             assumption(
@@ -215,7 +207,7 @@ def main() -> None:
                 "Single-family units reserved for rent",
                 0,
                 "units",
-                "rental_reserve",
+                "rental",
                 project_xlsx,
                 description="Held for rental income instead of sold. Reserved from latest phases first.",
             ),
@@ -224,7 +216,7 @@ def main() -> None:
                 "Townhome units reserved for rent",
                 0,
                 "units",
-                "rental_reserve",
+                "rental",
                 project_xlsx,
                 description="Held for rental income instead of sold. Reserved from latest phases first.",
             ),
@@ -249,7 +241,7 @@ def main() -> None:
                 source(
                     "NAHB cost breakdown guidance",
                     "https://www.nahb.org/",
-                    "Labor represents 35–40% of hard costs; 10% burden on vertical.",
+                    "Labor represents 35â€“40% of hard costs; 10% burden on vertical.",
                 ),
             ),
             assumption(
@@ -261,7 +253,7 @@ def main() -> None:
                 source(
                     "RSMeans residential estimating practice",
                     "https://www.rsmeans.com/2026-residential-costs-book",
-                    "Typical 5–10% waste allowance on materials.",
+                    "Typical 5â€“10% waste allowance on materials.",
                 ),
             ),
             assumption(
@@ -291,7 +283,7 @@ def main() -> None:
                 "homes/month",
                 "schedule",
                 source(
-                    "Western States Market Study — Delta Apartments",
+                    "Western States Market Study â€” Delta Apartments",
                     "Supporting Docs/Delta/Reports/Market Study.pdf",
                     "Market study projects ~10 units/month multifamily; for-sale assumed lower.",
                 ),
@@ -316,7 +308,7 @@ def main() -> None:
                 "schedule",
                 project_xlsx,
             ),
-            # Infrastructure unit costs — ordinance dimensions are fixed in computeProforma.js
+            # Infrastructure unit costs â€” ordinance dimensions are fixed in computeProforma.js
             assumption(
                 "infrastructure_safety_factor",
                 "Infrastructure safety factor",
@@ -339,7 +331,7 @@ def main() -> None:
                 source(
                     "Utah asphalt paving cost guide 2026",
                     "https://utahasphalt.com/asphalt-paving-cost-utah-2026/",
-                    "Commercial-scale paving $3–$7/sqft; mid-range for subdivision streets.",
+                    "Commercial-scale paving $3â€“$7/sqft; mid-range for subdivision streets.",
                 ),
             ),
             assumption(
@@ -351,7 +343,7 @@ def main() -> None:
                 source(
                     "ProMatcher Salt Lake City curbing report",
                     "https://curbing.promatcher.com/cost/salt-lake-city-ut-curbing-costs-prices.aspx",
-                    "$24–$31/LF installed concrete curb and gutter.",
+                    "$24â€“$31/LF installed concrete curb and gutter.",
                 ),
             ),
             assumption(
@@ -385,9 +377,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Ogden City — Monroe Water Line bid tabulation",
+                    "Ogden City â€” Monroe Water Line bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid item 121: 8\" PVC C900 DR-18 installed $108–$149/LF (2023); default is mid-range planning value.",
+                    "Bid item 121: 8\" PVC C900 DR-18 installed $108â€“$149/LF (2023); default is mid-range planning value.",
                 ),
             ),
             assumption(
@@ -399,7 +391,7 @@ def main() -> None:
                 source(
                     "ProMatcher Utah sewer cost report",
                     "https://sewers.promatcher.com/cost/utah.aspx",
-                    "Public report shows $63.18/LF ($55–$71) for trench replacement; default higher for new subdivision main per ST-113.",
+                    "Public report shows $63.18/LF ($55â€“$71) for trench replacement; default higher for new subdivision main per ST-113.",
                 ),
             ),
             assumption(
@@ -409,9 +401,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Ogden City — Monroe Water Line storm bid tabulation",
+                    "Ogden City â€” Monroe Water Line storm bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid schedule 2 item 203: 15\" storm drain RCP installed $114–$155/LF (2023); comparable installed storm pipe cost.",
+                    "Bid schedule 2 item 203: 15\" storm drain RCP installed $114â€“$155/LF (2023); comparable installed storm pipe cost.",
                 ),
             ),
             assumption(
@@ -421,9 +413,9 @@ def main() -> None:
                 "USD/each",
                 "infrastructure",
                 source(
-                    "Moab City — North Sewer Line bid tabulation",
+                    "Moab City â€” North Sewer Line bid tabulation",
                     "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
-                    "Bid items A8/A9: 4'–5' precast sewer manholes $5,393–$7,005 each (2019); spacing per Ord. 2025-317 ST-103.",
+                    "Bid items A8/A9: 4'â€“5' precast sewer manholes $5,393â€“$7,005 each (2019); spacing per Ord. 2025-317 ST-103.",
                 ),
             ),
             assumption(
@@ -433,9 +425,9 @@ def main() -> None:
                 "USD/each",
                 "infrastructure",
                 source(
-                    "Ogden City — Monroe Water Line storm bid tabulation",
+                    "Ogden City â€” Monroe Water Line storm bid tabulation",
                     "https://homesweetogden.ogdencity.com/DocumentCenter/View/25244/Monroe-WTR-Line-BIDTABFORM",
-                    "Bid item 202: 60\" precast storm drain manhole $8,050–$11,238 each (2023); spacing per Ord. 2025-317.",
+                    "Bid item 202: 60\" precast storm drain manhole $8,050â€“$11,238 each (2023); spacing per Ord. 2025-317.",
                 ),
             ),
             assumption(
@@ -445,9 +437,9 @@ def main() -> None:
                 "USD/LF",
                 "infrastructure",
                 source(
-                    "Moab City — North Sewer Line bid tabulation",
+                    "Moab City â€” North Sewer Line bid tabulation",
                     "https://www.moabcity.gov/AgendaCenter/ViewFile/Item/1191?fileID=2795",
-                    "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70–$130/LF (2019) informed lower joint-trench allowance.",
+                    "Excavation/backfill for joint trench only. Bid item A16 gas relocate $70â€“$130/LF (2019) informed lower joint-trench allowance.",
                 ),
             ),
             assumption(
@@ -459,7 +451,7 @@ def main() -> None:
                 source(
                     "Utah subdivision dry-utility planning allowances",
                     "Supporting Docs/Delta/",
-                    "2–4\" PE gas main material + install in open joint trench (trench cost separate). Planning mid-range $45–$70/LF.",
+                    "2â€“4\" PE gas main material + install in open joint trench (trench cost separate). Planning mid-range $45â€“$70/LF.",
                 ),
             ),
             assumption(
@@ -495,7 +487,7 @@ def main() -> None:
                 source(
                     "Utah subdivision dry-utility planning allowances",
                     "Supporting Docs/Delta/",
-                    "Pad-mount transformer contribution ~1 per 8 lots. Often utility-owned with developer contribution; $8k–$18k planning range.",
+                    "Pad-mount transformer contribution ~1 per 8 lots. Often utility-owned with developer contribution; $8kâ€“$18k planning range.",
                 ),
             ),
             assumption(
@@ -515,9 +507,9 @@ def main() -> None:
                 "Townhome rent (reserved units)",
                 1_750,
                 "USD/month",
-                "rental_holdout",
+                "rental",
                 source(
-                    "Western States Market Study — 3-bed townhome",
+                    "Western States Market Study â€” 3-bed townhome",
                     "Supporting Docs/Delta/Reports/Market Study.pdf",
                     "$1,750/mo market rent for 3-bed townhome.",
                 ),
@@ -527,9 +519,9 @@ def main() -> None:
                 "Single-family rent (reserved units)",
                 2_200,
                 "USD/month",
-                "rental_holdout",
+                "rental",
                 source(
-                    "Western States Market Study — comparable rents",
+                    "Western States Market Study â€” comparable rents",
                     "Supporting Docs/Delta/Reports/Market Study.pdf",
                     "Estimated market rent for reserved single-family units.",
                 ),
@@ -539,7 +531,7 @@ def main() -> None:
                 "Rental operating expenses",
                 6_000,
                 "USD/unit/year",
-                "rental_holdout",
+                "rental",
                 source(
                     "Western States Market Study",
                     "Supporting Docs/Delta/Reports/Market Study.pdf",
@@ -551,7 +543,7 @@ def main() -> None:
                 "Rental vacancy & credit loss",
                 0.05,
                 "ratio",
-                "rental_holdout",
+                "rental",
                 source(
                     "Western States Market Study",
                     "Supporting Docs/Delta/Reports/Market Study.pdf",
