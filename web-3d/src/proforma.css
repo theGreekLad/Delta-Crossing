@@ -42,6 +42,14 @@ html.proforma-page #root {
   gap: 0.5rem;
 }
 
+.proforma-scenario-banner {
+  padding: 0.65rem 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  background: rgba(90, 140, 110, 0.18);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
 .proforma-layout {
   display: grid;
   grid-template-columns: 0 minmax(0, 1fr);
@@ -83,6 +91,19 @@ html.proforma-page #root {
 .assumptions-panel-header h2 {
   font-size: 1.25rem;
   margin: 0;
+}
+
+.assumptions-panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.assumptions-share-btn {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
 }
 
 .assumptions-panel-toggle {

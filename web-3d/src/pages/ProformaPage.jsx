@@ -2,10 +2,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import SiteNav from '../components/SiteNav';
 import { platUrl } from '../data/platUrls';
 import {
+  applyScenarioFromUrl,
+  buildScenarioShareUrl,
   clearOverrides,
+  clearScenarioFromUrl,
   formatCurrency,
   formatNumber,
   formatPct,
+  loadOverrides,
   mergeAssumptions,
   setOverride,
   isRatioUnit,
@@ -471,6 +475,8 @@ export default function ProformaPage() {
   const [overrideTick, setOverrideTick] = useState(0);
   const [activeCalcId, setActiveCalcId] = useState(null);
   const [highlightAssumptionId, setHighlightAssumptionId] = useState(null);
+  const [shareStatus, setShareStatus] = useState(null);
+  const [scenarioBanner, setScenarioBanner] = useState(null);
   const [assumptionsOpen, setAssumptionsOpen] = useState(() => {
     try {
       return localStorage.getItem('proforma-assumptions-open') === 'true';
@@ -478,6 +484,30 @@ export default function ProformaPage() {
       return false;
     }
   });
+
+  useEffect(() => {
+    const applied = applyScenarioFromUrl();
+    if (applied == null) return;
+    const count = Object.keys(applied).length;
+    setScenarioBanner(
+      count
+        ? `Loaded shared scenario (${count} custom assumption${count === 1 ? '' : 's'}).`
+        : 'Opened a shared link with no custom assumptions (defaults).',
+    );
+    setOverrideTick((tick) => tick + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!shareStatus) return undefined;
+    const timer = window.setTimeout(() => setShareStatus(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [shareStatus]);
+
+  useEffect(() => {
+    if (!scenarioBanner) return undefined;
+    const timer = window.setTimeout(() => setScenarioBanner(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [scenarioBanner]);
 
   const toggleAssumptions = useCallback((open) => {
     setAssumptionsOpen(open);
@@ -607,7 +637,26 @@ export default function ProformaPage() {
 
   const handleReset = useCallback(() => {
     clearOverrides();
+    clearScenarioFromUrl();
+    setScenarioBanner(null);
     setOverrideTick((tick) => tick + 1);
+  }, []);
+
+  const handleShareScenario = useCallback(async () => {
+    const url = buildScenarioShareUrl(loadOverrides());
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        window.prompt('Copy this scenario link:', url);
+      }
+      const count = Object.keys(loadOverrides()).length;
+      setShareStatus(count ? 'Scenario link copied' : 'Defaults link copied');
+      window.history.replaceState({}, '', url);
+    } catch {
+      window.prompt('Copy this scenario link:', url);
+      setShareStatus('Copy the link from the prompt');
+    }
   }, []);
 
   if (loading) {
@@ -653,6 +702,7 @@ export default function ProformaPage() {
   const phaseData = activePhase
     ? result.phaseResults.find((entry) => entry.phase === activePhase)
     : null;
+  const hasCustomAssumptions = merged.assumptions.some((entry) => entry.value !== entry.default);
 
   return (
     <div className="proforma-app">
@@ -672,19 +722,36 @@ export default function ProformaPage() {
         />
       </header>
 
+      {scenarioBanner ? (
+        <div className="proforma-scenario-banner" role="status">
+          {scenarioBanner}
+        </div>
+      ) : null}
+
       <div className={`proforma-layout ${assumptionsOpen ? 'assumptions-open' : 'assumptions-collapsed'}`}>
         <aside className="assumptions-panel" aria-hidden={!assumptionsOpen}>
           <div className="assumptions-panel-header">
             <h2>Assumptions</h2>
-            <button
-              type="button"
-              className="assumptions-panel-toggle"
-              onClick={() => toggleAssumptions(false)}
-              aria-label="Collapse assumptions panel"
-              title="Hide assumptions"
-            >
-              ‹
-            </button>
+            <div className="assumptions-panel-header-actions">
+              {hasCustomAssumptions ? (
+                <button
+                  type="button"
+                  className="btn btn-primary assumptions-share-btn"
+                  onClick={handleShareScenario}
+                >
+                  {shareStatus || 'Share Scenario'}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="assumptions-panel-toggle"
+                onClick={() => toggleAssumptions(false)}
+                aria-label="Collapse assumptions panel"
+                title="Hide assumptions"
+              >
+                ‹
+              </button>
+            </div>
           </div>
           <div className="assumptions-panel-body">
             <p className="panel-note">
