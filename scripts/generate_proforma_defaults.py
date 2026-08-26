@@ -307,6 +307,10 @@ def main() -> None:
                 "homes",
                 "schedule",
                 project_xlsx,
+                description=(
+                    "Also sizes the cash reserve: enough vertical construction cost to keep "
+                    "this many homes in production. Surplus cash above that reserve is swept to equity."
+                ),
             ),
             # Infrastructure unit costs â€” ordinance dimensions are fixed in computeProforma.js
             assumption(

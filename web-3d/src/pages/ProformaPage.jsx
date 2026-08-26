@@ -219,7 +219,8 @@ function FinancialsView({ financials, onShowCalc }) {
       <p className="section-lead">
         Levered equity returns with land/engineering/studies at project start, phase infrastructure and
         water rights upfront per phase, vertical during construction, and sales as build waves finish.
-        Exit value includes reserved rental units at a 5% cap rate.
+        Profits are swept to equity after keeping enough cash to fund Homes under construction
+        simultaneously. Exit value is leftover cash, debt, and reserved rental units at a 5% cap rate.
       </p>
 
       <div className="financials-hero">
@@ -230,7 +231,7 @@ function FinancialsView({ financials, onShowCalc }) {
         >
           <span>Project IRR</span>
           <strong>{formatIrr(financials.irr)}</strong>
-          <p>Levered equity, annualized</p>
+          <p>Levered equity with profit sweeps, annualized</p>
           <span className="calc-hint" aria-hidden="true">ⓘ</span>
         </button>
         <button
@@ -240,7 +241,7 @@ function FinancialsView({ financials, onShowCalc }) {
         >
           <span>Equity Multiple</span>
           <strong>{formatMultiple(financials.equityMultiple)}</strong>
-          <p>Exit value ÷ equity invested</p>
+          <p>Distributions + residual ÷ equity invested</p>
           <span className="calc-hint" aria-hidden="true">ⓘ</span>
         </button>
         <button
@@ -259,6 +260,10 @@ function FinancialsView({ financials, onShowCalc }) {
         <CalcMetricCard calcId="totalEquityInvested" onShow={onShowCalc}>
           <span>Total equity invested</span>
           <strong>{formatCurrency(financials.totalEquityInvested)}</strong>
+        </CalcMetricCard>
+        <CalcMetricCard calcId="totalEquityDistributions" onShow={onShowCalc} highlight>
+          <span>Cash swept to equity</span>
+          <strong>{formatCurrency(financials.totalEquityDistributions)}</strong>
         </CalcMetricCard>
         <CalcMetricCard calcId="peakDebt" onShow={onShowCalc}>
           <span>Peak construction debt</span>
@@ -284,8 +289,8 @@ function FinancialsView({ financials, onShowCalc }) {
           <span>Equity payback</span>
           <strong>{formatMonths(financials.paybackMonth)}</strong>
         </CalcMetricCard>
-        <CalcMetricCard calcId="exitEquity" onShow={onShowCalc} highlight>
-          <span>Exit equity value</span>
+        <CalcMetricCard calcId="exitEquity" onShow={onShowCalc}>
+          <span>Residual exit equity</span>
           <strong>{formatCurrency(financials.exitEquity)}</strong>
         </CalcMetricCard>
       </div>
@@ -388,6 +393,10 @@ function FinancialsView({ financials, onShowCalc }) {
       </div>
 
       <h3>Monthly Cash Flow</h3>
+      <p className="section-lead">
+        After each month’s spend, sales, and debt paydown, cash above the construction reserve is
+        distributed. In reserve is what stays in the project; Distributed is what was swept to equity.
+      </p>
       <div className="financials-table-wrap">
         <table className="proforma-table financials-table">
         <thead>
@@ -396,6 +405,8 @@ function FinancialsView({ financials, onShowCalc }) {
             <th>Phase</th>
             <th>Stage</th>
             <th>Equity Flow</th>
+            <th title="Profit swept to equity this month">Distributed</th>
+            <th title="Cash kept in the project after this month’s sweep">In reserve</th>
             <th>Dev Spend</th>
             <th>Sales</th>
             <th>Interest</th>
@@ -411,8 +422,28 @@ function FinancialsView({ financials, onShowCalc }) {
               <td>
                 <span className={`stage-pill ${row.stage}`}>{row.stage}</span>
               </td>
-              <td className={row.equityFlow >= 0 ? 'pos' : 'neg'}>
+              <td
+                className={row.equityFlow >= 0 ? 'pos' : 'neg'}
+                title={
+                  row.equityInjection
+                    ? `Includes equity injection of ${formatCurrency(row.equityInjection)}`
+                    : undefined
+                }
+              >
                 {formatCurrency(row.equityFlow)}
+              </td>
+              <td className={`num ${row.distribution > 0 ? 'pos' : ''}`}>
+                {formatCurrency(row.distribution || 0)}
+              </td>
+              <td
+                className="num"
+                title={
+                  row.cashReserve
+                    ? `Target reserve ${formatCurrency(row.cashReserve)} for ${row.homesRemainingToBuild ?? '—'} unbuilt homes`
+                    : undefined
+                }
+              >
+                {formatCurrency(row.cash ?? 0)}
               </td>
               <td title={formatSpendBreakdown(row.spendBreakdown)}>
                 {row.buildSpend ? formatCurrency(row.buildSpend) : '—'}
@@ -463,7 +494,7 @@ const CATEGORY_COLLAPSE_NOTES = {
   rental:
     'Opens reserve counts, rents, vacancy, and opex. Use for mixed sale/rent exit and rental terminal value after debt is retired.',
   schedule:
-    'Opens build pace, parallel homes, and monthly absorption. Use when testing timeline, peak debt, and IRR duration.',
+    'Opens build pace, parallel homes, and monthly absorption. Parallel homes also sizes the cash reserve that is not swept to equity. Use when testing timeline, peak debt, and IRR duration.',
 };
 
 export default function ProformaPage() {
@@ -695,6 +726,9 @@ export default function ProformaPage() {
       : null,
     townhome_sale_price_per_sqft: avgThSqFt
       ? `≈ ${formatCurrency(avgThSqFt * thRate)} avg townhome (${formatNumber(avgThSqFt)} sqft)`
+      : null,
+    parallel_homes_per_phase: result.financials?.avgVerticalPerHome
+      ? `Cash reserve ≈ ${formatCurrency((result.map.parallel_homes_per_phase ?? 0) * result.financials.avgVerticalPerHome)} (this many homes × avg vertical cost); surplus is swept`
       : null,
   };
 

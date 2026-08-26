@@ -452,6 +452,14 @@ function bisectMonthlyRate(cashFlows, low, high) {
   return (low + high) / 2;
 }
 
+function constructionCashReserve(homesRemainingToBuild, parallelHomes, avgVerticalPerHome) {
+  const homesToFund = Math.max(
+    0,
+    Math.min(Number(parallelHomes) || 0, Number(homesRemainingToBuild) || 0),
+  );
+  return homesToFund * Math.max(0, avgVerticalPerHome || 0);
+}
+
 function coverCashShortfall(cash, debt, loanAdvance) {
   if (cash >= 0) {
     return { cash, debt, equityInjection: 0, loanDraw: 0 };
@@ -516,6 +524,13 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
   let paybackMonth = null;
   let cumulativeEquityReturn = 0;
 
+  const allHomes = phaseResults.flatMap((phase) => phase.homes || []);
+  const avgVerticalPerHome =
+    allHomes.length > 0
+      ? sum(allHomes.map((home) => home.costs?.verticalHard || 0)) / allHomes.length
+      : 0;
+  let homesRemainingToBuild = allHomes.length;
+
   const equityCashFlows = [-initialEquity];
   const monthlyRows = [];
   const phaseTimeline = [];
@@ -528,6 +543,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
     spendBreakdown = null,
     batch = [],
     financeShortfall = true,
+    homesRemainingToBuild: remainingToBuild = homesRemainingToBuild,
   }) => {
     month += 1;
 
@@ -558,17 +574,23 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
     const paydown = Math.min(debt, monthProceeds * 0.85);
     debt -= paydown;
     cash -= paydown;
-    // Proceeds net of required debt paydown stay in project cash (not distributed).
-    // Counting them as equity inflows here AND again in exitEquity double-counted IRR.
-    const netToEquity = monthProceeds - paydown;
-    totalEquityDistributions += netToEquity;
 
-    // IRR cash flows: only actual equity in/out. Intermediate sale surplus stays invested.
-    const equityFlow = -equityInjection;
+    // Keep enough cash to vertically fund the next parallel-homes batch; sweep the rest.
+    const cashReserve = constructionCashReserve(
+      remainingToBuild,
+      parallelHomes,
+      avgVerticalPerHome,
+    );
+    const distribution = Math.max(0, cash - cashReserve);
+    cash -= distribution;
+    totalEquityDistributions += distribution;
+
+    // IRR: capital calls negative, sweeps positive. Residual cash is not counted until exit.
+    const equityFlow = distribution - equityInjection;
     equityCashFlows.push(equityFlow);
 
-    // Unrealized equity P&L vs capital contributed (NAV − invested).
-    cumulativeEquityReturn = cash - debt - totalEquityInvested;
+    // Realized distributions + remaining NAV − capital contributed.
+    cumulativeEquityReturn = totalEquityDistributions + cash - debt - totalEquityInvested;
 
     if (paybackMonth == null && cumulativeEquityReturn >= 0) {
       paybackMonth = month;
@@ -589,7 +611,9 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
       spendBreakdown,
       saleProceeds: monthProceeds,
       debtPaydown: paydown,
-      retainedSaleSurplus: netToEquity,
+      distribution,
+      cashReserve,
+      homesRemainingToBuild: remainingToBuild,
       debt,
       cash,
       cumulativeEquityReturn,
@@ -617,6 +641,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
         infrastructure: 0,
         vertical: 0,
       },
+      homesRemainingToBuild,
     });
   }
 
@@ -671,6 +696,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
         for (const home of wave) {
           if (home.disposition === 'sale') inventory.push(home);
         }
+        homesRemainingToBuild = Math.max(0, homesRemainingToBuild - wave.length);
       }
 
       const batch = inventory.splice(0, Math.min(salesRate, inventory.length));
@@ -703,6 +729,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
         spendBreakdown,
         batch,
         financeShortfall: spend > 0 || isBuilding,
+        homesRemainingToBuild,
       });
     }
 
@@ -735,7 +762,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
   const exitEquity = cash - debt + rentalTerminalValue;
   if (Math.abs(exitEquity) > 1) {
     equityCashFlows.push(exitEquity);
-    cumulativeEquityReturn = exitEquity - totalEquityInvested;
+    cumulativeEquityReturn = totalEquityDistributions + exitEquity - totalEquityInvested;
     month += 1;
     if (paybackMonth == null && cumulativeEquityReturn >= 0) {
       paybackMonth = month;
@@ -751,6 +778,8 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
       interest: 0,
       buildSpend: 0,
       saleProceeds: 0,
+      distribution: 0,
+      cashReserve: 0,
       debt,
       cash,
       cumulativeEquityReturn,
@@ -759,9 +788,10 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
   }
 
   const irr = computeIrr(equityCashFlows);
-  const netProfit = exitEquity - totalEquityInvested;
+  const totalValueToEquity = totalEquityDistributions + exitEquity;
+  const netProfit = totalValueToEquity - totalEquityInvested;
   const equityMultiple =
-    totalEquityInvested > 0 ? Math.max(exitEquity, 0) / totalEquityInvested : null;
+    totalEquityInvested > 0 ? totalValueToEquity / totalEquityInvested : null;
   const returnOnCost =
     projectTotals.totalDevelopmentCost > 0
       ? netProfit / projectTotals.totalDevelopmentCost
@@ -779,6 +809,9 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
     profitMargin,
     netProfit,
     totalEquityInvested,
+    totalEquityDistributions,
+    avgVerticalPerHome,
+    parallelHomesReserve: parallelHomes,
     totalInterest,
     totalLoanDraws,
     totalSaleProceeds,

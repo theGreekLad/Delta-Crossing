@@ -276,7 +276,7 @@
       "default": 5,
       "unit": "homes",
       "category": "schedule",
-      "description": "",
+      "description": "Also sizes the cash reserve: enough vertical construction cost to keep this many homes in production. Surplus cash above that reserve is swept to equity.",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",

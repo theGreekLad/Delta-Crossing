@@ -26,47 +26,50 @@ export function buildCalculations(result, merged) {
     calcs.irr = calc(
       'irr',
       'Project IRR',
-      'IRR on equity inflows/outflows only: capital calls (negative) and terminal exit equity (positive). Sale surplus retained in the project is not counted twice.',
+      'IRR on monthly equity cash flows: capital calls (negative), profit sweeps (positive), and residual exit equity.',
       financials.irr,
       'pct',
       [
         step('Initial equity (month 0)', -(map.initial_equity ?? 0), 'currency'),
         step('Additional equity injections', financials.totalEquityInvested - (map.initial_equity ?? 0), 'currency'),
         step('Total equity invested', financials.totalEquityInvested, 'currency'),
-        step('Exit equity value', financials.exitEquity, 'currency'),
+        step('Cash swept to equity', financials.totalEquityDistributions ?? 0, 'currency'),
+        step('Residual exit equity', financials.exitEquity, 'currency'),
         step('Cash flow periods', financials.equityCashFlows?.length ?? 0, 'number'),
       ],
       ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct', 'homes_sold_per_month', 'months_to_build_home', 'parallel_homes_per_phase'],
-      'Monthly IRR series = equity injections as outflows, then exit equity as the terminal inflow. Intermediate sale proceeds stay in project cash and appear only in the exit value.',
+      'Cash above the vertical-cost reserve for Homes under construction simultaneously is distributed when earned. That reserve is (remaining unbuilt homes, capped at the parallel-homes setting) × average vertical cost per home.',
     );
 
     calcs.equityMultiple = calc(
       'equityMultiple',
       'Equity Multiple',
-      'Exit equity value ÷ total equity invested',
+      '(Cash swept to equity + residual exit equity) ÷ total equity invested',
       financials.equityMultiple,
       'multiple',
       [
-        step('Exit equity value', financials.exitEquity, 'currency'),
+        step('Cash swept to equity', financials.totalEquityDistributions ?? 0, 'currency'),
+        step('Residual exit equity', financials.exitEquity, 'currency'),
         step('Total equity invested', financials.totalEquityInvested, 'currency'),
         step('Equity multiple', financials.equityMultiple, 'multiple'),
       ],
-      ['initial_equity'],
+      ['initial_equity', 'parallel_homes_per_phase'],
     );
 
     calcs.returnOnCost = calc(
       'returnOnCost',
       'Return on Cost',
-      '(Exit equity − total equity invested) ÷ total development cost',
+      '(Swept cash + residual exit − total equity invested) ÷ total development cost',
       financials.returnOnCost,
       'pct',
       [
-        step('Exit equity value', financials.exitEquity, 'currency'),
+        step('Cash swept to equity', financials.totalEquityDistributions ?? 0, 'currency'),
+        step('Residual exit equity', financials.exitEquity, 'currency'),
         step('Total equity invested', financials.totalEquityInvested, 'currency'),
         step('Net profit', financials.netProfit, 'currency'),
         step('Total development cost', projectTotals.totalDevelopmentCost, 'currency'),
       ],
-      ['initial_equity'],
+      ['initial_equity', 'parallel_homes_per_phase'],
     );
 
     calcs.npvAt10Pct = calc(
@@ -95,6 +98,22 @@ export function buildCalculations(result, merged) {
         step('Total', financials.totalEquityInvested, 'currency'),
       ],
       ['initial_equity', 'construction_loan_advance_pct'],
+    );
+
+    calcs.totalEquityDistributions = calc(
+      'totalEquityDistributions',
+      'Cash Swept to Equity',
+      'Sale surplus distributed after keeping a cash reserve equal to vertical cost for Homes under construction simultaneously',
+      financials.totalEquityDistributions ?? 0,
+      'currency',
+      [
+        step('Homes in the cash reserve', financials.parallelHomesReserve ?? map.parallel_homes_per_phase ?? 0, 'number'),
+        step('Average vertical cost per home', financials.avgVerticalPerHome ?? 0, 'currency'),
+        step('Cash swept to equity', financials.totalEquityDistributions ?? 0, 'currency'),
+        step('Residual cash left in project', financials.endingCash ?? 0, 'currency'),
+      ],
+      ['parallel_homes_per_phase', 'sf_construction_cost_per_sqft'],
+      'Each month, cash above (remaining unbuilt homes, capped at the parallel-homes setting) × average vertical cost is paid out. New phase infrastructure can still require a later equity call if the reserve does not cover it.',
     );
 
     calcs.peakDebt = calc(
@@ -199,7 +218,7 @@ export function buildCalculations(result, merged) {
     calcs.paybackMonth = calc(
       'paybackMonth',
       'Equity Payback',
-      'First month cumulative equity return ≥ 0',
+      'First month cumulative distributions + remaining NAV ≥ total equity invested',
       financials.paybackMonth,
       'months',
       [
@@ -213,7 +232,7 @@ export function buildCalculations(result, merged) {
     calcs.exitEquity = calc(
       'exitEquity',
       'Exit Equity Value',
-      'Ending cash − ending debt + rental terminal value (if activated)',
+      'Residual NAV at the end: ending cash − ending debt + rental terminal value (if activated). Earlier profit sweeps are separate.',
       financials.exitEquity,
       'currency',
       [
