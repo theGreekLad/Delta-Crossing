@@ -1015,8 +1015,8 @@ export function computeProforma({
   const townhomeLots = residentialLots.filter((lot) => lot.lotType === 'townhome');
   const totalHomes = sfLots.length + townhomeLots.length + commercial.length;
 
-  const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 220);
-  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 220);
+  const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 200);
+  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 200);
 
   const enrichedLots = residentialLots.map((lot) => ({
     ...lot,

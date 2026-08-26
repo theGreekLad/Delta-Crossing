@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "model": "for-sale",
   "description": "For-sale proforma with ordinance-based infrastructure costing. Road area and centerline length from plat PDF annotations; quantities per Ord. 2025-317 (ST-103, ST-113, ST-131).",
   "phaseOrder": [
@@ -96,8 +96,8 @@
     {
       "id": "sf_sale_price_per_sqft",
       "label": "Single-family sale price",
-      "value": 220,
-      "default": 220,
+      "value": 200,
+      "default": 200,
       "unit": "USD/sqft",
       "category": "revenue",
       "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
@@ -105,15 +105,15 @@
         "name": "Delta rural new-home market estimate",
         "url": "https://buildgenius.app/construction-costs/utah",
         "retrieved": "2026-07-07",
-        "notes": "≈$220/sqft preserves prior ~$485k at ~2,200 sqft; sale price = dwelling sqft × this rate."
+        "notes": "Planning default $200/sqft; sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
     {
       "id": "townhome_sale_price_per_sqft",
       "label": "Townhome sale price",
-      "value": 220,
-      "default": 220,
+      "value": 200,
+      "default": 200,
       "unit": "USD/sqft",
       "category": "revenue",
       "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
@@ -121,7 +121,7 @@
         "name": "12_11_23 Proforma Delta.xlsx — Unit Mix",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Planning default $220/sqft (aligned with single-family); sale price = dwelling sqft × this rate."
+        "notes": "Planning default $200/sqft (aligned with single-family); sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },

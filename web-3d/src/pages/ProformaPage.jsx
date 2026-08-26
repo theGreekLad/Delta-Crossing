@@ -555,7 +555,7 @@ export default function ProformaPage() {
     async function load() {
       try {
         const [defaultsRes, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
-          fetch(`${platUrl('data/proforma-defaults.json')}?v=4`),
+          fetch(`${platUrl('data/proforma-defaults.json')}?v=5`),
           fetch(platUrl('data/manifest.json')),
           fetch(platUrl('data/sheet1-lots.json')),
           fetch(platUrl('data/sheet1-commercial.json')),

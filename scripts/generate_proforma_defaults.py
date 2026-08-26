@@ -104,7 +104,7 @@ def main() -> None:
     area_defaults = compute_plat_area_defaults()
 
     defaults = {
-        "version": 4,
+        "version": 5,
         "model": "for-sale",
         "description": (
             "For-sale proforma with ordinance-based infrastructure costing. "
@@ -173,13 +173,13 @@ def main() -> None:
             assumption(
                 "sf_sale_price_per_sqft",
                 "Single-family sale price",
-                220,
+                200,
                 "USD/sqft",
                 "revenue",
                 source(
                     "Delta rural new-home market estimate",
                     "https://buildgenius.app/construction-costs/utah",
-                    "â‰ˆ$220/sqft preserves prior ~$485k at ~2,200 sqft; sale price = dwelling sqft Ã— this rate.",
+                    "Planning default $200/sqft; sale price = dwelling sqft Ã— this rate.",
                 ),
                 description=(
                     "Sale price per dwelling square foot. Each home is priced as "
@@ -189,13 +189,13 @@ def main() -> None:
             assumption(
                 "townhome_sale_price_per_sqft",
                 "Townhome sale price",
-                220,
+                200,
                 "USD/sqft",
                 "revenue",
                 source(
                     "12_11_23 Proforma Delta.xlsx â€” Unit Mix",
                     "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-                    "Planning default $220/sqft (aligned with single-family); sale price = dwelling sqft Ã— this rate.",
+                    "Planning default $200/sqft (aligned with single-family); sale price = dwelling sqft Ã— this rate.",
                 ),
                 description=(
                     "Sale price per dwelling square foot. Each home is priced as "
