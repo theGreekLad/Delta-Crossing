@@ -70,7 +70,7 @@ def compute_plat_area_defaults() -> dict:
         "notes": (
             "Road area from plat PDF centerline annotations (sheet1-road-segments.json). "
             "Lot areas from plat S.F. labels and polygon scaling. "
-            "Total project acreage (~52 ac) for reference; water rights budgeted per lot at 1.0 AF/lot."
+            "Total project acreage (~52 ac) for reference; water rights budgeted per lot at 0.75 AF/lot."
         ),
     }
 
@@ -104,7 +104,7 @@ def main() -> None:
     area_defaults = compute_plat_area_defaults()
 
     defaults = {
-        "version": 3,
+        "version": 4,
         "model": "for-sale",
         "description": (
             "For-sale proforma with ordinance-based infrastructure costing. "
@@ -126,7 +126,7 @@ def main() -> None:
             assumption(
                 "initial_equity",
                 "Starting equity / cash",
-                500_000,
+                0,
                 "USD",
                 "financing",
                 project_xlsx,
@@ -135,36 +135,36 @@ def main() -> None:
             assumption(
                 "land_cost_total",
                 "Land acquisition (total)",
-                4_000_000,
+                4_200_000,
                 "USD",
                 "development",
                 source(
                     "12_11_23 Proforma Delta.xlsx",
                     "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-                    "Source proforma listed land at $1.835M; $4.0M used here as an "
+                    "Source proforma listed land at $1.835M; $4.2M used here as an "
                     "intentional acquisition-budget override.",
                 ),
                 description=(
-                    "Total land acquisition budget. Intentional $4.0M basis "
+                    "Total land acquisition budget. Planning default $4.2M "
                     "(overrides the $1.835M line in the source proforma)."
                 ),
             ),
             assumption(
                 "water_rights_af_per_lot",
                 "Culinary water requirement (per residential lot)",
-                1.0,
+                0.75,
                 "AF/lot",
                 "development",
                 millard_water,
                 description=(
-                    "Millard County requires 1.0 acre-foot dedicated per platted lot "
-                    "for culinary water feasibility at subdivision approval."
+                    "Planning default 0.75 AF/lot. Millard County ordinance cites "
+                    "1.0 acre-foot dedicated per platted lot at subdivision approval."
                 ),
             ),
             assumption(
                 "water_rights_cost_per_acre_foot",
                 "Culinary water rights purchase (city rate)",
-                10_000,
+                8_000,
                 "USD/AF",
                 "development",
                 delta_water,
@@ -189,13 +189,13 @@ def main() -> None:
             assumption(
                 "townhome_sale_price_per_sqft",
                 "Townhome sale price",
-                252,
+                220,
                 "USD/sqft",
                 "revenue",
                 source(
                     "12_11_23 Proforma Delta.xlsx â€” Unit Mix",
                     "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
-                    "â‰ˆ$252/sqft preserves prior ~$385k at ~1,525 sqft; sale price = dwelling sqft Ã— this rate.",
+                    "Planning default $220/sqft (aligned with single-family); sale price = dwelling sqft Ã— this rate.",
                 ),
                 description=(
                     "Sale price per dwelling square foot. Each home is priced as "
@@ -223,7 +223,7 @@ def main() -> None:
             assumption(
                 "sf_construction_cost_per_sqft",
                 "Single-family vertical construction",
-                168,
+                120,
                 "USD/sqft",
                 "vertical_construction",
                 source(
@@ -279,7 +279,7 @@ def main() -> None:
             assumption(
                 "homes_sold_per_month",
                 "Home absorption rate",
-                3,
+                4,
                 "homes/month",
                 "schedule",
                 source(
@@ -291,19 +291,19 @@ def main() -> None:
             assumption(
                 "months_to_build_home",
                 "Months to build one home",
-                6,
+                3,
                 "months",
                 "schedule",
                 source(
                     "Production home builder cycle",
                     "https://www.nahb.org/",
-                    "Census/NAHB production built-for-sale average ~6–8 months; default 6 months.",
+                    "Census/NAHB production built-for-sale average ~6–8 months; planning default 3 months.",
                 ),
             ),
             assumption(
                 "parallel_homes_per_phase",
                 "Homes under construction simultaneously (per phase)",
-                6,
+                5,
                 "homes",
                 "schedule",
                 project_xlsx,

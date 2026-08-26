@@ -74,15 +74,15 @@ function applyRentReservations(homeRows, phaseOrder, map) {
 }
 
 function computeVerticalCost(dwellingSqFt, map) {
-  const base = getValue(map, 'sf_construction_cost_per_sqft', 168);
+  const base = getValue(map, 'sf_construction_cost_per_sqft', 120);
   const waste = getValue(map, 'material_waste_pct', 0.07);
   const labor = getValue(map, 'labor_overhead_pct', 0.1);
   return dwellingSqFt * base * (1 + waste) * (1 + labor);
 }
 
 function computeWaterRights({ sfLots, townhomeLots }, map) {
-  const afPerLot = getValue(map, 'water_rights_af_per_lot', 1.0);
-  const costPerAcreFoot = getValue(map, 'water_rights_cost_per_acre_foot', 10000);
+  const afPerLot = getValue(map, 'water_rights_af_per_lot', 0.75);
+  const costPerAcreFoot = getValue(map, 'water_rights_cost_per_acre_foot', 8000);
 
   const sfAcreFeet = sfLots * afPerLot;
   const townhomeAcreFeet = townhomeLots * afPerLot;
@@ -496,12 +496,12 @@ function buildPhaseCostBreakdown(phaseHomes) {
 }
 
 function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
-  const initialEquity = getValue(map, 'initial_equity', 500000);
+  const initialEquity = getValue(map, 'initial_equity', 0);
   const loanRate = getValue(map, 'construction_loan_rate', 0.085);
   const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
-  const salesRate = getValue(map, 'homes_sold_per_month', 3);
+  const salesRate = getValue(map, 'homes_sold_per_month', 4);
   const monthsToBuild = getValue(map, 'months_to_build_home', 3);
-  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 6);
+  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 5);
   const discountRate = 0.1;
 
   let cash = initialEquity;
@@ -800,9 +800,9 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
 }
 
 function estimatePhaseSchedule(phase, map) {
-  const salesRate = getValue(map, 'homes_sold_per_month', 3);
+  const salesRate = getValue(map, 'homes_sold_per_month', 4);
   const monthsToBuild = getValue(map, 'months_to_build_home', 3);
-  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 6);
+  const parallelHomes = getValue(map, 'parallel_homes_per_phase', 5);
   const sellable = phase.homes.filter((home) => home.disposition === 'sale');
   const waveCount = Math.max(1, Math.ceil(phase.homeCount / parallelHomes));
   const buildMonths = Math.max(1, waveCount * monthsToBuild);
@@ -834,11 +834,11 @@ function estimatePhaseSchedule(phase, map) {
 }
 
 function simulatePhaseWaterfall(phaseResults, map, acquisitionCosts = null) {
-  let cash = getValue(map, 'initial_equity', 500000);
+  let cash = getValue(map, 'initial_equity', 0);
   let debt = 0;
   const loanRate = getValue(map, 'construction_loan_rate', 0.085);
   const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
-  const salesRate = getValue(map, 'homes_sold_per_month', 3);
+  const salesRate = getValue(map, 'homes_sold_per_month', 4);
 
   const timeline = [];
   const acquisition = acquisitionCosts || { total: 0 };
@@ -983,7 +983,7 @@ export function computeProforma({
   const totalHomes = sfLots.length + townhomeLots.length + commercial.length;
 
   const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 220);
-  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 252);
+  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 220);
 
   const enrichedLots = residentialLots.map((lot) => ({
     ...lot,
@@ -1004,7 +1004,7 @@ export function computeProforma({
 
   const residentialHomeCount = sfLots.length + townhomeLots.length;
   const shared = {
-    landPerHome: getValue(map, 'land_cost_total', 4000000) / Math.max(totalHomes, 1),
+    landPerHome: getValue(map, 'land_cost_total', 4200000) / Math.max(totalHomes, 1),
     engineeringPerHome: FIXED_ENGINEERING_TOTAL / Math.max(totalHomes, 1),
     studiesPerHome: FIXED_STUDIES_TOTAL / Math.max(totalHomes, 1),
     // Residential-only water rights spread across residential lots (commercial excluded).
@@ -1069,7 +1069,7 @@ export function computeProforma({
     };
   });
 
-  const landTotal = getValue(map, 'land_cost_total', 4000000);
+  const landTotal = getValue(map, 'land_cost_total', 4200000);
   const engineeringTotal = FIXED_ENGINEERING_TOTAL;
   const studiesTotal = FIXED_STUDIES_TOTAL;
   // Water rights are residential-only and cash-flowed per phase (phaseUpfront),

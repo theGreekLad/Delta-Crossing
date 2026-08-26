@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "model": "for-sale",
   "description": "For-sale proforma with ordinance-based infrastructure costing. Road area and centerline length from plat PDF annotations; quantities per Ord. 2025-317 (ST-103, ST-113, ST-131).",
   "phaseOrder": [
@@ -17,7 +17,7 @@
     "road_acres": 8.72,
     "road_centerline_lf": 6332.3,
     "total_project_acres": 52,
-    "notes": "Road area from plat PDF centerline annotations (sheet1-road-segments.json). Lot areas from plat S.F. labels and polygon scaling. Total project acreage (~52 ac) for reference; water rights budgeted per lot at 1.0 AF/lot."
+    "notes": "Road area from plat PDF centerline annotations (sheet1-road-segments.json). Lot areas from plat S.F. labels and polygon scaling. Total project acreage (~52 ac) for reference; water rights budgeted per lot at 0.75 AF/lot."
   },
   "ordinanceRef": {
     "title": "Ordinance 2025-317 — Delta City Design & Construction Standards",
@@ -32,8 +32,8 @@
     {
       "id": "initial_equity",
       "label": "Starting equity / cash",
-      "value": 500000,
-      "default": 500000,
+      "value": 0,
+      "default": 0,
       "unit": "USD",
       "category": "financing",
       "description": "Cash on hand before phase 1 construction.",
@@ -48,27 +48,27 @@
     {
       "id": "land_cost_total",
       "label": "Land acquisition (total)",
-      "value": 4000000,
-      "default": 4000000,
+      "value": 4200000,
+      "default": 4200000,
       "unit": "USD",
       "category": "development",
-      "description": "Total land acquisition budget. Intentional $4.0M basis (overrides the $1.835M line in the source proforma).",
+      "description": "Total land acquisition budget. Planning default $4.2M (overrides the $1.835M line in the source proforma).",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Source proforma listed land at $1.835M; $4.0M used here as an intentional acquisition-budget override."
+        "notes": "Source proforma listed land at $1.835M; $4.2M used here as an intentional acquisition-budget override."
       },
       "overridable": true
     },
     {
       "id": "water_rights_af_per_lot",
       "label": "Culinary water requirement (per residential lot)",
-      "value": 1,
-      "default": 1,
+      "value": 0.75,
+      "default": 0.75,
       "unit": "AF/lot",
       "category": "development",
-      "description": "Millard County requires 1.0 acre-foot dedicated per platted lot for culinary water feasibility at subdivision approval.",
+      "description": "Planning default 0.75 AF/lot. Millard County ordinance cites 1.0 acre-foot dedicated per platted lot at subdivision approval.",
       "source": {
         "name": "Millard County Subdivision Ordinance § 11-1-20",
         "url": "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
@@ -80,8 +80,8 @@
     {
       "id": "water_rights_cost_per_acre_foot",
       "label": "Culinary water rights purchase (city rate)",
-      "value": 10000,
-      "default": 10000,
+      "value": 8000,
+      "default": 8000,
       "unit": "USD/AF",
       "category": "development",
       "description": "Cost to purchase culinary water rights from Delta City per acre-foot.",
@@ -112,8 +112,8 @@
     {
       "id": "townhome_sale_price_per_sqft",
       "label": "Townhome sale price",
-      "value": 252,
-      "default": 252,
+      "value": 220,
+      "default": 220,
       "unit": "USD/sqft",
       "category": "revenue",
       "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
@@ -121,7 +121,7 @@
         "name": "12_11_23 Proforma Delta.xlsx — Unit Mix",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "≈$252/sqft preserves prior ~$385k at ~1,525 sqft; sale price = dwelling sqft × this rate."
+        "notes": "Planning default $220/sqft (aligned with single-family); sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
@@ -160,8 +160,8 @@
     {
       "id": "sf_construction_cost_per_sqft",
       "label": "Single-family vertical construction",
-      "value": 168,
-      "default": 168,
+      "value": 120,
+      "default": 120,
       "unit": "USD/sqft",
       "category": "vertical_construction",
       "description": "",
@@ -240,8 +240,8 @@
     {
       "id": "homes_sold_per_month",
       "label": "Home absorption rate",
-      "value": 3,
-      "default": 3,
+      "value": 4,
+      "default": 4,
       "unit": "homes/month",
       "category": "schedule",
       "description": "",
@@ -256,8 +256,8 @@
     {
       "id": "months_to_build_home",
       "label": "Months to build one home",
-      "value": 6,
-      "default": 6,
+      "value": 3,
+      "default": 3,
       "unit": "months",
       "category": "schedule",
       "description": "",
@@ -265,15 +265,15 @@
         "name": "Production home builder cycle",
         "url": "https://www.nahb.org/",
         "retrieved": "2026-07-14",
-        "notes": "Census/NAHB production built-for-sale average ~6–8 months; default 6 months."
+        "notes": "Census/NAHB production built-for-sale average ~6–8 months; planning default 3 months."
       },
       "overridable": true
     },
     {
       "id": "parallel_homes_per_phase",
       "label": "Homes under construction simultaneously (per phase)",
-      "value": 6,
-      "default": 6,
+      "value": 5,
+      "default": 5,
       "unit": "homes",
       "category": "schedule",
       "description": "",

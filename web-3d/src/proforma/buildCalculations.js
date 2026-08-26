@@ -17,7 +17,7 @@ export function buildCalculations(result, merged) {
   const residentialHomes = projectTotals.singleFamilyHomes + projectTotals.townhomeLots;
   const waste = map.material_waste_pct ?? 0.07;
   const labor = map.labor_overhead_pct ?? 0.1;
-  const baseCost = map.sf_construction_cost_per_sqft ?? 168;
+  const baseCost = map.sf_construction_cost_per_sqft ?? 120;
 
   const calcs = {};
 
