@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import SiteNav from '../components/SiteNav';
 import { platUrl } from '../data/platUrls';
 import {
@@ -23,11 +23,102 @@ import {
   CalculationPanel,
 } from '../proforma/CalculationPanel';
 
+const INTEGER_UNITS = new Set(['units', 'homes', 'months']);
+
+function formatAssumptionNumber(value, integer) {
+  if (!Number.isFinite(value)) return '';
+  if (integer) return String(Math.round(value));
+  const rounded = Math.round(value * 1e8) / 1e8;
+  return String(rounded);
+}
+
+function sanitizeNumericDraft(raw, integer) {
+  let next = String(raw).replace(/[^\d.]/g, '');
+  if (integer) return next.replace(/\./g, '');
+  const dot = next.indexOf('.');
+  if (dot === -1) return next;
+  return next.slice(0, dot + 1) + next.slice(dot + 1).replace(/\./g, '');
+}
+
+function isCompleteNumericDraft(text) {
+  return /^\d+(\.\d+)?$/.test(String(text).trim());
+}
+
+function parseNumericDraft(text, integer, min = 0) {
+  if (!isCompleteNumericDraft(text) && !/^\d+\.$/.test(String(text).trim())) return null;
+  const n = Number(String(text).trim());
+  if (!Number.isFinite(n)) return null;
+  const value = integer ? Math.round(n) : n;
+  return Math.max(min, value);
+}
+
+function AssumptionNumberInput({ id, committedValue, integer = false, min = 0, onCommit }) {
+  const [draft, setDraft] = useState(null);
+  const commitTimer = useRef(null);
+  const idle = formatAssumptionNumber(committedValue, integer);
+
+  const clearTimer = () => {
+    if (commitTimer.current != null) {
+      window.clearTimeout(commitTimer.current);
+      commitTimer.current = null;
+    }
+  };
+
+  useEffect(() => () => {
+    if (commitTimer.current != null) window.clearTimeout(commitTimer.current);
+  }, []);
+
+  const commitText = (text, finish) => {
+    const parsed = parseNumericDraft(text, integer, min);
+    if (parsed == null) {
+      if (finish) setDraft(null);
+      return;
+    }
+    if (Math.abs(parsed - committedValue) > 1e-10) onCommit(parsed);
+    if (finish) setDraft(null);
+  };
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode={integer ? 'numeric' : 'decimal'}
+      autoComplete="off"
+      autoCorrect="off"
+      spellCheck={false}
+      value={draft ?? idle}
+      onFocus={() => {
+        setDraft(idle);
+      }}
+      onChange={(event) => {
+        const next = sanitizeNumericDraft(event.target.value, integer);
+        setDraft(next);
+        clearTimer();
+        if (!isCompleteNumericDraft(next)) return;
+        commitTimer.current = window.setTimeout(() => commitText(next, false), 350);
+      }}
+      onBlur={() => {
+        clearTimer();
+        commitText(draft ?? idle, true);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.currentTarget.blur();
+        }
+        if (event.key === 'Escape') {
+          clearTimer();
+          setDraft(null);
+          event.currentTarget.blur();
+        }
+      }}
+    />
+  );
+}
+
 function AssumptionField({ entry, onChange, highlighted, liveHint = null, isKey = false }) {
   const isPct = isRatioUnit(entry.unit);
-  const isCount = entry.unit === 'units';
+  const isCount = INTEGER_UNITS.has(entry.unit);
   const isFlag = entry.unit === 'flag';
-  const displayValue = isPct ? (entry.value * 100).toFixed(2) : entry.value;
   const isOverridden = entry.value !== entry.default;
   const flagOn = Number(entry.value) >= 0.5;
 
@@ -67,20 +158,11 @@ function AssumptionField({ entry, onChange, highlighted, liveHint = null, isKey 
             </>
           ) : (
             <>
-              <input
+              <AssumptionNumberInput
                 id={entry.id}
-                type="number"
-                min={isCount || entry.unit === 'AF' || entry.unit === 'AF/lot' ? 0 : undefined}
-                step={entry.unit === 'USD/sqft' ? 1 : entry.unit === 'AF' ? 0.25 : undefined}
-                value={displayValue}
-                onChange={(event) => {
-                  const raw = Number(event.target.value);
-                  if (isCount) {
-                    onChange(entry.id, Math.max(0, Math.round(raw)));
-                    return;
-                  }
-                  onChange(entry.id, isPct ? raw / 100 : raw);
-                }}
+                committedValue={isPct ? entry.value * 100 : entry.value}
+                integer={isCount}
+                onCommit={(raw) => onChange(entry.id, isPct ? raw / 100 : raw)}
               />
               <span className="assumption-unit">{isPct ? '%' : entry.unit}</span>
             </>

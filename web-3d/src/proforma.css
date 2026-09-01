@@ -378,13 +378,14 @@ a.assumption-source-link:hover {
 }
 
 .assumption-input input {
-  width: 6.5rem;
+  width: 7.25rem;
   padding: 0.35rem 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--surface-border);
   background: rgba(0, 0, 0, 0.25);
   color: var(--text);
   text-align: right;
+  font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
   appearance: textfield;
 }

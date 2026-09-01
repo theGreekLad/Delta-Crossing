@@ -3,7 +3,7 @@
   "installCommand": "npm --prefix web-3d ci",
   "buildCommand": "npm --prefix web-3d run build",
   "outputDirectory": "web",
-  "rewrites": [
-    { "source": "/", "destination": "/3d/proforma.html" }
+  "redirects": [
+    { "source": "/", "destination": "/3d/proforma.html", "permanent": false }
   ]
 }
