@@ -1,0 +1,11 @@
+.env
+.env.*
+.vercel
+**/.vercel
+Supporting Docs
+BuildingAssets
+web-3d/.vite
+web-3d/node_modules
+node_modules
+scripts
+debug_*.png
