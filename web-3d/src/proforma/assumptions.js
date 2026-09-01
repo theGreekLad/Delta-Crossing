@@ -11,6 +11,10 @@ function sanitizeOverrides(parsed) {
   // Engineering / studies are fixed model constants, not editable assumptions.
   delete next.engineering_total;
   delete next.studies_total;
+  if (next.foundation_pct == null && Number.isFinite(Number(next.material_waste_pct))) {
+    next.foundation_pct = Number(next.material_waste_pct);
+  }
+  delete next.material_waste_pct;
   const cleaned = {};
   for (const [id, value] of Object.entries(next)) {
     const num = Number(value);

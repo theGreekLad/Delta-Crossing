@@ -15,9 +15,16 @@ export function buildCalculations(result, merged) {
   const { map, shared, waterRights, infrastructure, projectTotals, financials, rentalHoldout, waterfall, phaseResults, homeRows } = result;
   const totalHomes = projectTotals.singleFamilyHomes + projectTotals.townhomeLots + projectTotals.commercialBlocks;
   const residentialHomes = projectTotals.singleFamilyHomes + projectTotals.townhomeLots;
-  const waste = map.material_waste_pct ?? 0.07;
+  const foundation = map.foundation_pct ?? 0.07;
   const labor = map.labor_overhead_pct ?? 0.1;
-  const baseCost = map.sf_construction_cost_per_sqft ?? 120;
+  const sfBaseCost = map.sf_construction_cost_per_sqft ?? 120;
+  const thBaseCost = map.townhome_construction_cost_per_sqft ?? sfBaseCost;
+  const verticalMultiplier = (1 + foundation) * (1 + labor);
+
+  function verticalRateForHome(home) {
+    if (home?.costs?.verticalCostPerSqFt != null) return home.costs.verticalCostPerSqFt;
+    return home?.lotType === 'townhome' ? thBaseCost : sfBaseCost;
+  }
 
   const calcs = {};
 
@@ -38,7 +45,7 @@ export function buildCalculations(result, merged) {
         step('Cash flow periods', financials.equityCashFlows?.length ?? 0, 'number'),
       ],
       ['initial_equity', 'construction_loan_rate', 'construction_loan_advance_pct', 'homes_sold_per_month', 'months_to_build_home', 'parallel_homes_per_phase'],
-      'Cash above the vertical-cost reserve for Homes under construction simultaneously is distributed when earned. That reserve is (remaining unbuilt homes, capped at the parallel-homes setting) × average vertical cost per home.',
+      'Cash above the vertical-cost reserve plus the next phase’s infrastructure and water is distributed only when it came from sales (after debt paydown that does not dip below that reserve). Starting equity and later capital calls stay in the project until spent or exit. The vertical float is (remaining unbuilt homes, capped at the parallel-homes setting) × average vertical cost per home.',
     );
 
     calcs.equityMultiple = calc(
@@ -100,20 +107,70 @@ export function buildCalculations(result, merged) {
       ['initial_equity', 'construction_loan_advance_pct'],
     );
 
+    calcs.selfFundCashRequired = calc(
+      'selfFundCashRequired',
+      'Cash to Self-Fund',
+      'Peak cumulative (development spend − sale proceeds) with $0 starting cash. Deposit this on day one, set loan advance to 0%, and keep sale proceeds in the project to finish with no later equity calls or debt.',
+      financials.selfFundCashRequired,
+      'currency',
+      [
+        step('Low-point month', financials.selfFundTroughMonth, 'months', financials.selfFundTroughLabel),
+        step('Peak cash deficit (this amount)', financials.selfFundCashRequired, 'currency'),
+        step('Starting equity / cash (current)', map.initial_equity ?? 0, 'currency'),
+        step(
+          'Gap vs starting cash',
+          Math.max(0, (financials.selfFundCashRequired ?? 0) - (map.initial_equity ?? 0)),
+          'currency',
+        ),
+        step('Additional equity calls this run', financials.additionalEquityInjections ?? 0, 'currency'),
+        step('Peak construction debt this run', financials.peakDebt ?? 0, 'currency'),
+      ],
+      ['initial_equity', 'keep_sale_proceeds', 'construction_loan_advance_pct', 'land_cost_total', 'infrastructure_safety_factor', 'homes_sold_per_month', 'months_to_build_home', 'parallel_homes_per_phase'],
+      'Not a Land & Development cost. Land is what you buy; this is the working-capital hole before the first closings. Independent of the current loan settings. Contributed cash is never swept; only leftover sale proceeds above the vertical reserve are distributed. If Keep sale proceeds is off, later phases can still call cash when retained contributions plus that reserve do not cover sitework.',
+    );
+
+    calcs.additionalEquityInjections = calc(
+      'additionalEquityInjections',
+      'Additional Equity Calls',
+      'Equity injected after month 0 when cash would otherwise go negative',
+      financials.additionalEquityInjections ?? 0,
+      'currency',
+      [
+        step('Starting equity / cash', map.initial_equity ?? 0, 'currency'),
+        step('Additional calls', financials.additionalEquityInjections ?? 0, 'currency'),
+        step('Total equity invested', financials.totalEquityInvested, 'currency'),
+      ],
+      ['initial_equity', 'keep_sale_proceeds', 'construction_loan_advance_pct'],
+      (financials.additionalEquityInjections ?? 0) > 0
+        ? 'Cash flow rows with a negative equity flow that include an injection still need more money after start. Raise starting cash, turn on Keep sale proceeds, and/or cut the loan.'
+        : 'No capital calls after the opening deposit.',
+    );
+
     calcs.totalEquityDistributions = calc(
       'totalEquityDistributions',
       'Cash Swept to Equity',
-      'Sale surplus distributed after keeping a cash reserve equal to vertical cost for Homes under construction simultaneously',
+      'Sale surplus distributed after keeping a cash reserve for Homes under construction simultaneously plus the next phase’s roads and water. Starting cash and equity calls are never included in this sweep.',
       financials.totalEquityDistributions ?? 0,
       'currency',
       [
-        step('Homes in the cash reserve', financials.parallelHomesReserve ?? map.parallel_homes_per_phase ?? 0, 'number'),
+        step('Homes in the vertical float', financials.parallelHomesReserve ?? map.parallel_homes_per_phase ?? 0, 'number'),
         step('Average vertical cost per home', financials.avgVerticalPerHome ?? 0, 'currency'),
+        step(
+          'Vertical float',
+          (financials.parallelHomesReserve ?? map.parallel_homes_per_phase ?? 0) *
+            (financials.avgVerticalPerHome ?? 0),
+          'currency',
+        ),
+        step(
+          'Next phase infrastructure & water (while in the first phase)',
+          financials.nextPhaseInfraReserveTypical ?? 0,
+          'currency',
+        ),
         step('Cash swept to equity', financials.totalEquityDistributions ?? 0, 'currency'),
         step('Residual cash left in project', financials.endingCash ?? 0, 'currency'),
       ],
-      ['parallel_homes_per_phase', 'sf_construction_cost_per_sqft'],
-      'Each month, cash above (remaining unbuilt homes, capped at the parallel-homes setting) × average vertical cost is paid out. New phase infrastructure can still require a later equity call if the reserve does not cover it.',
+      ['parallel_homes_per_phase', 'sf_construction_cost_per_sqft', 'townhome_construction_cost_per_sqft', 'infrastructure_safety_factor'],
+      'Each month the reserve is the vertical float plus the following phase’s sitework. Debt paydown and sweeps cannot take cash below that amount, so the next roads-and-water package is paid from reserve instead of a new equity call.',
     );
 
     calcs.peakDebt = calc(
@@ -172,7 +229,8 @@ export function buildCalculations(result, merged) {
         'sf_sale_price_per_sqft',
         'townhome_sale_price_per_sqft',
         'sf_construction_cost_per_sqft',
-        'material_waste_pct',
+        'townhome_construction_cost_per_sqft',
+        'foundation_pct',
         'labor_overhead_pct',
         'infrastructure_safety_factor',
         'land_cost_total',
@@ -324,18 +382,36 @@ export function buildCalculations(result, merged) {
     [
       step('SF lots × AF/lot', waterRights.sfAcreFeet, 'number', `${waterRights.sfLots} × ${waterRights.afPerLot} AF`),
       step('Townhome lots × AF/lot', waterRights.townhomeAcreFeet, 'number', `${waterRights.townhomeLots} × ${waterRights.afPerLot} AF`),
-      step('Total acre-feet', waterRights.totalAcreFeet, 'number'),
+      step('Acre-feet required', waterRights.totalAcreFeet, 'number'),
+      step(
+        'Water equity (already owned)',
+        waterRights.equityAcreFeet ?? 0,
+        'number',
+        'Drawn by homes in construction order (phase, then lot number) until exhausted',
+      ),
+      step('Equity applied', waterRights.equityApplied ?? 0, 'number'),
+      ...(waterRights.unusedEquityAf > 0
+        ? [step('Unused owned AF', waterRights.unusedEquityAf, 'number', 'Owned water exceeds the project requirement')]
+        : []),
+      step(
+        'Acre-feet purchased',
+        waterRights.purchasedAcreFeet ?? waterRights.totalAcreFeet,
+        'number',
+        waterRights.homesFullyCovered
+          ? `${waterRights.homesFullyCovered} homes fully covered by equity${waterRights.homesPartial ? `, ${waterRights.homesPartial} partial` : ''}`
+          : null,
+      ),
       step('Cost per acre-foot', waterRights.costPerAcreFoot, 'currency'),
-      step('Total cost', waterRights.total, 'currency'),
+      step('Cash cost', waterRights.total, 'currency'),
     ],
-    ['water_rights_af_per_lot', 'water_rights_cost_per_acre_foot'],
+    ['water_rights_af_per_lot', 'water_equity_acre_feet', 'water_rights_cost_per_acre_foot'],
     waterRights.notes,
   );
 
   calcs.totalDevelopmentCost = calc(
     'totalDevelopmentCost',
     'Total Development Cost',
-    'Land + engineering + studies + water rights + infrastructure (× safety) + vertical (× waste × labor)',
+    'Land + engineering + studies + water rights + infrastructure (× safety) + vertical (× foundation × labor)',
     projectTotals.totalDevelopmentCost,
     'currency',
     [
@@ -352,7 +428,14 @@ export function buildCalculations(result, merged) {
         'currency',
         'From source proforma — not an editable assumption',
       ),
-      step('Water rights', waterRights.total, 'currency'),
+      step(
+        'Water rights (cash purchase)',
+        waterRights.total,
+        'currency',
+        (waterRights.equityApplied ?? 0) > 0
+          ? `${formatNumberPlain(waterRights.purchasedAcreFeet)} AF purchased after ${formatNumberPlain(waterRights.equityApplied)} AF equity`
+          : `${formatNumberPlain(waterRights.totalAcreFeet)} AF × ${formatCurrencyPlain(waterRights.costPerAcreFoot)}/AF`,
+      ),
       step(
         'Infrastructure',
         infrastructure.totalInfraBudget,
@@ -363,17 +446,19 @@ export function buildCalculations(result, merged) {
         'Vertical construction (all homes)',
         homeRows.reduce((s, h) => s + h.costs.verticalHard, 0),
         'currency',
-        `sqft × $${baseCost}/sqft × (1+${(waste * 100).toFixed(0)}% waste) × (1+${(labor * 100).toFixed(0)}% labor)`,
+        `SF $${sfBaseCost}/sqft · TH $${thBaseCost}/sqft × (1+${(foundation * 100).toFixed(0)}% foundation) × (1+${(labor * 100).toFixed(0)}% labor)`,
       ),
       step('Total', projectTotals.totalDevelopmentCost, 'currency'),
     ],
     [
       'land_cost_total',
       'water_rights_af_per_lot',
+      'water_equity_acre_feet',
       'water_rights_cost_per_acre_foot',
       'infrastructure_safety_factor',
       'sf_construction_cost_per_sqft',
-      'material_waste_pct',
+      'townhome_construction_cost_per_sqft',
+      'foundation_pct',
       'labor_overhead_pct',
     ],
   );
@@ -423,7 +508,8 @@ export function buildCalculations(result, merged) {
       'land_cost_total',
       'infrastructure_safety_factor',
       'sf_construction_cost_per_sqft',
-      'material_waste_pct',
+      'townhome_construction_cost_per_sqft',
+      'foundation_pct',
       'labor_overhead_pct',
     ],
   );
@@ -443,7 +529,8 @@ export function buildCalculations(result, merged) {
       'land_cost_total',
       'infrastructure_safety_factor',
       'sf_construction_cost_per_sqft',
-      'material_waste_pct',
+      'townhome_construction_cost_per_sqft',
+      'foundation_pct',
       'labor_overhead_pct',
     ],
   );
@@ -501,10 +588,12 @@ export function buildCalculations(result, merged) {
   const costSideAssumptionRefs = [
     'land_cost_total',
     'water_rights_af_per_lot',
+    'water_equity_acre_feet',
     'water_rights_cost_per_acre_foot',
     'infrastructure_safety_factor',
     'sf_construction_cost_per_sqft',
-    'material_waste_pct',
+    'townhome_construction_cost_per_sqft',
+    'foundation_pct',
     'labor_overhead_pct',
   ];
 
@@ -525,10 +614,18 @@ export function buildCalculations(result, merged) {
   calcs.infraPerHome = calc(
     'infraPerHome',
     'Infrastructure (per home)',
-    'Total infrastructure budget (all line items × safety factor) ÷ residential homes',
+    'Each line contributes (project quantity × unit cost × safety) ÷ residential homes. Per-home infra is that sum — not the sum of unit rates.',
     shared.infraPerHome,
     'currency',
     [
+      ...infrastructure.lineItems.map((item) =>
+        step(
+          item.label,
+          item.amountPerHome ?? item.amount / Math.max(residentialHomes, 1),
+          'currency',
+          `${formatNumberPlain(item.quantityPerHome ?? item.quantity / Math.max(residentialHomes, 1))} ${item.unit}/home × ${formatCurrencyPlain(item.unitCost)} × ${(infrastructure.safetyFactor ?? 1).toFixed(2)} safety`,
+        ),
+      ),
       step(
         'Unadjusted infra subtotal',
         infrastructure.totalInfraBase ?? 0,
@@ -538,25 +635,26 @@ export function buildCalculations(result, merged) {
       step('Safety factor', infrastructure.safetyFactor ?? 1, 'number', '× multiplier on every line item'),
       step('Total infrastructure', infrastructure.totalInfraBudget, 'currency'),
       step('Residential homes', residentialHomes, 'number'),
-      step('Per home', shared.infraPerHome, 'currency'),
+      step('Per home (total ÷ homes)', shared.infraPerHome, 'currency'),
     ],
     ['infrastructure_safety_factor', ...Object.values(infraUnitCostKeys)],
-    'Per-home share of the full ordinance + dry-utility budget. Change any infra unit cost or the safety factor to update this.',
+    'A transformer at $12,000 is ~1 per 8 lots, so it is a few thousand per home — not $12,000. Linear-foot and square-foot items use the same split: their project amount ÷ homes.',
   );
 
   calcs.verticalHard = calc(
     'verticalHard',
     'Vertical Construction',
-    'Dwelling sqft × cost/sqft × (1 + waste) × (1 + labor overhead)',
+    'Dwelling sqft × type cost/sqft × (1 + foundation) × (1 + labor overhead). Single-family and townhome rates are separate.',
     null,
     'currency',
     [
-      step('Base cost per sqft', baseCost, 'currency'),
-      step('Material waste', waste, 'pct'),
+      step('Single-family cost per sqft', sfBaseCost, 'currency'),
+      step('Townhome cost per sqft', thBaseCost, 'currency'),
+      step('Foundation', foundation, 'pct'),
       step('Labor overhead', labor, 'pct'),
-      step('Effective multiplier', (1 + waste) * (1 + labor), 'number'),
+      step('Effective multiplier', verticalMultiplier, 'number'),
     ],
-    ['sf_construction_cost_per_sqft', 'material_waste_pct', 'labor_overhead_pct'],
+    ['sf_construction_cost_per_sqft', 'townhome_construction_cost_per_sqft', 'foundation_pct', 'labor_overhead_pct'],
   );
 
   // ── Infrastructure ─────────────────────────────────────────────────
@@ -666,19 +764,33 @@ export function buildCalculations(result, merged) {
     calcs[`infra_${item.id}`] = calc(
       `infra_${item.id}`,
       item.label,
-      'Quantity × unit cost × infrastructure safety factor',
+      'Project amount = quantity × unit cost × safety. Per-home share = project amount ÷ residential homes (fractional quantities allowed).',
       item.amount,
       'currency',
       [
         step('Quantity', item.quantity, qtyFormat, item.quantityBasis || item.unit),
-        step('Unit cost', item.unitCost, 'currency'),
+        step('Unit cost (bid rate)', item.unitCost, 'currency', `per ${item.unit} — not per home`),
         step('Base amount (qty × unit cost)', item.baseAmount ?? item.quantity * item.unitCost, 'currency'),
         step('Safety factor', safety, 'number', '× multiplier'),
         step(
-          'Final amount',
+          'Project amount',
           item.amount,
           'currency',
           `${formatCurrencyPlain(item.baseAmount ?? item.quantity * item.unitCost)} × ${safety.toFixed(2)}`,
+        ),
+        step(
+          'Quantity per home',
+          item.quantityPerHome ?? item.quantity / Math.max(residentialHomes, 1),
+          qtyFormat,
+          item.unit === 'each'
+            ? 'Fractional — this item is not 1 per home'
+            : `${item.unit} of project quantity ÷ homes`,
+        ),
+        step(
+          'Per-home share',
+          item.amountPerHome ?? item.amount / Math.max(residentialHomes, 1),
+          'currency',
+          'Project amount ÷ residential homes',
         ),
       ],
       [unitCostKey, 'infrastructure_safety_factor'].filter(Boolean),
@@ -754,7 +866,7 @@ export function buildCalculations(result, merged) {
     calcs[`${prefix}_totalCost`] = calc(
       `${prefix}_totalCost`,
       `Phase ${phase.phase} Development Cost`,
-      'Sum of per-home total costs in this phase (land, eng, studies, water, infra × safety, vertical × waste × labor)',
+      'Sum of per-home total costs in this phase (land, eng, studies, water, infra × safety, vertical × foundation × labor)',
       phase.totalCost,
       'currency',
       [
@@ -764,13 +876,13 @@ export function buildCalculations(result, merged) {
           'Infrastructure (phase share)',
           phase.costBreakdown?.infrastructure ?? 0,
           'currency',
-          `includes safety ×${(infrastructure.safetyFactor ?? 1).toFixed(2)}`,
+          `${phase.homeCount} homes × ${formatCurrencyPlain(shared.infraPerHome)} per home (equal share of project total, not a fresh sum of unit rates)`,
         ),
         step(
           'Vertical',
           phase.costBreakdown?.vertical ?? 0,
           'currency',
-          `includes waste ${(waste * 100).toFixed(0)}% + labor ${(labor * 100).toFixed(0)}%`,
+          `includes foundation ${(foundation * 100).toFixed(0)}% + labor ${(labor * 100).toFixed(0)}%`,
         ),
         step('Total cost', phase.totalCost, 'currency'),
         step('Avg per home', phase.avgCostPerHome, 'currency'),
@@ -854,6 +966,7 @@ export function buildCalculations(result, merged) {
           'construction_loan_rate',
           'infrastructure_safety_factor',
           'sf_construction_cost_per_sqft',
+          'townhome_construction_cost_per_sqft',
         ],
       );
     }
@@ -861,17 +974,27 @@ export function buildCalculations(result, merged) {
     // Per-lot in phase
     phase.homes.forEach((home) => {
       const lotId = `lot_${home.lotNumber}`;
+      const lotVerticalRate = verticalRateForHome(home);
+      const lotVerticalKey =
+        home.lotType === 'townhome' ? 'townhome_construction_cost_per_sqft' : 'sf_construction_cost_per_sqft';
       calcs[`${lotId}_total`] = calc(
         `${lotId}_total`,
         `Lot ${home.lotNumber} Total Cost`,
-        'Land + engineering + studies + water rights + infra (× safety) + vertical (× waste × labor)',
+        'Land + engineering + studies + water rights + infra (× safety) + vertical (× foundation × labor)',
         home.costs.total,
         'currency',
         [
           step('Land', home.costs.land, 'currency'),
           step('Engineering', home.costs.engineering, 'currency'),
           step('Studies', home.costs.studies, 'currency'),
-          step('Water rights', home.costs.waterRights, 'currency'),
+          step(
+            'Water rights',
+            home.costs.waterRights,
+            'currency',
+            (home.costs.waterEquityAf ?? 0) > 0
+              ? `${formatNumberPlain(home.costs.waterAfRequired ?? waterRights.afPerLot)} AF: ${formatNumberPlain(home.costs.waterEquityAf)} AF from equity, ${formatNumberPlain(home.costs.waterPurchasedAf ?? 0)} AF purchased @ ${formatCurrencyPlain(waterRights.costPerAcreFoot)}/AF`
+              : `${formatNumberPlain(home.costs.waterAfRequired || waterRights.afPerLot)} AF purchased @ ${formatCurrencyPlain(waterRights.costPerAcreFoot)}/AF`,
+          ),
           step(
             'Infrastructure',
             home.costs.infrastructure,
@@ -882,7 +1005,7 @@ export function buildCalculations(result, merged) {
             'Vertical',
             home.costs.verticalHard,
             'currency',
-            `${home.dwellingSqFt.toLocaleString()} sqft × $${baseCost} × (1+${(waste * 100).toFixed(0)}% waste) × (1+${(labor * 100).toFixed(0)}% labor)`,
+            `${home.dwellingSqFt.toLocaleString()} sqft × $${lotVerticalRate} × (1+${(foundation * 100).toFixed(0)}% foundation) × (1+${(labor * 100).toFixed(0)}% labor)`,
           ),
           step('Total', home.costs.total, 'currency'),
         ],
@@ -892,18 +1015,22 @@ export function buildCalculations(result, merged) {
       calcs[`${lotId}_vertical`] = calc(
         `${lotId}_vertical`,
         `Lot ${home.lotNumber} Vertical Cost`,
-        'Dwelling sqft × cost/sqft × (1 + waste) × (1 + labor overhead)',
+        'Dwelling sqft × type cost/sqft × (1 + foundation) × (1 + labor overhead)',
         home.costs.verticalHard,
         'currency',
         [
           step('Dwelling sqft', home.dwellingSqFt, 'sqft', 'From R-4 building envelope on lot polygon (fallback 2,200 SF / 1,525 TH if envelope unavailable)'),
-          step('Cost per sqft', baseCost, 'currency'),
-          step('Material waste', waste, 'pct'),
+          step(
+            home.lotType === 'townhome' ? 'Townhome cost per sqft' : 'Single-family cost per sqft',
+            lotVerticalRate,
+            'currency',
+          ),
+          step('Foundation', foundation, 'pct'),
           step('Labor overhead', labor, 'pct'),
-          step('Effective multiplier', (1 + waste) * (1 + labor), 'number'),
+          step('Effective multiplier', verticalMultiplier, 'number'),
           step('Vertical cost', home.costs.verticalHard, 'currency'),
         ],
-        ['sf_construction_cost_per_sqft', 'material_waste_pct', 'labor_overhead_pct'],
+        [lotVerticalKey, 'foundation_pct', 'labor_overhead_pct'],
       );
 
       if (home.disposition === 'sale') {
@@ -933,7 +1060,7 @@ export function buildCalculations(result, merged) {
   calcs.col_dev_cost = calc(
     'col_dev_cost',
     'Development Cost',
-    'Sum of per-home costs (land, engineering, studies, water rights, infrastructure × safety, vertical × waste × labor)',
+    'Sum of per-home costs (land, engineering, studies, water rights, infrastructure × safety, vertical × foundation × labor)',
     null,
     'text',
     [
@@ -944,7 +1071,7 @@ export function buildCalculations(result, merged) {
         'currency',
         `per home; includes safety ×${(infrastructure.safetyFactor ?? 1).toFixed(2)}`,
       ),
-      step('Vertical', null, 'text', `sqft × $${baseCost}/sqft × (1+waste) × (1+labor)`),
+      step('Vertical', null, 'text', `SF $${sfBaseCost}/sqft · TH $${thBaseCost}/sqft × (1+foundation) × (1+labor)`),
     ],
     costSideAssumptionRefs,
   );
@@ -1018,30 +1145,41 @@ export function buildCalculations(result, merged) {
   calcs.col_infra = calc(
     'col_infra',
     'Infrastructure (per lot)',
-    'Total infrastructure budget (× safety factor) ÷ residential homes',
+    'This lot’s equal share of the full road & utility budget: total ÷ residential homes. Phase cash is that share × homes in the phase.',
     shared.infraPerHome,
     'currency',
     [
+      ...infrastructure.lineItems.map((item) =>
+        step(
+          item.label,
+          item.amountPerHome ?? item.amount / Math.max(residentialHomes, 1),
+          'currency',
+          `${formatNumberPlain(item.quantityPerHome ?? item.quantity / Math.max(residentialHomes, 1))} ${item.unit}/home`,
+        ),
+      ),
       step('Unadjusted infra subtotal', infrastructure.totalInfraBase ?? 0, 'currency'),
       step('Safety factor', infrastructure.safetyFactor ?? 1, 'number'),
       step('Total infrastructure', infrastructure.totalInfraBudget, 'currency'),
-      step('Per home', shared.infraPerHome, 'currency'),
+      step('Residential homes', residentialHomes, 'number'),
+      step('Per home (total ÷ homes)', shared.infraPerHome, 'currency'),
     ],
     ['infrastructure_safety_factor', ...Object.values(infraUnitCostKeys)],
+    'Not the sum of unit rates. Discrete items (manholes, transformers, lights) with less than one per home contribute only their fractional share.',
   );
 
   calcs.col_vertical = calc(
     'col_vertical',
     'Vertical Construction',
-    'Dwelling sqft × cost/sqft × (1 + waste) × (1 + labor)',
+    'Dwelling sqft × type cost/sqft × (1 + foundation) × (1 + labor). Single-family and townhome rates are separate.',
     null,
     'text',
     [
-      step('Base cost per sqft', baseCost, 'currency'),
-      step('Material waste', waste, 'pct'),
+      step('Single-family cost per sqft', sfBaseCost, 'currency'),
+      step('Townhome cost per sqft', thBaseCost, 'currency'),
+      step('Foundation', foundation, 'pct'),
       step('Labor overhead', labor, 'pct'),
     ],
-    ['sf_construction_cost_per_sqft', 'material_waste_pct', 'labor_overhead_pct'],
+    ['sf_construction_cost_per_sqft', 'townhome_construction_cost_per_sqft', 'foundation_pct', 'labor_overhead_pct'],
   );
 
   // Assumption input refs (direct values, not calculated)
@@ -1052,8 +1190,8 @@ export function buildCalculations(result, merged) {
         entry.label,
         entry.description || 'User assumption — edit in the Assumptions panel',
         entry.value,
-        entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number',
-        [step('Current value', entry.value, entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number')],
+        entry.unit === 'flag' ? 'flag' : entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number',
+        [step('Current value', entry.value, entry.unit === 'flag' ? 'flag' : entry.unit === 'ratio' ? 'pct' : entry.unit === 'USD' ? 'currency' : 'number')],
         [],
         entry.source?.name ? `Source: ${entry.source.name}` : null,
       );

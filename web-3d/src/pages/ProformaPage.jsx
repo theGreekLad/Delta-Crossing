@@ -26,13 +26,15 @@ import {
 function AssumptionField({ entry, onChange, highlighted, liveHint = null, isKey = false }) {
   const isPct = isRatioUnit(entry.unit);
   const isCount = entry.unit === 'units';
+  const isFlag = entry.unit === 'flag';
   const displayValue = isPct ? (entry.value * 100).toFixed(2) : entry.value;
   const isOverridden = entry.value !== entry.default;
+  const flagOn = Number(entry.value) >= 0.5;
 
   return (
     <div className={`assumption-row ${isOverridden ? 'overridden' : ''} ${highlighted ? 'assumption-highlight' : ''} ${isKey ? 'is-key' : ''}`}>
       <div className="assumption-label">
-        <label htmlFor={entry.id}>
+        <label htmlFor={entry.id} title={entry.description || undefined}>
           {entry.label}
           {isKey ? (
             <span className="assumption-key-mark" title="Key driver">
@@ -40,40 +42,52 @@ function AssumptionField({ entry, onChange, highlighted, liveHint = null, isKey 
             </span>
           ) : null}
         </label>
-        {entry.description ? <p className="assumption-desc">{entry.description}</p> : null}
+        {entry.source?.url?.startsWith('http') ? (
+          <a className="assumption-source-link" href={entry.source.url} target="_blank" rel="noreferrer">
+            {entry.source.name}
+          </a>
+        ) : entry.source?.name ? (
+          <span className="assumption-source-link is-local" title={entry.source.path || entry.source.url}>
+            {entry.source.name}
+          </span>
+        ) : null}
       </div>
       <div className="assumption-input-wrap">
         <div className="assumption-input">
-          <input
-            id={entry.id}
-            type="number"
-            min={isCount ? 0 : undefined}
-            step={entry.unit === 'USD/sqft' ? 1 : undefined}
-            value={displayValue}
-            onChange={(event) => {
-              const raw = Number(event.target.value);
-              if (isCount) {
-                onChange(entry.id, Math.max(0, Math.round(raw)));
-                return;
-              }
-              onChange(entry.id, isPct ? raw / 100 : raw);
-            }}
-          />
-          <span className="assumption-unit">{isPct ? '%' : entry.unit}</span>
+          {isFlag ? (
+            <>
+              <input
+                id={entry.id}
+                type="checkbox"
+                className="assumption-flag"
+                checked={flagOn}
+                onChange={(event) => onChange(entry.id, event.target.checked ? 1 : 0)}
+              />
+              <span className="assumption-unit">{flagOn ? 'On' : 'Off'}</span>
+            </>
+          ) : (
+            <>
+              <input
+                id={entry.id}
+                type="number"
+                min={isCount || entry.unit === 'AF' || entry.unit === 'AF/lot' ? 0 : undefined}
+                step={entry.unit === 'USD/sqft' ? 1 : entry.unit === 'AF' ? 0.25 : undefined}
+                value={displayValue}
+                onChange={(event) => {
+                  const raw = Number(event.target.value);
+                  if (isCount) {
+                    onChange(entry.id, Math.max(0, Math.round(raw)));
+                    return;
+                  }
+                  onChange(entry.id, isPct ? raw / 100 : raw);
+                }}
+              />
+              <span className="assumption-unit">{isPct ? '%' : entry.unit}</span>
+            </>
+          )}
         </div>
-        {liveHint ? <p className="assumption-live-hint">{liveHint}</p> : null}
       </div>
-      <div className="assumption-source">
-        {entry.source?.url?.startsWith('http') ? (
-          <a className="source-link" href={entry.source.url} target="_blank" rel="noreferrer">
-            {entry.source.name}
-          </a>
-        ) : (
-          <span className="source-label" title={entry.source?.path || entry.source?.url}>
-            {entry.source?.name}
-          </span>
-        )}
-      </div>
+      {liveHint ? <p className="assumption-live-hint">{liveHint}</p> : null}
     </div>
   );
 }
@@ -157,6 +171,24 @@ function formatMonths(value) {
   return `${years} yr ${months} mo`;
 }
 
+function formatHomesRunning(thisMonth, total, ofTotal) {
+  const running = total ?? 0;
+  const of = ofTotal != null ? ` of ${ofTotal}` : '';
+  if (thisMonth > 0) {
+    return { text: `+${thisMonth} · ${running}`, title: `${thisMonth} this month · ${running}${of} to date` };
+  }
+  return { text: String(running), title: `${running}${of} to date` };
+}
+
+function HomesRunningCell({ thisMonth, total, ofTotal }) {
+  const { text, title } = formatHomesRunning(thisMonth, total, ofTotal);
+  return (
+    <td className={`num ${thisMonth > 0 ? 'homes-delta' : ''}`} title={title}>
+      {text}
+    </td>
+  );
+}
+
 function formatSpendBreakdown(breakdown) {
   if (!breakdown) return undefined;
   const parts = [
@@ -191,7 +223,9 @@ async function readJsonResponse(response, label) {
   }
 }
 
-function FinancialsView({ financials, onShowCalc }) {
+const SHOW_SELF_FUND_STRIP = false;
+
+function FinancialsView({ financials, onShowCalc, onApplySelfFund }) {
   if (!financials) {
     return (
       <section className="proforma-section">
@@ -219,9 +253,36 @@ function FinancialsView({ financials, onShowCalc }) {
       <p className="section-lead">
         Levered equity returns with land/engineering/studies at project start, phase infrastructure and
         water rights upfront per phase, vertical during construction, and sales as build waves finish.
-        Profits are swept to equity after keeping enough cash to fund Homes under construction
-        simultaneously. Exit value is leftover cash, debt, and reserved rental units at a 5% cap rate.
+        Profits are swept to equity after keeping enough cash to keep Homes under construction
+        going and to pay the next phase’s roads and water, unless Keep sale proceeds is on. Sweeps come from sale proceeds only —
+        starting cash and later equity calls are never distributed. Exit value is leftover cash, debt, and
+        reserved rental units at a 5% cap rate.
       </p>
+
+      {SHOW_SELF_FUND_STRIP && financials.selfFundCashRequired > 0 ? (
+        <div className="self-fund-strip">
+          <CalcMetricCard calcId="selfFundCashRequired" onShow={onShowCalc} highlight>
+            <span>Cash to self-fund (no debt, no later checks)</span>
+            <strong>{formatCurrency(financials.selfFundCashRequired)}</strong>
+          </CalcMetricCard>
+          <div className="self-fund-strip-copy">
+            <p>
+              Put this in <strong>Starting equity / cash</strong> under Financing — not in Land
+              &amp; Development. Land is a cost; this is the working-capital hole before the first
+              closings
+              {financials.selfFundTroughMonth
+                ? ` (month ${financials.selfFundTroughMonth})`
+                : ''}
+              .
+            </p>
+            {onApplySelfFund ? (
+              <button type="button" className="btn btn-primary" onClick={onApplySelfFund}>
+                Use as starting cash (no loan, keep proceeds)
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="financials-hero">
         <button
@@ -260,6 +321,10 @@ function FinancialsView({ financials, onShowCalc }) {
         <CalcMetricCard calcId="totalEquityInvested" onShow={onShowCalc}>
           <span>Total equity invested</span>
           <strong>{formatCurrency(financials.totalEquityInvested)}</strong>
+        </CalcMetricCard>
+        <CalcMetricCard calcId="additionalEquityInjections" onShow={onShowCalc}>
+          <span>Additional equity calls</span>
+          <strong>{formatCurrency(financials.additionalEquityInjections ?? 0)}</strong>
         </CalcMetricCard>
         <CalcMetricCard calcId="totalEquityDistributions" onShow={onShowCalc} highlight>
           <span>Cash swept to equity</span>
@@ -394,8 +459,12 @@ function FinancialsView({ financials, onShowCalc }) {
 
       <h3>Monthly Cash Flow</h3>
       <p className="section-lead">
-        After each month’s spend, sales, and debt paydown, cash above the construction reserve is
-        distributed. In reserve is what stays in the project; Distributed is what was swept to equity.
+        {financials.keepSaleProceeds
+          ? 'Sale proceeds stay in the project. Distributed stays at $0 until exit; In reserve is the full cash balance.'
+          : 'After each month’s spend, sales, and debt paydown, leftover sale proceeds above the construction reserve are distributed. The reserve is the vertical float (homes under construction) plus the next phase’s infrastructure and water, so the next sitework package is paid from cash on hand instead of a new equity call. Starting cash and equity calls are never swept. In reserve is what stays in the project; Distributed is sale proceeds paid out to equity.'}{' '}
+        Rows with an extra equity call are marked. The self-fund low point is month{' '}
+        {financials.selfFundTroughMonth ?? '—'}. Built is homes completed (a construction wave
+        finishing); Sold is closings. Both are running totals.
       </p>
       <div className="financials-table-wrap">
         <table className="proforma-table financials-table">
@@ -404,8 +473,10 @@ function FinancialsView({ financials, onShowCalc }) {
             <th>Month</th>
             <th>Phase</th>
             <th>Stage</th>
+            <th title="Homes completed this month · running total">Built</th>
+            <th title="Homes closed this month · running total">Sold</th>
             <th>Equity Flow</th>
-            <th title="Profit swept to equity this month">Distributed</th>
+            <th title="Sale proceeds swept to equity this month (never contributed cash)">Distributed</th>
             <th title="Cash kept in the project after this month’s sweep">In reserve</th>
             <th>Dev Spend</th>
             <th>Sales</th>
@@ -416,12 +487,30 @@ function FinancialsView({ financials, onShowCalc }) {
         </thead>
         <tbody>
           {financials.monthlyRows.map((row) => (
-            <tr key={`${row.month}-${row.label}`}>
+            <tr
+              key={`${row.month}-${row.label}`}
+              className={[
+                row.equityInjection > 0 ? 'row-equity-call' : '',
+                row.month === financials.selfFundTroughMonth ? 'row-cash-trough' : '',
+              ]
+                .filter(Boolean)
+                .join(' ') || undefined}
+            >
               <td>{row.month}</td>
               <td>{row.phase ? `Phase ${row.phase}` : '—'}</td>
               <td>
                 <span className={`stage-pill ${row.stage}`}>{row.stage}</span>
               </td>
+              <HomesRunningCell
+                thisMonth={row.homesBuiltThisMonth || 0}
+                total={row.homesBuilt}
+                ofTotal={row.homesBuiltOf}
+              />
+              <HomesRunningCell
+                thisMonth={row.homesSoldThisMonth || 0}
+                total={row.homesSold}
+                ofTotal={row.homesSoldOf}
+              />
               <td
                 className={row.equityFlow >= 0 ? 'pos' : 'neg'}
                 title={
@@ -439,7 +528,7 @@ function FinancialsView({ financials, onShowCalc }) {
                 className="num"
                 title={
                   row.cashReserve
-                    ? `Target reserve ${formatCurrency(row.cashReserve)} for ${row.homesRemainingToBuild ?? '—'} unbuilt homes`
+                    ? `Target reserve ${formatCurrency(row.cashReserve)} — ${formatCurrency(row.verticalReserve || 0)} vertical float + ${formatCurrency(row.nextPhaseInfraReserve || 0)} next-phase roads & water`
                     : undefined
                 }
               >
@@ -465,8 +554,10 @@ function FinancialsView({ financials, onShowCalc }) {
 
 const MAIN_ASSUMPTION_IDS = [
   'land_cost_total',
+  'water_equity_acre_feet',
   'infrastructure_safety_factor',
   'sf_construction_cost_per_sqft',
+  'townhome_construction_cost_per_sqft',
   'initial_equity',
 ];
 
@@ -482,19 +573,19 @@ const CATEGORY_LABELS = {
 
 const CATEGORY_COLLAPSE_NOTES = {
   development:
-    'Opens water-rights AF/lot and city $/AF. Use when modeling culinary-water purchase cost separately from land.',
+    'Opens water equity (owned AF), AF/lot requirement, and city $/AF. Owned water is drawn home-by-home in construction order before any city purchase.',
   infrastructure:
     'Opens asphalt, curb, utilities, lights, and other unit costs. Use to match contractor bids or stress individual line items beyond the safety factor.',
   vertical_construction:
-    'Opens waste and labor overhead multipliers. Use when refining hard-cost build-up on top of the base $/sqft.',
+    'Opens single-family and townhome $/sqft, plus foundation and labor overhead. Use when the attached product does not cost the same as detached.',
   financing:
-    'Opens construction loan rate and advance %. Use for leverage / interest-sensitivity cases.',
+    'Opens starting cash, keep-proceeds, loan rate, and advance %. Starting cash is where self-fund working capital goes — not Land & Development. Use keep-proceeds + 0% loan to finish without later checks.',
   revenue:
     'Opens SF and townhome sale $/sqft. Use to reprice the absorption case; live avg-home equivalents update under each input.',
   rental:
     'Opens reserve counts, rents, vacancy, and opex. Use for mixed sale/rent exit and rental terminal value after debt is retired.',
   schedule:
-    'Opens build pace, parallel homes, and monthly absorption. Parallel homes also sizes the cash reserve that is not swept to equity. Use when testing timeline, peak debt, and IRR duration.',
+    'Opens build pace, parallel homes, and monthly absorption. Parallel homes sizes the vertical cash float; the reserve also holds the next phase’s roads and water. Use when testing timeline, peak debt, and IRR duration.',
 };
 
 export default function ProformaPage() {
@@ -555,7 +646,7 @@ export default function ProformaPage() {
     async function load() {
       try {
         const [defaultsRes, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
-          fetch(`${platUrl('data/proforma-defaults.json')}?v=5`),
+          fetch(`${platUrl('data/proforma-defaults.json')}?v=10`),
           fetch(platUrl('data/manifest.json')),
           fetch(platUrl('data/sheet1-lots.json')),
           fetch(platUrl('data/sheet1-commercial.json')),
@@ -582,6 +673,10 @@ export default function ProformaPage() {
           'gas_main_per_lf',
           'electric_conduit_per_lf',
           'telecom_conduit_per_lf',
+          'keep_sale_proceeds',
+          'townhome_construction_cost_per_sqft',
+          'water_equity_acre_feet',
+          'foundation_pct',
           'electric_transformer_each',
           'street_light_each',
         ];
@@ -720,6 +815,10 @@ export default function ProformaPage() {
   const avgThSqFt = result.projectTotals.avgTownhomeDwellingSqFt || 0;
   const sfRate = result.map.sf_sale_price_per_sqft ?? 0;
   const thRate = result.map.townhome_sale_price_per_sqft ?? 0;
+  const sfVertical = result.map.sf_construction_cost_per_sqft ?? 0;
+  const thVertical = result.map.townhome_construction_cost_per_sqft ?? sfVertical;
+  const verticalMult =
+    (1 + (result.map.foundation_pct ?? 0.07)) * (1 + (result.map.labor_overhead_pct ?? 0.1));
   const assumptionLiveHints = {
     sf_sale_price_per_sqft: avgSfSqFt
       ? `≈ ${formatCurrency(avgSfSqFt * sfRate)} avg single-family (${formatNumber(avgSfSqFt)} sqft)`
@@ -727,15 +826,50 @@ export default function ProformaPage() {
     townhome_sale_price_per_sqft: avgThSqFt
       ? `≈ ${formatCurrency(avgThSqFt * thRate)} avg townhome (${formatNumber(avgThSqFt)} sqft)`
       : null,
-    parallel_homes_per_phase: result.financials?.avgVerticalPerHome
-      ? `Cash reserve ≈ ${formatCurrency((result.map.parallel_homes_per_phase ?? 0) * result.financials.avgVerticalPerHome)} (this many homes × avg vertical cost); surplus is swept`
+    sf_construction_cost_per_sqft: avgSfSqFt
+      ? `≈ ${formatCurrency(avgSfSqFt * sfVertical * verticalMult)} avg SF vertical after foundation & labor`
       : null,
+    townhome_construction_cost_per_sqft: avgThSqFt
+      ? `≈ ${formatCurrency(avgThSqFt * thVertical * verticalMult)} avg townhome vertical after foundation & labor`
+      : null,
+    parallel_homes_per_phase: result.financials?.avgVerticalPerHome
+      ? `Vertical float ≈ ${formatCurrency((result.map.parallel_homes_per_phase ?? 0) * result.financials.avgVerticalPerHome)} (${result.map.parallel_homes_per_phase ?? 0} homes). Reserve also holds the next phase’s roads & water (${formatCurrency(result.financials.nextPhaseInfraReserveTypical ?? 0)}) so that sitework is paid from cash, not a new equity call.`
+      : null,
+    initial_equity: result.financials?.selfFundCashRequired
+      ? `Self-fund peak ${formatCurrency(result.financials.selfFundCashRequired)}. Set this, 0% loan, and Keep sale proceeds — do not add a land-cost line.`
+      : null,
+    keep_sale_proceeds: result.financials?.keepSaleProceeds
+      ? 'On: later phase roads are paid from retained sales. Off: sale proceeds above reserve are swept; contributed cash is not.'
+      : 'Off: sale proceeds above the vertical reserve are swept. Starting cash and later calls stay in the project until spent or exit.',
+    water_equity_acre_feet: (() => {
+      const wr = result.waterRights;
+      if (!wr) return null;
+      if ((wr.equityAcreFeet ?? 0) <= 0) {
+        return `None applied. All ${formatNumber(wr.totalAcreFeet, 2)} AF purchased ≈ ${formatCurrency(wr.total)}.`;
+      }
+      if ((wr.purchasedAcreFeet ?? 0) <= 0) {
+        return `Covers all ${wr.sfLots + wr.townhomeLots} homes. No city purchase.`;
+      }
+      const partial = wr.homesPartial ? ` + ${wr.homesPartial} partial` : '';
+      return `Covers ${wr.homesFullyCovered} homes${partial} in build order. Remaining ${formatNumber(wr.purchasedAcreFeet, 2)} AF purchased ≈ ${formatCurrency(wr.total)}.`;
+    })(),
+    water_rights_cost_per_acre_foot: (() => {
+      const wr = result.waterRights;
+      if (!wr) return null;
+      if ((wr.purchasedAcreFeet ?? 0) > 0) {
+        return `${formatNumber(wr.purchasedAcreFeet, 2)} AF still to buy ≈ ${formatCurrency(wr.total)}`;
+      }
+      if ((wr.equityApplied ?? 0) > 0) return 'Owned water covers the full requirement';
+      return null;
+    })(),
   };
 
   const activePhase = view.startsWith('phase-') ? Number(view.replace('phase-', '')) : null;
   const phaseData = activePhase
     ? result.phaseResults.find((entry) => entry.phase === activePhase)
     : null;
+  const residentialHomeCount =
+    result.projectTotals.singleFamilyHomes + result.projectTotals.townhomeLots;
   const hasCustomAssumptions = merged.assumptions.some((entry) => entry.value !== entry.default);
 
   return (
@@ -877,7 +1011,21 @@ export default function ProformaPage() {
             ))}
           </nav>
 
-          {view === 'financials' && <FinancialsView financials={result.financials} onShowCalc={showCalc} />}
+          {view === 'financials' && (
+            <FinancialsView
+              financials={result.financials}
+              onShowCalc={showCalc}
+              onApplySelfFund={() => {
+                const amount = Math.ceil(result.financials?.selfFundCashRequired || 0);
+                setOverride('initial_equity', amount);
+                setOverride('construction_loan_advance_pct', 0);
+                setOverride('keep_sale_proceeds', 1);
+                setOverrideTick((tick) => tick + 1);
+                toggleAssumptions(true);
+                setHighlightAssumptionId('initial_equity');
+              }}
+            />
+          )}
 
           {view === 'total' && (
             <section className="proforma-section">
@@ -905,7 +1053,11 @@ export default function ProformaPage() {
                 </CalcMetricCard>
                 <CalcMetricCard calcId="waterRightsTotal" onShow={showCalc}>
                   <span>
-                    Water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF)
+                    Water rights ({formatNumber(result.waterRights.purchasedAcreFeet ?? result.waterRights.totalAcreFeet, 1)} AF purchased
+                    {(result.waterRights.equityApplied ?? 0) > 0
+                      ? ` · ${formatNumber(result.waterRights.equityApplied, 1)} AF equity`
+                      : ''}
+                    )
                   </span>
                   <strong>{formatCurrency(result.waterRights.total)}</strong>
                 </CalcMetricCard>
@@ -960,7 +1112,20 @@ export default function ProformaPage() {
                   </tr>
                   <tr className="calc-row-clickable" onClick={() => showCalc('waterRightsTotal')}>
                     <td>
-                      Culinary water rights ({formatNumber(result.waterRights.totalAcreFeet, 1)} AF
+                      Water equity (already owned, {formatNumber(result.waterRights.equityApplied ?? 0, 2)} AF
+                      {(result.waterRights.homesFullyCovered ?? 0) > 0
+                        ? ` · ${result.waterRights.homesFullyCovered} homes at $0${result.waterRights.homesPartial ? `, ${result.waterRights.homesPartial} partial` : ''}`
+                        : ''}
+                      )
+                    </td>
+                    <CalcTd calcId="waterRightsTotal" onShow={showCalc}>
+                      {formatCurrency(0)}
+                    </CalcTd>
+                  </tr>
+                  <tr className="calc-row-clickable" onClick={() => showCalc('waterRightsTotal')}>
+                    <td>
+                      Culinary water purchase ({formatNumber(result.waterRights.purchasedAcreFeet ?? result.waterRights.totalAcreFeet, 1)} AF
+                      {' '}of {formatNumber(result.waterRights.totalAcreFeet, 1)} AF
                       @ {formatCurrency(result.waterRights.costPerAcreFoot)}/AF)
                     </td>
                     <CalcTd calcId="waterRightsTotal" onShow={showCalc}>{formatCurrency(result.waterRights.total)}</CalcTd>
@@ -1227,17 +1392,28 @@ export default function ProformaPage() {
                   <span>Total infrastructure cost</span>
                   <strong>{formatCurrency(result.infrastructure.totalInfraBudget, 2)}</strong>
                 </CalcMetricCard>
+                <CalcMetricCard calcId="infraPerHome" onShow={showCalc} highlight>
+                  <span>Infra per home</span>
+                  <strong>{formatCurrency(result.shared.infraPerHome)}</strong>
+                </CalcMetricCard>
               </div>
 
               <h3>Cost Line Items</h3>
+              <p className="section-lead">
+                Unit cost is the bid rate ($/sqft, $/LF, or $/each). Per home is that line&apos;s share of
+                the project total (amount ÷ {formatNumber(residentialHomeCount)}{' '}
+                homes), including items with less than one per lot.
+              </p>
               <table className="proforma-table">
                 <thead>
                   <tr>
                     <th>Item</th>
                     <th>Ordinance</th>
                     <th>Quantity</th>
-                    <th>Unit Cost</th>
-                    <th>Amount</th>
+                    <th>Qty / home</th>
+                    <th>Unit cost</th>
+                    <th>Project amount</th>
+                    <CalcTh calcId="infraPerHome" onShow={showCalc}>Per home</CalcTh>
                   </tr>
                 </thead>
                 <tbody>
@@ -1252,21 +1428,32 @@ export default function ProformaPage() {
                       <td>
                         {formatNumber(row.quantity, row.unit === 'each' ? 0 : 2)} {row.unit}
                       </td>
+                      <td>
+                        {formatNumber(row.quantityPerHome, row.unit === 'each' ? 3 : 2)} {row.unit}
+                      </td>
                       <td>{formatCurrency(row.unitCost, 2)}</td>
                       <CalcTd calcId={`infra_${row.id}`} onShow={showCalc}>
                         {formatCurrency(row.amount, 2)}
+                      </CalcTd>
+                      <CalcTd calcId="infraPerHome" onShow={showCalc}>
+                        {formatCurrency(row.amountPerHome, 2)}
                       </CalcTd>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
                   <tr className="calc-row-clickable" onClick={() => showCalc('totalInfraBudget')}>
-                    <td colSpan={4}>
+                    <td colSpan={5}>
                       <strong>Total infrastructure</strong>
                     </td>
                     <td>
                       <button type="button" className="calc-td-trigger" onClick={() => showCalc('totalInfraBudget')}>
                         <strong>{formatCurrency(result.infrastructure.totalInfraBudget, 2)}</strong>
+                      </button>
+                    </td>
+                    <td>
+                      <button type="button" className="calc-td-trigger" onClick={() => showCalc('infraPerHome')}>
+                        <strong>{formatCurrency(result.shared.infraPerHome, 2)}</strong>
                       </button>
                     </td>
                   </tr>
@@ -1353,6 +1540,12 @@ export default function ProformaPage() {
           {phaseData && (
             <section className="proforma-section">
               <h2>Phase {phaseData.phase} Detail</h2>
+              <p className="section-lead">
+                Phase infrastructure is this phase&apos;s equal share of the project road &amp; utility
+                budget ({phaseData.homeCount} homes × {formatCurrency(result.shared.infraPerHome)} per
+                home = {formatCurrency(phaseData.costBreakdown?.infrastructure ?? 0)}), not a new sum of
+                unit rates for the phase.
+              </p>
               <div className="metric-grid">
                 <div className="metric-card">
                   <span>Homes in phase</span>

@@ -6,6 +6,8 @@ function formatStepValue(value, format) {
   switch (format) {
     case 'currency':
       return formatCurrency(value, 2);
+    case 'flag':
+      return Number(value) >= 0.5 ? 'On' : 'Off';
     case 'pct':
       return formatPct(value);
     case 'multiple':
@@ -133,12 +135,16 @@ export function CalculationPanel({ calcId, calculations, assumptions, onClose, o
                       >
                         <span>{entry.label}</span>
                         <span className="calc-assumption-value">
-                          {entry.unit === 'ratio' || (typeof entry.unit === 'string' && entry.unit.startsWith('ratio/'))
-                            ? formatPct(entry.value)
-                            : entry.unit === 'USD' ||
-                                (typeof entry.unit === 'string' && entry.unit.startsWith('USD'))
-                              ? formatCurrency(entry.value, 2)
-                              : formatNumber(entry.value, 2)}
+          {entry.unit === 'flag'
+            ? Number(entry.value) >= 0.5
+              ? 'On'
+              : 'Off'
+            : entry.unit === 'ratio' || (typeof entry.unit === 'string' && entry.unit.startsWith('ratio/'))
+            ? formatPct(entry.value)
+            : entry.unit === 'USD' ||
+                (typeof entry.unit === 'string' && entry.unit.startsWith('USD'))
+              ? formatCurrency(entry.value, 2)
+              : formatNumber(entry.value, 2)}
                         </span>
                       </button>
                     </li>

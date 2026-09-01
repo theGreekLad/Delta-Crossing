@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 10,
   "model": "for-sale",
   "description": "For-sale proforma with ordinance-based infrastructure costing. Road area and centerline length from plat PDF annotations; quantities per Ord. 2025-317 (ST-103, ST-113, ST-131).",
   "phaseOrder": [
@@ -36,12 +36,28 @@
       "default": 0,
       "unit": "USD",
       "category": "financing",
-      "description": "Cash on hand before phase 1 construction.",
+      "description": "Cash deposited before month 1. This is a source of funds, not a development cost. The Financials tab shows how much you need here to finish with no loan and no later checks.",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
         "notes": "Land $1.835M, engineering $110k, studies $17.5k."
+      },
+      "overridable": true
+    },
+    {
+      "id": "keep_sale_proceeds",
+      "label": "Keep sale proceeds in the project",
+      "value": 0,
+      "default": 0,
+      "unit": "flag",
+      "category": "financing",
+      "description": "Off: leftover sale proceeds above the vertical-construction reserve are swept to equity each month (starting cash and later calls are never swept). On: all sale proceeds stay in until exit, so one starting deposit can finish the job.",
+      "source": {
+        "name": "Self-fund cash-flow policy",
+        "url": "web-3d/src/proforma/computeProforma.js",
+        "retrieved": "2026-09-01",
+        "notes": "Required to model no additional infusions; default remains sweep-to-equity for levered IRR."
       },
       "overridable": true
     },
@@ -74,6 +90,22 @@
         "url": "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
         "retrieved": "2026-07-07",
         "notes": "Minimum 1.0 acre-foot of culinary water dedicated to each proposed lot at plat approval."
+      },
+      "overridable": true
+    },
+    {
+      "id": "water_equity_acre_feet",
+      "label": "Water equity (already owned)",
+      "value": 0,
+      "default": 0,
+      "unit": "AF",
+      "category": "development",
+      "description": "Culinary acre-feet already owned — not purchased. Applied to homes in construction order (phase, then lot number) until exhausted. Remaining requirement is bought at the city $/AF rate.",
+      "source": {
+        "name": "Sponsor-owned culinary water rights",
+        "url": "Supporting Docs/Delta/Utilities/Culinary/Water Rights/",
+        "retrieved": "2026-09-01",
+        "notes": "Default 0 AF so totals match the prior all-purchase case. Raise this for water already in hand."
       },
       "overridable": true
     },
@@ -164,12 +196,28 @@
       "default": 120,
       "unit": "USD/sqft",
       "category": "vertical_construction",
-      "description": "",
+      "description": "Hard cost per dwelling square foot for detached single-family homes. Waste and labor overhead apply on top.",
       "source": {
         "name": "BuildGenius Utah Construction Costs 2026",
         "url": "https://buildgenius.app/construction-costs/utah",
         "retrieved": "2026-07-07",
         "notes": "Standard finish single-family; Utah cost index 102%."
+      },
+      "overridable": true
+    },
+    {
+      "id": "townhome_construction_cost_per_sqft",
+      "label": "Townhome vertical construction",
+      "value": 120,
+      "default": 120,
+      "unit": "USD/sqft",
+      "category": "vertical_construction",
+      "description": "Hard cost per dwelling square foot for townhomes. Waste and labor overhead apply on top. Independent of the single-family rate.",
+      "source": {
+        "name": "BuildGenius Utah Construction Costs 2026",
+        "url": "https://buildgenius.app/construction-costs/utah",
+        "retrieved": "2026-09-01",
+        "notes": "Default matches the previous shared $120/sqft so totals do not jump; lower this for attached-product savings."
       },
       "overridable": true
     },
@@ -190,18 +238,18 @@
       "overridable": true
     },
     {
-      "id": "material_waste_pct",
-      "label": "Material waste factor",
+      "id": "foundation_pct",
+      "label": "Foundation",
       "value": 0.07,
       "default": 0.07,
       "unit": "ratio",
       "category": "vertical_construction",
-      "description": "",
+      "description": "Foundation cost as a percent of vertical hard cost (dwelling sqft × $/sqft). Applied before labor overhead.",
       "source": {
         "name": "RSMeans residential estimating practice",
         "url": "https://www.rsmeans.com/2026-residential-costs-book",
-        "retrieved": "2026-07-07",
-        "notes": "Typical 5–10% waste allowance on materials."
+        "retrieved": "2026-09-01",
+        "notes": "Default 7% matches the previous material-waste adder so totals do not jump. Adjust to match foundation bids."
       },
       "overridable": true
     },
@@ -276,7 +324,7 @@
       "default": 5,
       "unit": "homes",
       "category": "schedule",
-      "description": "Also sizes the cash reserve: enough vertical construction cost to keep this many homes in production. Surplus cash above that reserve is swept to equity.",
+      "description": "Sizes the vertical cash float: enough to keep this many homes in production. The reserve also holds the next phase’s infrastructure and water so that sitework is paid from cash on hand instead of a new equity call. Only sale proceeds above that combined reserve are swept.",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
