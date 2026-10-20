@@ -1179,3 +1179,44 @@ a.assumption-source-link:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.variant-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+}
+
+.variant-switch button {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--surface-border);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.8rem;
+}
+
+.variant-switch button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--surface-border);
+}
+
+.compare-table th.is-active,
+.compare-table td.is-active {
+  background: rgba(61, 154, 139, 0.08);
+}
+
+.compare-table td.is-best {
+  color: #7fd49b;
+  font-weight: 600;
+}
+
+.compare-table tfoot td {
+  border-bottom: none;
+}

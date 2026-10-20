@@ -256,6 +256,7 @@ export function buildCalculations(result, merged) {
 
     if (projectTotals.acquisitionCosts?.total > 0) {
       const acq = projectTotals.acquisitionCosts;
+      const softSource = acq.softCostSource || 'From 12_11_23 Proforma Delta.xlsx — not editable';
       calcs.acquisitionCosts = calc(
         'acquisitionCosts',
         'Project Acquisition Costs',
@@ -264,12 +265,14 @@ export function buildCalculations(result, merged) {
         'currency',
         [
           step('Land', acq.land, 'currency'),
-          step('Engineering (fixed)', acq.engineering, 'currency', 'From 12_11_23 Proforma Delta.xlsx — not editable'),
-          step('Studies (fixed)', acq.studies, 'currency', 'From 12_11_23 Proforma Delta.xlsx — not editable'),
+          step('Engineering (fixed)', acq.engineering, 'currency', softSource),
+          step('Studies (fixed)', acq.studies, 'currency', softSource),
           step('Total acquisition', acq.total, 'currency'),
         ],
         ['land_cost_total'],
-        'Engineering ($110k) and studies ($17.5k) are fixed soft costs from the source proforma.',
+        acq.softCostSource
+          ? `Engineering and studies are fixed planning placeholders: ${acq.softCostSource}`
+          : 'Engineering ($110k) and studies ($17.5k) are fixed soft costs from the source proforma.',
       );
     }
 
@@ -313,10 +316,11 @@ export function buildCalculations(result, merged) {
   }
 
   // ── Project totals ─────────────────────────────────────────────────
+  const countSource = result.meta?.countSource || 'on the plat';
   calcs.singleFamilyHomes = calc(
     'singleFamilyHomes',
     'Single-Family Homes',
-    'Count of single-family lots on the plat',
+    `Count of single-family lots ${countSource}`,
     projectTotals.singleFamilyHomes,
     'number',
     [step('Single-family lots', projectTotals.singleFamilyHomes, 'number')],
@@ -325,7 +329,7 @@ export function buildCalculations(result, merged) {
   calcs.townhomeLots = calc(
     'townhomeLots',
     'Townhomes',
-    'Count of townhome lots on the plat',
+    `Count of townhome lots ${countSource}`,
     projectTotals.townhomeLots,
     'number',
     [step('Townhome lots', projectTotals.townhomeLots, 'number')],
@@ -420,13 +424,13 @@ export function buildCalculations(result, merged) {
         'Engineering (fixed)',
         projectTotals.acquisitionCosts?.engineering ?? 0,
         'currency',
-        'From source proforma — not an editable assumption',
+        projectTotals.acquisitionCosts?.softCostSource || 'From source proforma — not an editable assumption',
       ),
       step(
         'Studies (fixed)',
         projectTotals.acquisitionCosts?.studies ?? 0,
         'currency',
-        'From source proforma — not an editable assumption',
+        projectTotals.acquisitionCosts?.softCostSource || 'From source proforma — not an editable assumption',
       ),
       step(
         'Water rights (cash purchase)',
@@ -584,6 +588,8 @@ export function buildCalculations(result, merged) {
     telecom_conduit: 'telecom_conduit_per_lf',
     transformers: 'electric_transformer_each',
     street_lights: 'street_light_each',
+    storm_storage: 'storm_storage_per_cy',
+    ditch_pipe: 'ditch_pipe_per_lf',
   };
   const costSideAssumptionRefs = [
     'land_cost_total',
@@ -659,14 +665,22 @@ export function buildCalculations(result, merged) {
 
   // ── Infrastructure ─────────────────────────────────────────────────
   const cl = infrastructure.totalRoadLf;
+  const movedLf = infrastructure.roadArea.transferredLf || 0;
+  const labels = infrastructure.labels || {};
   calcs.totalRoadLf = calc(
     'totalRoadLf',
     'Total Centerline Length',
-    'Sum of centerline segment lengths from plat annotations',
+    labels.centerline || 'Sum of centerline segment lengths from plat annotations',
     cl,
     'lf',
     [
       step('Segment count', infrastructure.roadArea.segmentCount, 'number'),
+      ...(movedLf
+        ? [
+            step('Plat centerline', cl + movedLf, 'lf'),
+            step(infrastructure.roadArea.transferLabel, -movedLf, 'lf'),
+          ]
+        : []),
       step('Total centerline', cl, 'lf'),
     ],
     [],
@@ -691,7 +705,7 @@ export function buildCalculations(result, merged) {
   calcs.pavementSqFt = calc(
     'pavementSqFt',
     'Pavement Area',
-    'Centerline LF × 24\' (ST-103)',
+    labels.pavementFormula || 'Centerline LF × 24\' (ST-103)',
     infrastructure.pavementSqFt,
     'sqft',
     [
@@ -700,13 +714,13 @@ export function buildCalculations(result, merged) {
       step('Pavement area', infrastructure.pavementSqFt, 'sqft'),
     ],
     [],
-    'Pavement width from Ord. 2025-317 ST-103 (24\' local roads). Not an editable assumption.',
+    labels.pavementNote || 'Pavement width from Ord. 2025-317 ST-103 (24\' local roads). Not an editable assumption.',
   );
 
   calcs.sidewalkSqFt = calc(
     'sidewalkSqFt',
     'Sidewalk Area',
-    'Centerline LF × 2 × 5\' (ST-131, both sides)',
+    labels.sidewalkFormula || 'Centerline LF × 2 × 5\' (ST-131, both sides)',
     infrastructure.sidewalkSqFt,
     'sqft',
     [
@@ -715,7 +729,7 @@ export function buildCalculations(result, merged) {
       step('Sidewalk area', infrastructure.sidewalkSqFt, 'sqft'),
     ],
     [],
-    'Sidewalk width from Ord. 2025-317 ST-131 (5\' both sides). Not an editable assumption.',
+    labels.sidewalkNote || 'Sidewalk width from Ord. 2025-317 ST-131 (5\' both sides). Not an editable assumption.',
   );
 
   calcs.totalInfraBudget = calc(
@@ -751,7 +765,7 @@ export function buildCalculations(result, merged) {
   infrastructure.lineItems.forEach((item) => {
     const safety = infrastructure.safetyFactor ?? 1;
     const qtyFormat =
-      item.unit === 'each' ? 'number' : item.unit === 'sqft' ? 'sqft' : 'lf';
+      item.unit === 'each' || item.unit === 'CY' ? 'number' : item.unit === 'sqft' ? 'sqft' : 'lf';
     const unitCostKey = infraUnitCostKeys[item.id];
     const sourceNote = [
       item.quantityBasis ? `Quantity basis: ${item.quantityBasis}.` : null,
@@ -974,12 +988,13 @@ export function buildCalculations(result, merged) {
     // Per-lot in phase
     phase.homes.forEach((home) => {
       const lotId = `lot_${home.lotNumber}`;
+      const lotName = home.label ?? home.lotNumber;
       const lotVerticalRate = verticalRateForHome(home);
       const lotVerticalKey =
         home.lotType === 'townhome' ? 'townhome_construction_cost_per_sqft' : 'sf_construction_cost_per_sqft';
       calcs[`${lotId}_total`] = calc(
         `${lotId}_total`,
-        `Lot ${home.lotNumber} Total Cost`,
+        `Lot ${lotName} Total Cost`,
         'Land + engineering + studies + water rights + infra (× safety) + vertical (× foundation × labor)',
         home.costs.total,
         'currency',
@@ -1014,12 +1029,18 @@ export function buildCalculations(result, merged) {
 
       calcs[`${lotId}_vertical`] = calc(
         `${lotId}_vertical`,
-        `Lot ${home.lotNumber} Vertical Cost`,
+        `Lot ${lotName} Vertical Cost`,
         'Dwelling sqft × type cost/sqft × (1 + foundation) × (1 + labor overhead)',
         home.costs.verticalHard,
         'currency',
         [
-          step('Dwelling sqft', home.dwellingSqFt, 'sqft', 'From R-4 building envelope on lot polygon (fallback 2,200 SF / 1,525 TH if envelope unavailable)'),
+          step(
+            'Dwelling sqft',
+            home.dwellingSqFt,
+            'sqft',
+            home.dwellingSource ||
+              'From R-4 building envelope on lot polygon (fallback 2,200 SF / 1,525 TH if envelope unavailable)',
+          ),
           step(
             home.lotType === 'townhome' ? 'Townhome cost per sqft' : 'Single-family cost per sqft',
             lotVerticalRate,
@@ -1036,7 +1057,7 @@ export function buildCalculations(result, merged) {
       if (home.disposition === 'sale') {
         calcs[`${lotId}_margin`] = calc(
           `${lotId}_margin`,
-          `Lot ${home.lotNumber} Gross Margin`,
+          `Lot ${lotName} Gross Margin`,
           'Sale price (dwelling sqft × $/sqft) − total cost',
           home.grossMargin,
           'currency',

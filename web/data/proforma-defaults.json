@@ -1,6 +1,12 @@
 {
-  "version": 10,
+  "version": 12,
   "model": "for-sale",
+  "transfers": {
+    "lotNumbers": [17, 18, 19],
+    "roadCenterlineLf": 236.9,
+    "roadLabel": "Harvest Lane south of Jasper Drive — moved to the South Parcel proforma",
+    "note": "Lots 17-19 (Phase 1 Lots 116-118) and 236.9 LF of Harvest Lane south of Jasper Drive are carried in the South Parcel proforma (web/data/south-parcel) and excluded here."
+  },
   "description": "For-sale proforma with ordinance-based infrastructure costing. Road area and centerline length from plat PDF annotations; quantities per Ord. 2025-317 (ST-103, ST-113, ST-131).",
   "phaseOrder": [
     1,
@@ -17,7 +23,7 @@
     "road_acres": 8.72,
     "road_centerline_lf": 6332.3,
     "total_project_acres": 52,
-    "notes": "Road area from plat PDF centerline annotations (sheet1-road-segments.json). Lot areas from plat S.F. labels and polygon scaling. Total project acreage (~52 ac) for reference; water rights budgeted per lot at 0.75 AF/lot."
+    "notes": "Road area from plat PDF centerline annotations (sheet1-road-segments.json). Lot areas from plat S.F. labels and polygon scaling. Total project acreage (~52 ac) for reference; water rights budgeted per lot at 0.85 AF/lot."
   },
   "ordinanceRef": {
     "title": "Ordinance 2025-317 — Delta City Design & Construction Standards",
@@ -32,8 +38,8 @@
     {
       "id": "initial_equity",
       "label": "Starting equity / cash",
-      "value": 0,
-      "default": 0,
+      "value": 5000000,
+      "default": 5000000,
       "unit": "USD",
       "category": "financing",
       "description": "Cash deposited before month 1. This is a source of funds, not a development cost. The Financials tab shows how much you need here to finish with no loan and no later checks.",
@@ -64,27 +70,27 @@
     {
       "id": "land_cost_total",
       "label": "Land acquisition (total)",
-      "value": 4200000,
-      "default": 4200000,
+      "value": 4000000,
+      "default": 4000000,
       "unit": "USD",
       "category": "development",
-      "description": "Total land acquisition budget. Planning default $4.2M (overrides the $1.835M line in the source proforma).",
+      "description": "Total land acquisition budget. Planning default $4.0M (overrides the $1.835M line in the source proforma).",
       "source": {
         "name": "12_11_23 Proforma Delta.xlsx",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Source proforma listed land at $1.835M; $4.2M used here as an intentional acquisition-budget override."
+        "notes": "Source proforma listed land at $1.835M; $4.0M used here as an intentional acquisition-budget override."
       },
       "overridable": true
     },
     {
       "id": "water_rights_af_per_lot",
       "label": "Culinary water requirement (per residential lot)",
-      "value": 0.75,
-      "default": 0.75,
+      "value": 0.85,
+      "default": 0.85,
       "unit": "AF/lot",
       "category": "development",
-      "description": "Planning default 0.75 AF/lot. Millard County ordinance cites 1.0 acre-foot dedicated per platted lot at subdivision approval.",
+      "description": "Planning default 0.85 AF/lot. Millard County ordinance cites 1.0 acre-foot dedicated per platted lot at subdivision approval.",
       "source": {
         "name": "Millard County Subdivision Ordinance § 11-1-20",
         "url": "https://millardcounty.gov/wp-content/uploads/2019/07/Plat-Subdivision-Application.pdf",
@@ -128,8 +134,8 @@
     {
       "id": "sf_sale_price_per_sqft",
       "label": "Single-family sale price",
-      "value": 200,
-      "default": 200,
+      "value": 210,
+      "default": 210,
       "unit": "USD/sqft",
       "category": "revenue",
       "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
@@ -137,15 +143,15 @@
         "name": "Delta rural new-home market estimate",
         "url": "https://buildgenius.app/construction-costs/utah",
         "retrieved": "2026-07-07",
-        "notes": "Planning default $200/sqft; sale price = dwelling sqft × this rate."
+        "notes": "Planning default $210/sqft; sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
     {
       "id": "townhome_sale_price_per_sqft",
       "label": "Townhome sale price",
-      "value": 200,
-      "default": 200,
+      "value": 205,
+      "default": 205,
       "unit": "USD/sqft",
       "category": "revenue",
       "description": "Sale price per dwelling square foot. Each home is priced as dwelling sqft × this rate.",
@@ -153,7 +159,7 @@
         "name": "12_11_23 Proforma Delta.xlsx — Unit Mix",
         "url": "Supporting Docs/Delta/12_11_23 Proforma Delta.xlsx",
         "retrieved": "2026-07-07",
-        "notes": "Planning default $200/sqft (aligned with single-family); sale price = dwelling sqft × this rate."
+        "notes": "Planning default $205/sqft; sale price = dwelling sqft × this rate."
       },
       "overridable": true
     },
@@ -208,8 +214,8 @@
     {
       "id": "townhome_construction_cost_per_sqft",
       "label": "Townhome vertical construction",
-      "value": 120,
-      "default": 120,
+      "value": 110,
+      "default": 110,
       "unit": "USD/sqft",
       "category": "vertical_construction",
       "description": "Hard cost per dwelling square foot for townhomes. Waste and labor overhead apply on top. Independent of the single-family rate.",
@@ -217,15 +223,15 @@
         "name": "BuildGenius Utah Construction Costs 2026",
         "url": "https://buildgenius.app/construction-costs/utah",
         "retrieved": "2026-09-01",
-        "notes": "Default matches the previous shared $120/sqft so totals do not jump; lower this for attached-product savings."
+        "notes": "Planning default $110/sqft for attached product."
       },
       "overridable": true
     },
     {
       "id": "labor_overhead_pct",
       "label": "Labor burden & contractor O&P",
-      "value": 0.1,
-      "default": 0.1,
+      "value": 0.08,
+      "default": 0.08,
       "unit": "ratio",
       "category": "vertical_construction",
       "description": "",
@@ -233,15 +239,15 @@
         "name": "NAHB cost breakdown guidance",
         "url": "https://www.nahb.org/",
         "retrieved": "2026-07-07",
-        "notes": "Labor represents 35–40% of hard costs; 10% burden on vertical."
+        "notes": "Planning default 8% burden on vertical."
       },
       "overridable": true
     },
     {
       "id": "foundation_pct",
       "label": "Foundation",
-      "value": 0.07,
-      "default": 0.07,
+      "value": 0.1,
+      "default": 0.1,
       "unit": "ratio",
       "category": "vertical_construction",
       "description": "Foundation cost as a percent of vertical hard cost (dwelling sqft × $/sqft). Applied before labor overhead.",
@@ -249,15 +255,15 @@
         "name": "RSMeans residential estimating practice",
         "url": "https://www.rsmeans.com/2026-residential-costs-book",
         "retrieved": "2026-09-01",
-        "notes": "Default 7% matches the previous material-waste adder so totals do not jump. Adjust to match foundation bids."
+        "notes": "Planning default 10% of vertical hard cost. Adjust to match foundation bids."
       },
       "overridable": true
     },
     {
       "id": "construction_loan_rate",
       "label": "Construction loan interest rate",
-      "value": 0.085,
-      "default": 0.085,
+      "value": 0,
+      "default": 0,
       "unit": "ratio/year",
       "category": "financing",
       "description": "",
@@ -272,8 +278,8 @@
     {
       "id": "construction_loan_advance_pct",
       "label": "Max loan advance (% of phase cost)",
-      "value": 0.7,
-      "default": 0.7,
+      "value": 0,
+      "default": 0,
       "unit": "ratio",
       "category": "financing",
       "description": "",
@@ -288,8 +294,8 @@
     {
       "id": "homes_sold_per_month",
       "label": "Home absorption rate",
-      "value": 4,
-      "default": 4,
+      "value": 2,
+      "default": 2,
       "unit": "homes/month",
       "category": "schedule",
       "description": "",

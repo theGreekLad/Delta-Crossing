@@ -305,6 +305,83 @@ async function readJsonResponse(response, label) {
   }
 }
 
+const REQUIRED_ASSUMPTION_IDS = [
+  'infrastructure_safety_factor',
+  'gas_main_per_lf',
+  'electric_conduit_per_lf',
+  'telecom_conduit_per_lf',
+  'keep_sale_proceeds',
+  'townhome_construction_cost_per_sqft',
+  'water_equity_acre_feet',
+  'foundation_pct',
+  'electric_transformer_each',
+  'street_light_each',
+];
+
+export function assertFreshDefaults(defaultsJson) {
+  if (!Array.isArray(defaultsJson?.assumptions) || defaultsJson.assumptions.length < 1) {
+    throw new Error('Proforma defaults missing assumptions list');
+  }
+  const loadedIds = new Set(defaultsJson.assumptions.map((a) => a.id));
+  const missing = REQUIRED_ASSUMPTION_IDS.filter((id) => !loadedIds.has(id));
+  if (missing.length) {
+    throw new Error(`Stale proforma defaults (missing ${missing.join(', ')}). Hard-refresh or clear cache.`);
+  }
+}
+
+export async function loadMainProformaDefaults() {
+  const res = await fetch(`${platUrl('data/proforma-defaults.json')}?v=12`);
+  const defaultsJson = await readJsonResponse(res, 'Proforma defaults');
+  assertFreshDefaults(defaultsJson);
+  return defaultsJson;
+}
+
+async function loadMainProformaInputs() {
+  const [defaults, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
+    loadMainProformaDefaults(),
+    fetch(platUrl('data/manifest.json')),
+    fetch(platUrl('data/sheet1-lots.json')),
+    fetch(platUrl('data/sheet1-commercial.json')),
+    fetch(platUrl('data/sheet1-road-segments.json')),
+  ]);
+
+  if (!manifestRes.ok || !lotsRes.ok) {
+    throw new Error('Failed to load proforma data');
+  }
+
+  const [manifest, lots, commercial, roadSegments] = await Promise.all([
+    readJsonResponse(manifestRes, 'Plat manifest'),
+    readJsonResponse(lotsRes, 'Sheet1 lots'),
+    commercialRes.ok ? readJsonResponse(commercialRes, 'Commercial lots') : [],
+    roadSegmentsRes.ok ? readJsonResponse(roadSegmentsRes, 'Road segments') : null,
+  ]);
+
+  const sheet = manifest.sheets.find((entry) => entry.id === 'sheet1');
+  if (!sheet) throw new Error('Sheet1 not found in manifest');
+  return { defaults, inputs: { manifest, sheet, lots, commercial, roadSegments } };
+}
+
+/** Site config for the main Delta Crossings proforma. Other sites pass their own to ProformaPage. */
+export const MAIN_PROFORMA_SITE = {
+  title: 'Delta Crossings Proforma',
+  subtitle: (result) =>
+    `For-sale single-family & townhomes · Phase-funded development · ${result.meta.ordinanceRef.title}`,
+  navCurrent: 'proforma',
+  navLinks: null,
+  load: loadMainProformaInputs,
+  compute: (merged, inputs) =>
+    computeProforma({
+      defaults: merged,
+      lots: inputs.lots,
+      commercial: inputs.commercial,
+      roadSegments: inputs.roadSegments,
+      sheet: inputs.sheet,
+      phaseOrder: merged.phaseOrder,
+    }),
+};
+
+const LINKABLE_VIEWS = new Set(['compare', 'financials', 'total', 'waterfall', 'infra', 'rental']);
+
 const SHOW_SELF_FUND_STRIP = false;
 
 function FinancialsView({ financials, onShowCalc, onApplySelfFund }) {
@@ -634,6 +711,97 @@ function FinancialsView({ financials, onShowCalc, onApplySelfFund }) {
   );
 }
 
+const COMPARE_ROWS = [
+  {
+    label: 'Homes (single-family / townhome)',
+    value: (r) => r.projectTotals.singleFamilyHomes + r.projectTotals.townhomeLots,
+    format: (v, r) => `${v} (${r.projectTotals.singleFamilyHomes} / ${r.projectTotals.townhomeLots})`,
+  },
+  { label: 'Avg dwelling size', value: (r) => r.projectTotals.avgDwellingSqFt, format: (v) => `${formatNumber(v)} sqft` },
+  { label: 'Total sale revenue', value: (r) => r.projectTotals.totalSaleRevenue, format: (v) => formatCurrency(v), better: 'high' },
+  { label: 'Total development cost', value: (r) => r.projectTotals.totalDevelopmentCost, format: (v) => formatCurrency(v) },
+  { label: 'Gross margin (pre-finance)', value: (r) => r.projectTotals.totalGrossMargin, format: (v) => formatCurrency(v), better: 'high' },
+  { label: 'Gross margin %', value: (r) => r.financials?.profitMargin, format: (v) => formatPct(v), better: 'high' },
+  { label: 'Infrastructure total', value: (r) => r.infrastructure.totalInfraBudget, format: (v) => formatCurrency(v), better: 'low' },
+  { label: 'Infrastructure per home', value: (r) => r.shared.infraPerHome, format: (v) => formatCurrency(v), better: 'low' },
+  { label: 'Water rights', value: (r) => r.waterRights.total, format: (v) => formatCurrency(v) },
+  { label: 'Project IRR', value: (r) => r.financials?.irr, format: (v) => formatIrr(v), better: 'high' },
+  { label: 'Equity multiple', value: (r) => r.financials?.equityMultiple, format: (v) => formatMultiple(v), better: 'high' },
+  { label: 'Return on cost', value: (r) => r.financials?.returnOnCost, format: (v) => formatPct(v), better: 'high' },
+  { label: 'Cash to self-fund (peak)', value: (r) => r.financials?.selfFundCashRequired, format: (v) => formatCurrency(v), better: 'low' },
+  { label: 'Total equity invested', value: (r) => r.financials?.totalEquityInvested, format: (v) => formatCurrency(v) },
+  { label: 'Project duration', value: (r) => r.financials?.projectDurationMonths, format: (v) => formatMonths(v), better: 'low' },
+];
+
+function CompareView({ comparison, activeId, onSelect }) {
+  return (
+    <section className="proforma-section compare-section">
+      <h2>Compare Concepts</h2>
+      <p className="section-lead">
+        Every concept runs on the same assumptions, so changing an input updates all three columns. The best value in
+        each row is highlighted. Open a concept to see its full financials, cost lines and cash flow.
+      </p>
+      <div className="compare-table-wrap">
+        <table className="proforma-table compare-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              {comparison.map(({ option }) => (
+                <th key={option.id} className={option.id === activeId ? 'is-active' : undefined}>
+                  {option.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARE_ROWS.map((row) => {
+              const values = comparison.map(({ result }) => row.value(result));
+              const finite = values.filter((v) => Number.isFinite(v));
+              let best = null;
+              if (row.better && finite.length > 1) {
+                best = row.better === 'high' ? Math.max(...finite) : Math.min(...finite);
+              }
+              return (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  {comparison.map(({ option, result }, index) => (
+                    <td
+                      key={option.id}
+                      className={
+                        [option.id === activeId ? 'is-active' : '', best != null && values[index] === best ? 'is-best' : '']
+                          .filter(Boolean)
+                          .join(' ') || undefined
+                      }
+                    >
+                      {row.format(values[index], result)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td />
+              {comparison.map(({ option }) => (
+                <td key={option.id}>
+                  <button
+                    type="button"
+                    className={`btn ${option.id === activeId ? 'active' : 'btn-primary'}`}
+                    onClick={() => onSelect(option.id)}
+                  >
+                    {option.id === activeId ? `Showing ${option.short}` : `Open ${option.short}`}
+                  </button>
+                </td>
+              ))}
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 const MAIN_ASSUMPTION_IDS = [
   'land_cost_total',
   'water_equity_acre_feet',
@@ -670,12 +838,18 @@ const CATEGORY_COLLAPSE_NOTES = {
     'Opens build pace, parallel homes, and monthly absorption. Parallel homes sizes the vertical cash float; the reserve also holds the next phase’s roads and water. Use when testing timeline, peak debt, and IRR duration.',
 };
 
-export default function ProformaPage() {
+export default function ProformaPage({ site = MAIN_PROFORMA_SITE }) {
+  const variants = site.variants || null;
+  const [variant, setVariant] = useState(() => site.initialVariant?.() ?? variants?.[0]?.id ?? null);
   const [defaults, setDefaults] = useState(null);
-  const [platData, setPlatData] = useState(null);
+  const [siteInputs, setSiteInputs] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('financials');
+  const [view, setView] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('view');
+    if (requested === 'compare' && !variants) return 'financials';
+    return LINKABLE_VIEWS.has(requested) ? requested : 'financials';
+  });
   const [overrideTick, setOverrideTick] = useState(0);
   const [activeCalcId, setActiveCalcId] = useState(null);
   const [highlightAssumptionId, setHighlightAssumptionId] = useState(null);
@@ -727,55 +901,10 @@ export default function ProformaPage() {
 
     async function load() {
       try {
-        const [defaultsRes, manifestRes, lotsRes, commercialRes, roadSegmentsRes] = await Promise.all([
-          fetch(`${platUrl('data/proforma-defaults.json')}?v=10`),
-          fetch(platUrl('data/manifest.json')),
-          fetch(platUrl('data/sheet1-lots.json')),
-          fetch(platUrl('data/sheet1-commercial.json')),
-          fetch(platUrl('data/sheet1-road-segments.json')),
-        ]);
-
-        if (!defaultsRes.ok || !manifestRes.ok || !lotsRes.ok) {
-          throw new Error('Failed to load proforma data');
-        }
-
-        const [defaultsJson, manifest, lots, commercial, roadSegments] = await Promise.all([
-          readJsonResponse(defaultsRes, 'Proforma defaults'),
-          readJsonResponse(manifestRes, 'Plat manifest'),
-          readJsonResponse(lotsRes, 'Sheet1 lots'),
-          commercialRes.ok ? readJsonResponse(commercialRes, 'Commercial lots') : [],
-          roadSegmentsRes.ok ? readJsonResponse(roadSegmentsRes, 'Road segments') : null,
-        ]);
-
-        if (!Array.isArray(defaultsJson?.assumptions) || defaultsJson.assumptions.length < 1) {
-          throw new Error('Proforma defaults missing assumptions list');
-        }
-        const requiredIds = [
-          'infrastructure_safety_factor',
-          'gas_main_per_lf',
-          'electric_conduit_per_lf',
-          'telecom_conduit_per_lf',
-          'keep_sale_proceeds',
-          'townhome_construction_cost_per_sqft',
-          'water_equity_acre_feet',
-          'foundation_pct',
-          'electric_transformer_each',
-          'street_light_each',
-        ];
-        const loadedIds = new Set(defaultsJson.assumptions.map((a) => a.id));
-        const missing = requiredIds.filter((id) => !loadedIds.has(id));
-        if (missing.length) {
-          throw new Error(
-            `Stale proforma defaults (missing ${missing.join(', ')}). Hard-refresh or clear cache.`,
-          );
-        }
-
-        const sheet = manifest.sheets.find((entry) => entry.id === 'sheet1');
-        if (!sheet) throw new Error('Sheet1 not found in manifest');
-
+        const loaded = await site.load();
         if (!cancelled) {
-          setDefaults(defaultsJson);
-          setPlatData({ manifest, sheet, lots, commercial, roadSegments });
+          setDefaults(loaded.defaults);
+          setSiteInputs(loaded.inputs);
         }
       } catch (loadError) {
         if (!cancelled) setError(loadError);
@@ -788,7 +917,7 @@ export default function ProformaPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [site]);
 
   const merged = useMemo(() => {
     if (!defaults) return null;
@@ -797,16 +926,24 @@ export default function ProformaPage() {
   }, [defaults, overrideTick]);
 
   const result = useMemo(() => {
-    if (!merged || !platData) return null;
-    return computeProforma({
-      defaults: merged,
-      lots: platData.lots,
-      commercial: platData.commercial,
-      roadSegments: platData.roadSegments,
-      sheet: platData.sheet,
-      phaseOrder: merged.phaseOrder,
-    });
-  }, [merged, platData]);
+    if (!merged || !siteInputs) return null;
+    return site.compute(merged, siteInputs, variant);
+  }, [site, merged, siteInputs, variant]);
+
+  const comparison = useMemo(() => {
+    if (view !== 'compare' || !variants || !merged || !siteInputs) return null;
+    return variants.map((option) => ({ option, result: site.compute(merged, siteInputs, option.id) }));
+  }, [view, variants, site, merged, siteInputs]);
+
+  const selectVariant = useCallback(
+    (id) => {
+      setVariant(id);
+      site.onVariantChange?.(id);
+      setActiveCalcId(null);
+      setView((current) => (current.startsWith('phase-') ? 'financials' : current));
+    },
+    [site],
+  );
 
   const calculations = useMemo(() => {
     if (!result || !merged) return {};
@@ -958,11 +1095,27 @@ export default function ProformaPage() {
     <div className="proforma-app">
       <header className="proforma-header">
         <div>
-          <h1>Delta Crossings Proforma</h1>
-          <p>For-sale single-family & townhomes · Phase-funded development · {result.meta.ordinanceRef.title}</p>
+          <h1>{site.title}</h1>
+          <p>{site.subtitle(result)}</p>
+          {variants ? (
+            <div className="variant-switch" role="group" aria-label="Concept layout">
+              {variants.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={variant === option.id ? 'active' : ''}
+                  aria-pressed={variant === option.id}
+                  onClick={() => selectVariant(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
         <SiteNav
-          current="proforma"
+          current={site.navCurrent}
+          links={site.navLinks}
           className="proforma-header-actions"
           extra={
             <button type="button" className="btn" onClick={handleReset}>
@@ -1046,6 +1199,15 @@ export default function ProformaPage() {
             </button>
           ) : null}
           <nav className="proforma-tabs" aria-label="Proforma views">
+            {variants ? (
+              <button
+                type="button"
+                className={view === 'compare' ? 'active' : ''}
+                onClick={() => setView('compare')}
+              >
+                Compare Concepts
+              </button>
+            ) : null}
             <button
               type="button"
               className={view === 'financials' ? 'active' : ''}
@@ -1092,6 +1254,17 @@ export default function ProformaPage() {
               </button>
             ))}
           </nav>
+
+          {view === 'compare' && comparison ? (
+            <CompareView
+              comparison={comparison}
+              activeId={variant}
+              onSelect={(id) => {
+                selectVariant(id);
+                setView('financials');
+              }}
+            />
+          ) : null}
 
           {view === 'financials' && (
             <FinancialsView
@@ -1219,6 +1392,9 @@ export default function ProformaPage() {
                 </tbody>
               </table>
               <p className="section-lead">{result.waterRights.notes}</p>
+              {result.meta.transfers?.note ? (
+                <p className="section-lead">{result.meta.transfers.note}</p>
+              ) : null}
 
               <h3>Per-Phase Overview</h3>
               <table className="proforma-table">
@@ -1330,7 +1506,7 @@ export default function ProformaPage() {
                 <p className="section-lead">{result.infrastructure.roadArea.notes}</p>
               ) : null}
 
-              <h3>Road Area (from Plat)</h3>
+              <h3>{result.infrastructure.roadArea.heading || 'Road Area (from Plat)'}</h3>
               <table className="proforma-table">
                 <thead>
                   <tr>
@@ -1399,21 +1575,27 @@ export default function ProformaPage() {
               <table className="proforma-table">
                 <tbody>
                   <tr className="calc-row-clickable" onClick={() => showCalc('pavementSqFt')}>
-                    <td>Pavement ({result.infrastructure.ordinanceSpecs.pavementWidthFt}&apos; per ST-103)</td>
+                    <td>
+                      Pavement ({result.infrastructure.ordinanceSpecs.pavementWidthFt}&apos; per{' '}
+                      {result.infrastructure.ordinanceSpecs.pavementRef || 'ST-103'})
+                    </td>
                     <CalcTd calcId="pavementSqFt" onShow={showCalc}>
                       {formatNumber(result.infrastructure.pavementSqFt)} sqft
                     </CalcTd>
                   </tr>
                   <tr className="calc-row-clickable" onClick={() => showCalc('sidewalkSqFt')}>
                     <td>
-                      Sidewalks ({result.infrastructure.ordinanceSpecs.sidewalkWidthFt}&apos; × 2 per ST-131)
+                      Sidewalks ({result.infrastructure.ordinanceSpecs.sidewalkWidthFt}&apos; × 2 per{' '}
+                      {result.infrastructure.ordinanceSpecs.sidewalkRef || 'ST-131'})
                     </td>
                     <CalcTd calcId="sidewalkSqFt" onShow={showCalc}>
                       {formatNumber(result.infrastructure.sidewalkSqFt)} sqft
                     </CalcTd>
                   </tr>
                   <tr>
-                    <td>Curb &amp; gutter (both sides, ST-121)</td>
+                    <td>
+                      Curb &amp; gutter (both sides, {result.infrastructure.ordinanceSpecs.curbRef || 'ST-121'})
+                    </td>
                     <td>{formatNumber(result.infrastructure.curbGutterLf)} LF</td>
                   </tr>
                   <tr>
@@ -1600,7 +1782,7 @@ export default function ProformaPage() {
                   <tbody>
                     {result.rentalHoldout.reservedHomes.map((home) => (
                       <tr key={home.lotNumber}>
-                        <td>{home.lotNumber}</td>
+                        <td>{home.label ?? home.lotNumber}</td>
                         <td>{home.lotType === 'townhome' ? 'Townhome' : 'Single-family'}</td>
                         <td>{home.phase}</td>
                         <td>{formatNumber(home.dwellingSqFt)} sqft</td>
@@ -1664,7 +1846,7 @@ export default function ProformaPage() {
                 <tbody>
                   {phaseData.homes.map((home) => (
                     <tr key={home.lotNumber}>
-                      <td>{home.lotNumber}</td>
+                      <td>{home.label ?? home.lotNumber}</td>
                       <td>{home.lotType === 'townhome' ? 'Townhome' : 'SF'}</td>
                       <td>{home.disposition === 'rent' ? 'Rent' : 'Sale'}</td>
                       <td>{formatNumber(home.dwellingSqFt)} sqft</td>

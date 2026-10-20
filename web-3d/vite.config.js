@@ -52,6 +52,8 @@ export default defineConfig({
         'design-viewer': path.resolve(__dirname, 'design-viewer.html'),
         layouts: path.resolve(__dirname, 'layouts.html'),
         'area-info': path.resolve(__dirname, 'area-info.html'),
+        'south-plan': path.resolve(__dirname, 'south-plan.html'),
+        'south-proforma': path.resolve(__dirname, 'south-proforma.html'),
       },
     },
   },

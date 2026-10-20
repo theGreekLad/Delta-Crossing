@@ -1,6 +1,11 @@
-const STORAGE_KEY = 'delta-crossings-proforma-overrides';
+let STORAGE_KEY = 'delta-crossings-proforma-overrides';
 /** Query param used for shareable assumption scenarios. */
 export const SCENARIO_PARAM = 'scenario';
+
+/** Point override storage at a site-specific key (each proforma page keeps its own scenario). */
+export function configureAssumptionStorage(key) {
+  if (key) STORAGE_KEY = key;
+}
 
 function sanitizeOverrides(parsed) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};

@@ -76,15 +76,15 @@ function applyRentReservations(homeRows, phaseOrder, map) {
 function verticalCostPerSqFt(lotType, map) {
   const sfRate = getValue(map, 'sf_construction_cost_per_sqft', 120);
   if (lotType === 'townhome') {
-    return getValue(map, 'townhome_construction_cost_per_sqft', sfRate);
+    return getValue(map, 'townhome_construction_cost_per_sqft', 110);
   }
   return sfRate;
 }
 
 function computeVerticalCost(dwellingSqFt, lotType, map) {
   const base = verticalCostPerSqFt(lotType, map);
-  const foundation = getValue(map, 'foundation_pct', 0.07);
-  const labor = getValue(map, 'labor_overhead_pct', 0.1);
+  const foundation = getValue(map, 'foundation_pct', 0.1);
+  const labor = getValue(map, 'labor_overhead_pct', 0.08);
   return dwellingSqFt * base * (1 + foundation) * (1 + labor);
 }
 
@@ -97,7 +97,7 @@ function sortLotsForConstruction(lots, phaseOrder) {
 }
 
 function computeWaterRights({ sfLots, townhomeLots, lots = [], phaseOrder = [] }, map) {
-  const afPerLot = getValue(map, 'water_rights_af_per_lot', 0.75);
+  const afPerLot = getValue(map, 'water_rights_af_per_lot', 0.85);
   const costPerAcreFoot = getValue(map, 'water_rights_cost_per_acre_foot', 8000);
   const equityAcreFeet = Math.max(0, getValue(map, 'water_equity_acre_feet', 0));
 
@@ -458,6 +458,154 @@ function computeInfrastructureDetail(roadArea, map, options = {}) {
   };
 }
 
+/** Remove centerline moved to another proforma (e.g. Harvest Lane south of Jasper). */
+function applyRoadTransfer(roadArea, transfers) {
+  const movedLf = Math.min(roadArea.centerlineLf || 0, Math.max(0, transfers?.roadCenterlineLf || 0));
+  if (!movedLf) return roadArea;
+  return {
+    ...roadArea,
+    centerlineLf: roadArea.centerlineLf - movedLf,
+    roadSqFt: roadArea.roadSqFt - movedLf * (roadArea.rowWidthFt || 60),
+    transferredLf: movedLf,
+    transferLabel: transfers.roadLabel || 'Moved to another proforma',
+    notes: [roadArea.notes, transfers.note].filter(Boolean).join(' '),
+  };
+}
+
+/**
+ * Infrastructure from a measured concept takeoff instead of plat annotations. Line-item ids match
+ * computeInfrastructureDetail so the UI and calculation panels treat both the same way.
+ */
+function computeInfrastructureFromTakeoff(takeoff, map, options = {}) {
+  const residentialLots = Math.max(0, Math.round(options.residentialLots || 0));
+  const homesForShare = Math.max(residentialLots, 1);
+  const safetyFactor = Math.max(0, getValue(map, 'infrastructure_safety_factor', 1));
+  const transformersPerLots = 8;
+  const transformers = Math.max(1, Math.ceil(residentialLots / transformersPerLots));
+  const centerlineLf = takeoff.centerlineLf || 0;
+  const ref = takeoff.sectionRef || 'ST-02';
+  const source = takeoff.source;
+  const includeDitch = getValue(map, 'include_ditch_piping', 1) >= 0.5;
+  const utilityLf = takeoff.dryUtilityTrenchLf ?? centerlineLf;
+
+  const rows = [
+    ['grading', 'Road corridor grading & base', takeoff.rowSqFt, 'sqft', 'road_grading_per_sqft', 1.25,
+      `${ref} base course & granular borrow`, "60' ROW area of the new streets and Harvest Lane"],
+    ['asphalt', 'Asphalt pavement', takeoff.asphaltSqFt, 'sqft', 'asphalt_paving_per_sqft', 4.5,
+      `${ref} hot mix asphalt (41' section)`, 'Asphalt area measured from the layout, incl. 25\' curb returns'],
+    ['curb', 'Curb & gutter (both sides)', takeoff.curbGutterLf, 'LF', 'curb_gutter_per_lf', 27,
+      `${ref} type B-1 curb & gutter`, 'Measured along both sides of each new street'],
+    ['sidewalk', 'Concrete sidewalks (both sides)', takeoff.sidewalkSqFt, 'sqft', 'sidewalk_concrete_per_sqft', 12,
+      `${ref} 5' sidewalk against curb`, 'Measured along both sides of each new street'],
+    ['water', 'Culinary water main (blue PVC)', takeoff.waterMainLf, 'LF', 'water_main_per_lf', 85,
+      'ST-113 / AWWA C900 PVC', '1 × centerline LF'],
+    ['sewer', 'Sanitary sewer main (PVC)', takeoff.sewerMainLf, 'LF', 'sewer_main_per_lf', 95,
+      'ST-113 opposite water line', '1 × centerline LF'],
+    ['sewer_manholes', 'Sewer manholes (precast)', takeoff.sewerManholes, 'each', 'sewer_manhole_each', 4500,
+      'Junctions + max 400\' spacing', 'Junctions plus one per 400 LF'],
+    ['storm', 'Storm drain (HDPE)', takeoff.stormDrainLf, 'LF', 'storm_drain_per_lf', 75,
+      'Black corrugated HDPE to Parcel A basin', 'New-street centerline + 60\' outfall to the basin'],
+    ['storm_manholes', 'Storm drain manholes', takeoff.stormManholes, 'each', 'storm_manhole_each', 5500,
+      'Precast eccentric cone', 'Junctions plus one per 400 LF'],
+    ['utilities', 'Joint utility trenching (gas / power / telecom)', utilityLf, 'LF', 'utility_trench_per_lf', 35,
+      'Joint trench excavation only — hardware below', '1 × centerline LF'],
+    ['gas_main', 'Natural gas main (PE pipe & fittings)', utilityLf, 'LF', 'gas_main_per_lf', 55,
+      '2–4" PE main in joint trench (excl. trench)', '1 × centerline LF'],
+    ['electric_conduit', 'Electric primary/secondary conduit', utilityLf, 'LF', 'electric_conduit_per_lf', 32,
+      'PVC conduit bank for power (excl. trench)', '1 × centerline LF'],
+    ['telecom_conduit', 'Telecom / fiber conduit', utilityLf, 'LF', 'telecom_conduit_per_lf', 18,
+      'Empty conduit for ISP / fiber (excl. trench)', '1 × centerline LF'],
+    ['transformers', 'Pad-mount transformers', transformers, 'each', 'electric_transformer_each', 12000,
+      `~1 per ${transformersPerLots} lots (${residentialLots} homes)`, `ceil(${residentialLots} homes ÷ ${transformersPerLots})`],
+    ['street_lights', 'Street lights (pole, fixture & base)', takeoff.streetLights, 'each', 'street_light_each', 4500,
+      'Intersections + ~250\' spacing', 'Placed on the concept layout'],
+    ['storm_storage', 'Retention basin expansion (excavation)', takeoff.stormStorageCy, 'CY', 'storm_storage_per_cy', 10,
+      'DCC 16.28.030.I — hold the 24-hr, 10-yr storm', `${Math.round(takeoff.stormStorageCf || 0).toLocaleString()} CF of added storage ÷ 27`],
+    ['ditch_pipe', 'Pipe the Parcel C ditch', includeDitch ? takeoff.ditchPipeLf : 0, 'LF', 'ditch_pipe_per_lf', 95,
+      'DCC 16.28.030.H — no open ditches in or next to a subdivision',
+      includeDitch ? 'Length of Parcel C beside Lots 116–118' : 'Turned off in assumptions'],
+  ];
+
+  const lineItems = rows.map(([id, label, quantity, unit, assumptionId, fallback, ordinanceRef, quantityBasis]) => {
+    const unitCost = getValue(map, assumptionId, fallback);
+    const qty = Math.max(0, quantity || 0);
+    const baseAmount = qty * unitCost;
+    const amount = baseAmount * safetyFactor;
+    return {
+      id,
+      label,
+      quantity: qty,
+      unit,
+      unitCost,
+      ordinanceRef,
+      quantityBasis,
+      quantitySource: source,
+      baseAmount,
+      amount,
+      quantityPerHome: qty / homesForShare,
+      amountPerHome: amount / homesForShare,
+    };
+  });
+  const totalInfraBase = sum(lineItems.map((item) => item.baseAmount));
+  const totalInfraBudget = sum(lineItems.map((item) => item.amount));
+  const stormLf = takeoff.stormDrainLf || 0;
+
+  return {
+    roadArea: {
+      method: 'concept-takeoff',
+      heading: 'Street Area (from concept layout)',
+      roadSqFt: takeoff.rowSqFt,
+      centerlineLf,
+      rowHalfWidthFt: 30,
+      rowWidthFt: 60,
+      segmentCount: takeoff.segments?.length || 0,
+      segments: takeoff.segments || [],
+      rowMarkerCount: 0,
+      warning: null,
+      formula: 'Centerlines and 60\' ROW areas of Street A/B and Harvest Lane, measured from the concept layout',
+      notes: takeoff.notes || null,
+    },
+    ordinanceSpecs: {
+      rowWidthFt: 60,
+      pavementWidthFt: 41,
+      pavementRef: ref,
+      sidewalkWidthFt: 5,
+      sidewalkRef: ref,
+      curbRef: ref,
+      stormNetworkCoveragePct: centerlineLf > 0 ? stormLf / centerlineLf : 0,
+      streetLightSpacingFt: takeoff.streetLights ? Math.round(centerlineLf / takeoff.streetLights) : 0,
+      transformersPerLots,
+    },
+    totalRoadSqFt: takeoff.rowSqFt,
+    totalRoadLf: centerlineLf,
+    pavementSqFt: takeoff.asphaltSqFt,
+    sidewalkLf: centerlineLf * 2,
+    sidewalkSqFt: takeoff.sidewalkSqFt,
+    curbGutterLf: takeoff.curbGutterLf,
+    transformers,
+    streetLights: takeoff.streetLights,
+    residentialLots,
+    safetyFactor,
+    lineItems,
+    totalInfraBase,
+    totalInfraBudget,
+    labels: {
+      centerline: 'New Street A/B plus Harvest Lane south of Jasper Drive, measured from the concept layout',
+      pavementFormula: "Asphalt area measured from the concept layout (41' ST-02 section incl. curb returns)",
+      pavementNote:
+        "Delta City standard drawing ST-02 (updated 3/3/2025): 60' local road = 41' asphalt, 2.5' curb & gutter, 5' sidewalk and 2' behind walk on each side.",
+      sidewalkFormula: "Sidewalk area measured from the concept layout (5' both sides, ST-02)",
+      sidewalkNote: "ST-02: 5' sidewalk against the curb on both sides of every new street.",
+    },
+    ordinanceNote:
+      `Quantities measured from the concept layout (${formatLf(centerlineLf)} of new street + Harvest Lane) using ` +
+      `Delta City ST-02: 60' ROW, 41' asphalt, curb & gutter and 5' sidewalks both sides. ` +
+      'Jasper Drive is built with Phase 1 and excluded. Includes added retention storage for the 24-hr, 10-yr storm ' +
+      'and optional piping of the Parcel C ditch. ' +
+      `Infrastructure safety factor ×${safetyFactor.toFixed(2)} applied to all line items. Unit costs are editable assumptions.`,
+  };
+}
+
 function formatLf(value) {
   return `${Math.round(value).toLocaleString()} LF`;
 }
@@ -588,11 +736,11 @@ function buildPhaseCostBreakdown(phaseHomes) {
 }
 
 function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
-  const initialEquity = getValue(map, 'initial_equity', 0);
-  const loanRate = getValue(map, 'construction_loan_rate', 0.085);
-  const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
+  const initialEquity = getValue(map, 'initial_equity', 5000000);
+  const loanRate = getValue(map, 'construction_loan_rate', 0);
+  const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0);
   const keepSaleProceeds = getValue(map, 'keep_sale_proceeds', 0) > 0;
-  const salesRate = getValue(map, 'homes_sold_per_month', 4);
+  const salesRate = getValue(map, 'homes_sold_per_month', 2);
   const monthsToBuild = getValue(map, 'months_to_build_home', 3);
   const parallelHomes = getValue(map, 'parallel_homes_per_phase', 5);
   const discountRate = 0.1;
@@ -986,7 +1134,7 @@ function computeFinancials(phaseResults, map, rentalHoldout, projectTotals) {
 }
 
 function estimatePhaseSchedule(phase, map) {
-  const salesRate = getValue(map, 'homes_sold_per_month', 4);
+  const salesRate = getValue(map, 'homes_sold_per_month', 2);
   const monthsToBuild = getValue(map, 'months_to_build_home', 3);
   const parallelHomes = getValue(map, 'parallel_homes_per_phase', 5);
   const sellable = phase.homes.filter((home) => home.disposition === 'sale');
@@ -1020,11 +1168,11 @@ function estimatePhaseSchedule(phase, map) {
 }
 
 function simulatePhaseWaterfall(phaseResults, map, acquisitionCosts = null) {
-  let cash = getValue(map, 'initial_equity', 0);
+  let cash = getValue(map, 'initial_equity', 5000000);
   let debt = 0;
-  const loanRate = getValue(map, 'construction_loan_rate', 0.085);
-  const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0.7);
-  const salesRate = getValue(map, 'homes_sold_per_month', 4);
+  const loanRate = getValue(map, 'construction_loan_rate', 0);
+  const loanAdvance = getValue(map, 'construction_loan_advance_pct', 0);
+  const salesRate = getValue(map, 'homes_sold_per_month', 2);
 
   const timeline = [];
   const acquisition = acquisitionCosts || { total: 0 };
@@ -1150,36 +1298,57 @@ function computeRentalHoldout(reservedHomes, map, endingDebt, endingCash) {
   };
 }
 
+/**
+ * @param {object} args
+ * @param {object} [args.siteModel] Prepared site instead of plat data:
+ *   { name, homes: [{ lotNumber, label, lotType, phase, squareFeet, dwellingSqFt }],
+ *     takeoff: {...measured quantities}, softCosts: { engineering, studies, source } }
+ */
 export function computeProforma({
   defaults,
-  lots,
+  lots = [],
   commercial = [],
   roadSegments = null,
-  sheet,
+  sheet = null,
   phaseOrder,
+  siteModel = null,
 }) {
   const map = getAssumptionMap(defaults);
-  const feetPerPixel = computeFeetPerPixel(lots);
-  const transform = createCoordinateTransform(sheet.pixelWidth, sheet.pixelHeight, feetPerPixel);
-  const roads = sheet.roads || [];
+  const transfers = siteModel ? null : defaults.transfers || null;
+  const transferredLots = new Set(transfers?.lotNumbers || []);
 
-  const residentialLots = lots.filter((lot) => lot.lotNumber);
+  let residentialLots;
+  let enrichedLots;
+  if (siteModel) {
+    commercial = [];
+    residentialLots = siteModel.homes;
+    enrichedLots = siteModel.homes.map((home) => ({ ...home }));
+  } else {
+    const feetPerPixel = computeFeetPerPixel(lots);
+    const transform = createCoordinateTransform(sheet.pixelWidth, sheet.pixelHeight, feetPerPixel);
+    const roads = sheet.roads || [];
+    residentialLots = lots.filter((lot) => lot.lotNumber && !transferredLots.has(lot.lotNumber));
+    enrichedLots = residentialLots.map((lot) => ({
+      ...lot,
+      dwellingSqFt: estimateDwellingSqFt(lot, roads, transform),
+    }));
+  }
   const sfLots = residentialLots.filter((lot) => lot.lotType === 'single-family');
   const townhomeLots = residentialLots.filter((lot) => lot.lotType === 'townhome');
   const totalHomes = sfLots.length + townhomeLots.length + commercial.length;
 
-  const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 200);
-  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 200);
+  const sfSalePricePerSqFt = getValue(map, 'sf_sale_price_per_sqft', 210);
+  const townhomeSalePricePerSqFt = getValue(map, 'townhome_sale_price_per_sqft', 205);
 
-  const enrichedLots = residentialLots.map((lot) => ({
-    ...lot,
-    dwellingSqFt: estimateDwellingSqFt(lot, roads, transform),
-  }));
-
-  const roadArea = computeRoadAreaFromSegments(roadSegments);
-  const infrastructure = computeInfrastructureDetail(roadArea, map, {
-    residentialLots: sfLots.length + townhomeLots.length,
-  });
+  const infrastructure = siteModel
+    ? computeInfrastructureFromTakeoff(siteModel.takeoff, map, {
+        residentialLots: sfLots.length + townhomeLots.length,
+      })
+    : computeInfrastructureDetail(applyRoadTransfer(computeRoadAreaFromSegments(roadSegments), transfers), map, {
+        residentialLots: sfLots.length + townhomeLots.length,
+      });
+  const engineeringTotal = siteModel?.softCosts?.engineering ?? FIXED_ENGINEERING_TOTAL;
+  const studiesTotal = siteModel?.softCosts?.studies ?? FIXED_STUDIES_TOTAL;
   const orderedPhases = phaseOrder || defaults.phaseOrder || [1, 3, 4, 5, 6, 7];
   const waterRights = computeWaterRights(
     {
@@ -1193,9 +1362,9 @@ export function computeProforma({
 
   const residentialHomeCount = sfLots.length + townhomeLots.length;
   const shared = {
-    landPerHome: getValue(map, 'land_cost_total', 4200000) / Math.max(totalHomes, 1),
-    engineeringPerHome: FIXED_ENGINEERING_TOTAL / Math.max(totalHomes, 1),
-    studiesPerHome: FIXED_STUDIES_TOTAL / Math.max(totalHomes, 1),
+    landPerHome: getValue(map, 'land_cost_total', 4000000) / Math.max(totalHomes, 1),
+    engineeringPerHome: engineeringTotal / Math.max(totalHomes, 1),
+    studiesPerHome: studiesTotal / Math.max(totalHomes, 1),
     // Average cash water cost after equity; individual homes draw owned AF first.
     waterRightsPerHome: waterRights.total / Math.max(residentialHomeCount, 1),
     infraPerHome: infrastructure.totalInfraBudget / Math.max(residentialHomeCount, 1),
@@ -1208,6 +1377,8 @@ export function computeProforma({
     const salePrice = costs.dwellingSqFt * salePricePerSqFt;
     return {
       lotNumber: lot.lotNumber,
+      label: lot.label ?? String(lot.lotNumber),
+      dwellingSource: lot.dwellingSource,
       phase: lot.phase,
       lotType: lot.lotType,
       lotSqFt: lot.squareFeet,
@@ -1257,9 +1428,7 @@ export function computeProforma({
     };
   });
 
-  const landTotal = getValue(map, 'land_cost_total', 4200000);
-  const engineeringTotal = FIXED_ENGINEERING_TOTAL;
-  const studiesTotal = FIXED_STUDIES_TOTAL;
+  const landTotal = getValue(map, 'land_cost_total', 4000000);
   // Water rights are residential-only and cash-flowed per phase (phaseUpfront),
   // so acquisition no longer carries a commercial water-rights line.
   const acquisitionCosts = {
@@ -1267,6 +1436,7 @@ export function computeProforma({
     engineering: engineeringTotal,
     studies: studiesTotal,
     total: landTotal + engineeringTotal + studiesTotal,
+    softCostSource: siteModel?.softCosts?.source || null,
   };
 
   const waterfall = simulatePhaseWaterfall(phaseResults, map, acquisitionCosts);
@@ -1338,6 +1508,9 @@ export function computeProforma({
       model: defaults.model,
       phaseOrder: orderedPhases,
       ordinanceRef: defaults.ordinanceRef,
+      siteName: siteModel?.name || null,
+      countSource: siteModel ? 'in the selected concept' : 'on the plat',
+      transfers,
     },
   };
 }

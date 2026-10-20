@@ -1,19 +1,22 @@
 ﻿import React from 'react';
 import { platUrl, appUrl } from '../data/platUrls';
 
+const MAIN_LINKS = [
+  { id: 'plat', label: 'Plat Map', href: platUrl('index.html') },
+  { id: '3d', label: '3D View', href: appUrl('index.html') },
+  // Conceptual Drawings kept in repo but hidden from live nav for now.
+  { id: 'layouts', label: 'Layouts', href: appUrl('layouts.html') },
+  { id: 'area', label: 'Delta Area Information', href: appUrl('area-info.html') },
+  { id: 'proforma', label: 'Proforma', href: appUrl('proforma.html') },
+];
+
 /**
  * Shared top-nav links used across 3D app pages.
- * @param {'plat' | '3d' | 'concepts' | 'layouts' | 'area' | 'proforma' | null} current
+ * @param {string | null} current id of the active link
+ * @param {{ id: string, label: string, href: string }[] | null} links overrides the main-site links
  */
-export default function SiteNav({ current = null, extra = null, className = 'header-actions' }) {
-  const links = [
-    { id: 'plat', label: 'Plat Map', href: platUrl('index.html') },
-    { id: '3d', label: '3D View', href: appUrl('index.html') },
-    // Conceptual Drawings kept in repo but hidden from live nav for now.
-    { id: 'layouts', label: 'Layouts', href: appUrl('layouts.html') },
-    { id: 'area', label: 'Delta Area Information', href: appUrl('area-info.html') },
-    { id: 'proforma', label: 'Proforma', href: appUrl('proforma.html') },
-  ];
+export default function SiteNav({ current = null, extra = null, className = 'header-actions', links = null }) {
+  links = links || MAIN_LINKS;
 
   return (
     <div className={`${className} site-nav`}>
