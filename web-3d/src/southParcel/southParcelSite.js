@@ -16,6 +16,9 @@ export const CONCEPT_OPTIONS = [
   { id: 'A', label: 'A · Single-Family', short: 'A' },
   { id: 'B', label: 'B · Mixed', short: 'B' },
   { id: 'C', label: 'C · Townhome', short: 'C' },
+  { id: 'D', label: 'D · SF + Parcel A', short: 'D' },
+  { id: 'E', label: 'E · Mixed + Parcel A', short: 'E' },
+  { id: 'F', label: 'F · Townhome + Parcel A', short: 'F' },
 ];
 
 /** Engineering/studies for a stand-alone ~6 ac, ~830 LF subdivision (planning placeholders). */
@@ -41,7 +44,7 @@ const LAND_ALLOCATION = {
 const STARTING_CASH = {
   value: 3000000,
   description:
-    'Cash deposited before month 1 for the South Parcel. Default covers the self-fund peak of every concept at default assumptions (about $2.9M); the Financials tab shows the peak for the selected concept.',
+    'Cash deposited before month 1 for the South Parcel. Default covers the self-fund peak of Concepts A–C at default assumptions (about $2.9M); D–F peak near $3.4M, and the model calls the difference as added equity. The Financials tab shows the peak for the selected concept.',
 };
 
 const EXTRA_ASSUMPTIONS = [
@@ -53,7 +56,7 @@ const EXTRA_ASSUMPTIONS = [
     unit: 'USD/CY',
     category: 'infrastructure',
     description:
-      'Excavate and shape added storage in the Parcel A basin for the 24-hour, 10-year storm (DCC 16.28.030.I). Quantity comes from the concept stormwater check.',
+      'Excavate and shape storage for the 24-hour, 10-year storm (DCC 16.28.030.I): added depth in the Parcel A basin (Concepts A–C) or the later-phase basin (D–F; land and outfall not priced). Quantity comes from the concept stormwater check.',
     source: {
       name: 'Bulk excavation planning rate',
       url: 'Supporting Docs/Delta/Construction Drawings copy/Delta Crossing Phase 1.pdf',

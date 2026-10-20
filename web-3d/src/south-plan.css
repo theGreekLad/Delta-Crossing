@@ -64,6 +64,7 @@
 .sp-hatch-line { stroke: #689c62; stroke-width: 1.4; }
 .sp-open { fill: #a6c98c; stroke: #285c3c; stroke-width: 1.2; }
 .sp-canal { fill: #b8d6aa; stroke: #285c3c; stroke-width: 1.2; }
+.sp-former-parcel { fill: none; stroke: #285c3c; stroke-width: 1.4; stroke-dasharray: 10 6; pointer-events: none; }
 
 .sp-lot { cursor: pointer; outline: none; }
 .sp-lot-fill { stroke: #463f37; stroke-width: 1.6; transition: fill 0.12s ease; }

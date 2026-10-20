@@ -11,6 +11,9 @@ Coordinates are survey feet in a local frame: +X runs east along Jasper Drive (p
 S88°27'43"E) and +Y runs north (N01°32'17"E). The origin is the southwest corner of the
 4.800-acre description, where the canal strip meets the north line of Delta Estates.
 
+Concepts A-C keep Parcel A as the Phase 1 retention basin. Concepts D-F move retention to a later phase
+(location TBD), run Street A through Parcel A to a temporary stub at the commercial line, and build homes there.
+
 Outputs, written to web/data/south-parcel/:
   concepts.json            base parcels plus every concept's streets, lots, quantities and checks
   concept-<id>.svg / .png  plan sheet per concept
@@ -26,7 +29,7 @@ from itertools import product as iter_product
 
 from PIL import Image, ImageDraw, ImageFont
 from shapely import affinity
-from shapely.geometry import LineString, Polygon, box
+from shapely.geometry import LineString, Point, Polygon, box
 from shapely.ops import split, unary_union
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,6 +53,9 @@ LOTS_116_118 = (  # name, Y at the canal-strip line where the lot starts, plat a
 )
 PARCEL_A_PLAT_SQFT = 49782
 FOUR_POINT_EIGHT_AC_SQFT = 209083
+C15_DELTA = math.radians(43 + 4 / 60 + 11 / 3600)  # Jasper south ROW curve C15 (R=330, 248.06')
+COMMERCIAL_AZ = math.radians(46.93)                # N48°28'06"E commercial line, rotated into the local frame
+PARCEL_A_SE = (FP_EAST_X + 71.63, 0.0)
 
 # ---------------------------------------------------------------------------
 # Delta City code values used by the layout (citations carried into the JSON)
@@ -59,6 +65,8 @@ PAVEMENT_HALF = 20.5    # ST-02 60' local road: 41' asphalt (12' lanes + 8.5' pa
 CURB_GUTTER = 2.5       # ST-02 type B-1 curb and gutter
 SIDEWALK = 5.0          # ST-02 5' sidewalk against the curb, 2' behind walk
 CURB_RETURN_R = 25.0    # TMP 2025 §7.5.1: 25' minimum corner radius
+TURNAROUND_DIA = 70.0   # DCC 16.24.070.B: temporary turning area at a stub longer than 150'
+JASPER_ACCESS_SPACING = 500  # TMP 2025 §7.5.1: unsignalized full-movement intersections
 R4 = {
     'sf_min_area': 7500,
     'mf_base_area': 7500,
@@ -97,12 +105,18 @@ TH_UNIT = {'id': 'th-31', 'name': 'Two-story townhome unit', 'width': 31, 'depth
 DRIVEWAY_W = STALLS_PER_UNIT * STALL_W  # 27'
 
 CONCEPTS = (
-    {'id': 'A', 'name': 'Single-Family', 'north': 'SF', 'south': 'SF',
+    {'id': 'A', 'name': 'Single-Family', 'north': 'SF', 'south': 'SF', 'retention': 'parcel-a',
      'summary': 'Detached homes on both new tiers.'},
-    {'id': 'B', 'name': 'Mixed', 'north': 'TH', 'south': 'SF',
+    {'id': 'B', 'name': 'Mixed', 'north': 'TH', 'south': 'SF', 'retention': 'parcel-a',
      'summary': 'Townhomes along Jasper Drive (collector buffer); single-family next to Delta Estates.'},
-    {'id': 'C', 'name': 'Townhome', 'north': 'TH', 'south': 'TH',
+    {'id': 'C', 'name': 'Townhome', 'north': 'TH', 'south': 'TH', 'retention': 'parcel-a',
      'summary': 'Townhome buildings on both new tiers for maximum unit count.'},
+    {'id': 'D', 'name': 'Single-Family + Parcel A', 'north': 'SF', 'south': 'SF', 'retention': 'deferred',
+     'summary': 'Concept A with the retention basin moved to a later phase; Street A runs through Parcel A to a stub.'},
+    {'id': 'E', 'name': 'Mixed + Parcel A', 'north': 'TH', 'south': 'SF', 'retention': 'deferred',
+     'summary': 'Concept B with the retention basin moved to a later phase; Street A runs through Parcel A to a stub.'},
+    {'id': 'F', 'name': 'Townhome + Parcel A', 'north': 'TH', 'south': 'TH', 'retention': 'deferred',
+     'summary': 'Concept C with the retention basin moved to a later phase; Street A runs through Parcel A to a stub.'},
 )
 
 RULES = (
@@ -127,6 +141,7 @@ RULES = (
     ('storm', 'Storm drainage', 'DCC 16.28.030.I', 'Hold the 24-hour, 10-year storm on site (NOAA Atlas 14: 1.37 in)'),
     ('ditch', 'Ditches', 'DCC 16.28.030.H; 18.64.040', 'No open ditches within or adjoining the subdivision'),
     ('pue', 'Utility easements', 'DCC 16.24.080; Phase 1 plat', "15' total easement width; 10' PUE along lot fronts"),
+    ('parcel_a', 'Parcel A', 'Phase 1 plat; Utah Code 10-9a-608', 'Platted as open space / retention for Phase 1'),
 )
 
 
@@ -197,17 +212,32 @@ def jasper_centerline():
 
 
 def parcel_a_polygon():
-    """Open space / retention parcel east of the Future Phase (Phase 1 plat Parcel A)."""
+    """Open space / retention parcel east of the Future Phase (Phase 1 plat Parcel A).
+
+    Closed on C15 and the radial Lot 104 side line (N41°31'54"W 105.50'). The plat's 377.90' call along
+    the commercial line does not close with those; the closed figure gives 350.8'.
+    """
     cx, cy, r = JASPER_C14_PC_X, JASPER_CL_Y + 300.0, 330.0
-    se = (FP_EAST_X + 71.63, 0.0)
-    az = math.radians(46.93)  # S48°28'06"W commercial line, rotated into the local frame
-    dot = (se[0] + 377.90 * math.sin(az), se[1] + 377.90 * math.cos(az))
-    side = (-math.cos(az), math.sin(az))  # N41°31'54"W (Lot 104 side line)
-    corner = (dot[0] + 105.50 * side[0], dot[1] + 105.50 * side[1])
-    a_end = math.atan2(corner[1] - cy, corner[0] - cx)
+    a_end = -math.pi / 2 + C15_DELTA
     arc_pts = [(cx + r * math.cos(a_end + (-math.pi / 2 - a_end) * i / 40),
                 cy + r * math.sin(a_end + (-math.pi / 2 - a_end) * i / 40)) for i in range(41)]
-    return Polygon([(FP_EAST_X, 0.0), se, dot] + arc_pts + [(FP_EAST_X, JASPER_S_ROW_Y)])
+    corner = arc_pts[0]
+    dot = (corner[0] + 105.50 * math.cos(a_end), corner[1] + 105.50 * math.sin(a_end))
+    return Polygon([(FP_EAST_X, 0.0), PARCEL_A_SE, dot] + arc_pts + [(FP_EAST_X, JASPER_S_ROW_Y)])
+
+
+def commercial_x_at(y):
+    """X of the Phase 2 commercial line (Parcel A's southeast side) at a given Y."""
+    return PARCEL_A_SE[0] + y * math.tan(COMMERCIAL_AZ)
+
+
+def commercial_side():
+    """Half-plane southeast of the commercial line (Phase 2 land)."""
+    u = (math.sin(COMMERCIAL_AZ), math.cos(COMMERCIAL_AZ))
+    n = (math.cos(COMMERCIAL_AZ), -math.sin(COMMERCIAL_AZ))
+    a = (PARCEL_A_SE[0] - 600 * u[0], PARCEL_A_SE[1] - 600 * u[1])
+    b = (PARCEL_A_SE[0] + 1200 * u[0], PARCEL_A_SE[1] + 1200 * u[1])
+    return Polygon([a, b, (b[0] + 2000 * n[0], b[1] + 2000 * n[1]), (a[0] + 2000 * n[0], a[1] + 2000 * n[1])])
 
 
 class Base:
@@ -238,6 +268,7 @@ class Base:
                 Polygon([(PARCEL_C_WIDTH, -5), (400, -5), (400, y1 + 370 * LOT_LINE_SLOPE), (PARCEL_C_WIDTH, y1)])
             self.existing_lots.append({'name': name, 'poly': largest(lots_area.intersection(band)), 'platArea': plat_area})
         self.parcel_a = parcel_a_polygon()
+        self.with_parcel_a = largest(self.future_phase.union(self.parcel_a).difference(self.jasper_row))
         self.south_line = LineString([(-100, 0), (1300, 0)])
 
     def street_a_start(self, target_y):
@@ -267,8 +298,15 @@ class Base:
 # Street network and tiers for one Street A position
 # ---------------------------------------------------------------------------
 class Network:
+    """Street A turns north into Street B at Emerald Way; Parcel A stays the retention basin."""
+    through = False
+
     def __init__(self, base: Base, target_y: float):
         self.base = base
+        self.land = base.future_phase
+        self.turnaround = Polygon()
+        self.north_east = None
+        self.remnants = []
         approach, harvest_skew = base.street_a_start(target_y)
         self.harvest_skew_deg = harvest_skew
         self.y = approach[-1][1]
@@ -278,6 +316,9 @@ class Network:
         self.cl_a = LineString(approach + elbow)
         self.cl_b = LineString([elbow[-1], (EMERALD_CL_X, JASPER_CL_Y)])
         self.cl = LineString(list(self.cl_a.coords) + [(EMERALD_CL_X, JASPER_CL_Y)])
+        self.centerlines = [self.cl]
+        self.surface_lines = [self.cl]
+        self.street_b_label_y = (self.y + ELBOW_RADIUS + JASPER_S_ROW_Y) / 2
         self.row_a = self.cl_a.buffer(HALF_ROW, cap_style=2, join_style=1)
         self.row_b = self.cl_b.buffer(HALF_ROW, cap_style=2)
         self.row = unary_union([self.row_a, self.row_b])
@@ -309,6 +350,64 @@ class Network:
     @property
     def tier_depths(self):
         return JASPER_S_ROW_Y - (self.y + HALF_ROW), self.y - HALF_ROW
+
+    @property
+    def new_street_len(self):
+        """Street A/B centerline from the Harvest Lane ROW line to the Jasper Drive centerline."""
+        length = self.cl.intersection(self.base.future_phase.buffer(HALF_ROW)).length
+        return min(length, self.cl.length - HALF_ROW)
+
+
+class ThroughNetwork:
+    """Retention moved off site: Street A runs straight east through Parcel A and stubs to the commercial line.
+
+    Street B tees north from Street A to Jasper at Emerald Way, so the loop to Jasper stays; a new Jasper
+    intersection inside Parcel A would sit closer than 500' to Emerald Way (TMP 2025 §7.5.1).
+    """
+    through = True
+
+    def __init__(self, base: Base, target_y: float):
+        self.base = base
+        self.land = base.with_parcel_a
+        approach, harvest_skew = base.street_a_start(target_y)
+        self.harvest_skew_deg = harvest_skew
+        self.y = approach[-1][1]
+        self.stub_end_x = commercial_x_at(self.y)
+        self.cl_a = LineString(approach + [(self.stub_end_x, self.y)])
+        self.cl_b = LineString([(EMERALD_CL_X, self.y), (EMERALD_CL_X, JASPER_CL_Y)])
+        self.centerlines = [self.cl_a, self.cl_b]
+        # Overshoot past the commercial line so the ROW and pavement end flush with the diagonal boundary.
+        long_a = LineString(approach + [(self.stub_end_x + 2 * HALF_ROW, self.y)])
+        self.surface_lines = [long_a, self.cl_b]
+        lead = (TURNAROUND_DIA / 2) / math.cos(COMMERCIAL_AZ)
+        self.turnaround = Point(self.stub_end_x - lead, self.y).buffer(TURNAROUND_DIA / 2, 32)
+        self.row_a = unary_union([long_a.buffer(HALF_ROW, cap_style=2, join_style=1), self.turnaround]) \
+            .difference(commercial_side().buffer(-1.0))
+        self.row_b = self.cl_b.buffer(HALF_ROW, cap_style=2)
+        self.row = unary_union([self.row_a, self.row_b])
+        self.side_rows = unary_union([base.harvest_row, self.row_b])
+
+        pieces = polys(self.land.difference(self.row))
+        north = [p for p in pieces if p.centroid.y > self.y]
+        self.north = max((p for p in north if p.centroid.x < EMERALD_CL_X), key=lambda p: p.area)
+        self.north_east = max((p for p in north if p.centroid.x > EMERALD_CL_X), key=lambda p: p.area)
+        self.south = max((p for p in pieces if p.centroid.y < self.y), key=lambda p: p.area)
+        self.remnants = [p for p in pieces if p not in (self.north, self.north_east, self.south)]
+        self.open_space = Polygon()
+        self.street_a_len = self.cl_a.length
+        self.street_b_len = self.cl_b.length
+        self.block_len = EMERALD_CL_X - approach[0][0]
+        self.stub_len = self.stub_end_x - EMERALD_CL_X
+        self.street_b_label_y = (self.y + HALF_ROW + JASPER_S_ROW_Y) / 2
+
+    @property
+    def tier_depths(self):
+        return JASPER_S_ROW_Y - (self.y + HALF_ROW), self.y - HALF_ROW
+
+    @property
+    def new_street_len(self):
+        """Street A from the Harvest Lane ROW line to the stub end, plus Street B up to the Jasper centerline."""
+        return self.cl_a.intersection(self.land.buffer(0.01)).length + (JASPER_CL_Y - self.y - HALF_ROW)
 
 
 # ---------------------------------------------------------------------------
@@ -485,13 +584,15 @@ def analyze_lot(lot, spec, tier, front_rows, side_rows, design=None, rear_on_col
 # ---------------------------------------------------------------------------
 # Tier subdivision
 # ---------------------------------------------------------------------------
-def cumulative_area_fn(tier_poly):
+def cumulative_area_fn(tier_poly, measure=None):
+    """x_at(target) for the cut line where `measure` of the tier west of it reaches target (default: area)."""
+    measure = measure or (lambda clip: tier_poly.intersection(clip).area)
     minx, miny, maxx, maxy = tier_poly.bounds
     xs, areas = [], []
     x = minx
     while x <= maxx + 0.5:
         xs.append(x)
-        areas.append(tier_poly.intersection(box(minx - 1, miny - 1, x, maxy + 1)).area)
+        areas.append(measure(box(minx - 1, miny - 1, x, maxy + 1)))
         x += 0.5
 
     def x_at(target):
@@ -517,12 +618,24 @@ def candidate_sequences(product, total_area):
     return seqs
 
 
-def subdivide(tier_poly, product, tier, front_rows, side_rows, rear_on_collector):
-    x_at, total = cumulative_area_fn(tier_poly)
+def subdivide(tier_poly, product, tier, front_rows, side_rows, rear_on_collector, split='area'):
+    """Cut a tier into lots with side lines square to Street A.
+
+    split='area' shares the tier by minimum lot area; split='frontage' shares the street frontage by building
+    width, which suits tiers whose far lot picks up a deep irregular remainder.
+    """
     minx, miny, maxx, maxy = tier_poly.bounds
-    for seq in candidate_sequences(product, total):
-        need = [R4['mf_base_area'] + R4['mf_per_added_unit'] * (s['units'] - 1) if s['type'] == 'TH'
-                else R4['sf_min_area'] for s in seq]
+    if split == 'frontage':
+        front = tier_poly.boundary.intersection(front_rows.buffer(0.05))
+        x_at, total = cumulative_area_fn(tier_poly, lambda clip: front.intersection(clip).length)
+    else:
+        x_at, total = cumulative_area_fn(tier_poly)
+    for seq in candidate_sequences(product, tier_poly.area):
+        if split == 'frontage':
+            need = [TH_UNIT['width'] * s['units'] + 2 * R4['side'] if s['type'] == 'TH' else R4['min_width'] for s in seq]
+        else:
+            need = [R4['mf_base_area'] + R4['mf_per_added_unit'] * (s['units'] - 1) if s['type'] == 'TH'
+                    else R4['sf_min_area'] for s in seq]
         weights = [1.0] * len(seq)
         for _ in range(10):
             scaled = [n * w for n, w in zip(need, weights)]
@@ -601,7 +714,20 @@ def existing_lot_records(base):
     return records
 
 
+def number_lots(north, south):
+    lots = []
+    for tier_name, tier_lots, start in (('north', north, 201), ('south', south, 201 + len(north))):
+        for i, lot in enumerate(tier_lots):
+            lot['id'] = str(start + i)
+            lot['tier'] = tier_name
+            lot['existing'] = False
+            lots.append(lot)
+    return lots
+
+
 def build_concept(base, cfg):
+    if cfg['retention'] == 'deferred':
+        return build_through_concept(base, cfg)
     best = None
     for target in range(104, 125, 4):
         net = Network(base, target)
@@ -613,7 +739,7 @@ def build_concept(base, cfg):
             continue
         for reach in (0, 25, 50):
             south_poly, _ = net.south_split(reach)
-            south = subdivide(south_poly, cfg['south'], 'south', net.row_a, Polygon(), False)
+            south = subdivide(south_poly, cfg['south'], 'south', net.row_a, base.harvest_row, False)
             if not south:
                 continue
             corner = elbow_lots(net)
@@ -628,44 +754,62 @@ def build_concept(base, cfg):
     net.south_split(reach)
     if not corner:
         net.open_space = unary_union([net.open_space, net.elbow])
-    south = south + corner
-    lots = []
-    for tier_name, tier_lots, start in (('north', north, 201), ('south', south, 201 + len(north))):
-        for i, lot in enumerate(tier_lots):
-            lot['id'] = str(start + i)
-            lot['tier'] = tier_name
-            lot['existing'] = False
-            lots.append(lot)
-    return net, lots
+    return net, number_lots(north, south + corner)
+
+
+def build_through_concept(base, cfg):
+    """Lay out Street A through Parcel A and subdivide the three tiers it creates."""
+    best = None
+    for target in range(104, 125, 2):
+        net = ThroughNetwork(base, target)
+        north_depth, south_depth = net.tier_depths
+        if north_depth < 70 or south_depth < 70:
+            continue
+        north_w = subdivide(net.north, cfg['north'], 'north', net.row_a, net.side_rows, True)
+        north_e = max((subdivide(net.north_east, cfg['north'], 'north', net.row_a, net.row_b, True, split)
+                       for split in ('area', 'frontage')), key=lambda ls: sum(l['units'] for l in ls))
+        south = subdivide(net.south, cfg['south'], 'south', net.row_a, base.harvest_row, False)
+        if not (north_w and north_e and south):
+            continue
+        lots = north_w + north_e + south
+        units = sum(l['units'] for l in lots)
+        slack = min(l['areaSqFt'] - l['minAreaSqFt'] for l in lots)
+        score = (units, round(slack / 250), -abs(north_depth - south_depth))
+        if best is None or score > best[0]:
+            best = (score, target, north_w + north_e, south)
+    _, target, north, south = best
+    return ThroughNetwork(base, target), number_lots(north, south)
 
 
 def street_surfaces(base, net):
-    cls = [net.cl, base.harvest_cl, base.jasper_cl]
+    cls = net.surface_lines + [base.harvest_cl, base.jasper_cl]
     asphalt = unary_union([c.buffer(PAVEMENT_HALF, cap_style=2) for c in cls])
     asphalt = asphalt.buffer(CURB_RETURN_R).buffer(-CURB_RETURN_R)
+    asphalt = unary_union([asphalt, net.turnaround])
     curb = unary_union([c.buffer(PAVEMENT_HALF + CURB_GUTTER, cap_style=2) for c in cls])
     curb = curb.buffer(CURB_RETURN_R + CURB_GUTTER).buffer(-(CURB_RETURN_R + CURB_GUTTER))
     walk_outer = unary_union([c.buffer(PAVEMENT_HALF + CURB_GUTTER + SIDEWALK, cap_style=2) for c in cls])
     walk_outer = walk_outer.buffer(CURB_RETURN_R + 7.5).buffer(-(CURB_RETURN_R + 7.5))
     row = unary_union([net.row, base.harvest_row, base.jasper_row])
+    if net.through:
+        row = row.difference(commercial_side())
     return {
         'row': row,
         'asphalt': asphalt.intersection(row.buffer(0.1)),
         'curb': curb.difference(asphalt).intersection(row.buffer(0.1)),
-        'sidewalk': walk_outer.difference(curb).intersection(row.buffer(0.1)),
+        'sidewalk': walk_outer.difference(curb).difference(asphalt).intersection(row.buffer(0.1)),
     }
 
 
 def quantities(base, net, lots, surfaces):
     """Takeoff for the new project's streets and utilities (Jasper Drive excluded)."""
-    new_row_in = net.row.intersection(base.future_phase.buffer(0.1))
+    new_row_in = net.row.intersection(net.land.buffer(0.1))
     harvest_cl_in = base.harvest_cl.intersection(box(-50, 0, 400, JASPER_S_ROW_Y))
     streets_in = unary_union([new_row_in, base.harvest_in])
     asphalt = surfaces['asphalt'].intersection(streets_in)
     curb = surfaces['curb'].intersection(streets_in)
     walk = surfaces['sidewalk'].intersection(streets_in)
-    new_len = net.cl.intersection(base.future_phase.buffer(HALF_ROW)).length
-    new_len = min(new_len, net.cl.length - HALF_ROW)
+    new_len = net.new_street_len
     harvest_len = harvest_cl_in.length
     units = sum(l['units'] for l in lots)
     utility_len = new_len + harvest_len
@@ -679,7 +823,7 @@ def quantities(base, net, lots, surfaces):
         'sidewalkSqFt': round(walk.area),
         'waterMainLf': round(utility_len, 1),
         'sewerMainLf': round(utility_len, 1),
-        'stormDrainLf': round(new_len + 60, 1),
+        'stormDrainLf': round(new_len + (0 if net.through else 60), 1),
         'dryUtilityTrenchLf': round(utility_len, 1),
         'sewerManholes': 3 + math.ceil(utility_len / 400),
         'stormManholes': 2 + math.ceil(new_len / 400),
@@ -696,11 +840,22 @@ def quantities(base, net, lots, surfaces):
             'ditchPipeLf is only needed if the double line shown in Parcel C on the preliminary plat is a live ditch.',
         ],
     }
+    if net.through:
+        q['stubLengthFt'] = round(net.stub_len, 1)
+        q['temporaryTurnaroundSqFt'] = round(net.turnaround.area)
+        q['notes'] += [
+            "Street A stubs to the Phase 2 commercial line with a 70' temporary turnaround (DCC 16.24.070.B); "
+            'pavement runs to the property line so Phase 2 can extend it.',
+            'Storm drain is the trunk under Street A/B only; the outfall to the later-phase basin (location TBD) '
+            'and rerouting the Phase 1 30" line out of Parcel A are not included.',
+        ]
     return q
 
 
 def stormwater(base, net, lots, surfaces):
     area = base.parcel.difference(base.jasper_row)
+    if net.through:
+        area = area.union(base.parcel_a).difference(commercial_side())
     roofs = unary_union([f for l in lots for f in l['footprints']])
     paved_lots = unary_union([d for l in lots for d in l['driveways'] + l['walks']])
     street_hard = unary_union([surfaces['asphalt'], surfaces['curb'], surfaces['sidewalk']]).intersection(area)
@@ -708,8 +863,7 @@ def stormwater(base, net, lots, surfaces):
     pervious = area.area - impervious.area
     c_weighted = (RUNOFF_C_IMPERVIOUS * impervious.area + RUNOFF_C_PERVIOUS * pervious) / area.area
     volume = RAIN_10YR_24HR_IN / 12 * (RUNOFF_C_IMPERVIOUS * impervious.area + RUNOFF_C_PERVIOUS * pervious)
-    basin_floor = 0.7 * (PARCEL_A_PLAT_SQFT + net.open_space.area)
-    return {
+    out = {
         'designStorm': '24-hour, 10-year (DCC 16.28.030.I)',
         'rainfallIn': RAIN_10YR_24HR_IN,
         'rainfallSource': 'NOAA Atlas 14 PFDS, 39.353 N / 112.565 W',
@@ -719,11 +873,27 @@ def stormwater(base, net, lots, surfaces):
         'runoffCoefficient': round(c_weighted, 3),
         'requiredVolumeCf': round(volume),
         'requiredVolumeAcFt': round(volume / 43560, 3),
-        'basinFloorSqFt': round(basin_floor),
-        'addedDepthIn': round(12 * volume / basin_floor, 1),
-        'note': 'Parcel A already receives the Phase 1 30" storm drain. This volume is the extra storage for the '
-                'south parcel, spread over Parcel A plus the new open space (70% of area as basin floor).',
     }
+    if net.through:
+        out.update(
+            basinLocation='Later phase, location TBD',
+            basinFloorSqFt=None,
+            addedDepthIn=None,
+            floorAt2FtSqFt=round(volume / 2),
+            note='Retention moves to a later phase (location TBD). This is the south parcel\'s own storage, about '
+                 '%s SF of basin floor at 2 ft deep. Parcel A\'s storage for Phase 1 (the 30" storm drain) has to move '
+                 'with it and is not sized here; the Phase 1 drainage report the city asked for is not in the files.'
+                 % f"{round(volume / 2):,}",
+        )
+        return out
+    basin_floor = 0.7 * (PARCEL_A_PLAT_SQFT + net.open_space.area)
+    out.update(
+        basinFloorSqFt=round(basin_floor),
+        addedDepthIn=round(12 * volume / basin_floor, 1),
+        note='Parcel A already receives the Phase 1 30" storm drain. This volume is the extra storage for the '
+             'south parcel, spread over Parcel A plus the new open space (70% of area as basin floor).',
+    )
+    return out
 
 
 def compliance(base, net, lots, existing, storm):
@@ -757,13 +927,26 @@ def compliance(base, net, lots, existing, storm):
     put('parking', all(l['checks']['parking'] for l in new + existing), '3 driveway stalls per unit; garages not counted')
     put('one_structure', True, 'One building per lot; townhome units on unit lots')
     put('street_row', True, "Street A/B: 60' ROW, ST-02 section")
-    put('cul', True, 'Street A/B loops Harvest Lane to Jasper Drive')
+    if net.through:
+        put('cul', True, "Street A/B loops Harvest Lane to Jasper; Street A's %.0f' east leg is a temporary stub to "
+            "Phase 2 with a 70' turnaround (16.24.070.B)" % net.stub_len, 'check')
+    else:
+        put('cul', True, 'Street A/B loops Harvest Lane to Jasper Drive')
     put('block', BLOCK_MIN <= net.block_len <= BLOCK_MAX, "Harvest to Street B: %.0f'" % net.block_len)
     put('lot_access', True, 'All lots front Harvest Lane or Street A')
     put('collector', True, "North-tier lots back onto Jasper with a 10' rear buffer; needs LUA approval as double-frontage lots")
-    put('intersection', True, "Street A leaves Harvest at 90°; Street B lines up with Emerald Way (4-way)")
-    put('storm', True, '%s CF (%.2f ac-ft) extra storage; about %.1f in. over the basin' % (
-        f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt'], storm['addedDepthIn']), 'check')
+    if net.through:
+        put('intersection', True, "Street B tees into Street A in line with Emerald Way; no new Jasper access "
+            "(Parcel A frontage is under %d' from Emerald)" % JASPER_ACCESS_SPACING)
+        put('storm', True, '%s CF (%.2f ac-ft) for the south parcel, plus Parcel A\'s Phase 1 storage, held in a '
+            'later-phase basin (location TBD) before this phase records' % (
+                f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt']), 'check')
+        put('parcel_a', True, 'Becomes lots: amend the Phase 1 plat and reroute the Phase 1 30" storm drain', 'check')
+    else:
+        put('intersection', True, "Street A leaves Harvest at 90°; Street B lines up with Emerald Way (4-way)")
+        put('storm', True, '%s CF (%.2f ac-ft) extra storage; about %.1f in. over the basin' % (
+            f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt'], storm['addedDepthIn']), 'check')
+        put('parcel_a', True, 'Kept as the retention basin')
     put('ditch', True, 'Pipe the Parcel C ditch if it is live (about %d LF)' % round(LOTS_116_118[-1][1] + 75.28), 'check')
     put('pue', True, "10' front PUE inside the 25' setback; 7.5' rear/side easements as needed")
     out = []
@@ -984,25 +1167,27 @@ def render_sheet(base, net, cfg, lots, existing, surfaces, q, storm, checks, sum
     sh.poly(P(surfaces['sidewalk'].intersection(view)), fill=COLORS['sidewalk'])
     sh.poly(P(surfaces['curb'].intersection(view)), fill=COLORS['curb'])
     sh.poly(P(surfaces['asphalt'].intersection(view)), fill=COLORS['asphalt'])
-    for cl in (net.cl, base.harvest_cl.intersection(view), base.jasper_cl.intersection(view)):
+    for cl in net.centerlines + [base.harvest_cl.intersection(view), base.jasper_cl.intersection(view)]:
         for part in getattr(cl, 'geoms', [cl]):
             sh.line([pt(*c) for c in part.coords], (236, 214, 120), 1.2, dash=(14, 8))
 
     # Open space
-    sh.poly(P(base.parcel_a), fill=COLORS['retention'], stroke=COLORS['accent'], width=1.6)
-    hatch = [LineString([(FP_EAST_X - 50 + k * 14, -10), (FP_EAST_X + 300 + k * 14, 350)]) for k in range(-40, 60)]
-    for hl in hatch:
-        seg = hl.intersection(base.parcel_a)
-        for s in getattr(seg, 'geoms', [seg]):
-            if not s.is_empty and s.length > 1:
-                sh.line([pt(*c) for c in s.coords], (104, 156, 98), 0.8)
-    sh.poly(P(net.open_space), fill=COLORS['open'], stroke=COLORS['accent'], width=1.2)
+    if not net.through:
+        sh.poly(P(base.parcel_a), fill=COLORS['retention'], stroke=COLORS['accent'], width=1.6)
+        hatch = [LineString([(FP_EAST_X - 50 + k * 14, -10), (FP_EAST_X + 300 + k * 14, 350)]) for k in range(-40, 60)]
+        for hl in hatch:
+            seg = hl.intersection(base.parcel_a)
+            for s in getattr(seg, 'geoms', [seg]):
+                if not s.is_empty and s.length > 1:
+                    sh.line([pt(*c) for c in s.coords], (104, 156, 98), 0.8)
+        sh.poly(P(net.open_space), fill=COLORS['open'], stroke=COLORS['accent'], width=1.2)
     sh.poly(P(base.parcel_c), fill=COLORS['canal'], stroke=COLORS['accent'], width=1.2)
-    pa = base.parcel_a.centroid
-    sh.text(*pt(pa.x - 25, pa.y - 20), 'PARCEL A\nOPEN SPACE / RETENTION\n(Phase 1 basin, keep)\n%s SF per plat' % f"{PARCEL_A_PLAT_SQFT:,}",
-            size=13, bold=True, color=(30, 70, 40))
-    osc = net.open_space.representative_point()
-    sh.text(*pt(osc.x, osc.y), 'OS-1\nopen space /\nstorm\n%s SF' % f"{round(net.open_space.area):,}", size=11, color=(30, 70, 40), bold=True)
+    if not net.through:
+        pa = base.parcel_a.centroid
+        sh.text(*pt(pa.x - 25, pa.y - 20), 'PARCEL A\nOPEN SPACE / RETENTION\n(Phase 1 basin, keep)\n%s SF per plat' % f"{PARCEL_A_PLAT_SQFT:,}",
+                size=13, bold=True, color=(30, 70, 40))
+        osc = net.open_space.representative_point()
+        sh.text(*pt(osc.x, osc.y), 'OS-1\nopen space /\nstorm\n%s SF' % f"{round(net.open_space.area):,}", size=11, color=(30, 70, 40), bold=True)
     sh.text(*pt(15, 112), 'PARCEL C  canal buffer  %s SF' % f"{round(base.parcel_c.area):,}", size=11, color=(30, 70, 40), bold=True, rotate=-90)
 
     # Lots
@@ -1044,8 +1229,16 @@ def render_sheet(base, net, cfg, lots, existing, surfaces, q, storm, checks, sum
     sh.text(*pt(hx, hy), 'HARVEST LANE', size=13, color=(255, 255, 255), bold=True, rotate=-81)
     run_y = net.y
     sh.text(*pt(470, run_y - 3), "STREET A  (60' ROW · ST-02)", size=13, color=(255, 255, 255), bold=True)
-    sh.text(*pt(EMERALD_CL_X + 2, (net.y + ELBOW_RADIUS + JASPER_S_ROW_Y) / 2 + 4), 'STREET B', size=11,
+    sh.text(*pt(EMERALD_CL_X + 2, net.street_b_label_y + 4), 'STREET B', size=11,
             color=(255, 255, 255), bold=True, rotate=-90)
+    if net.through:
+        tc = net.turnaround.centroid
+        sh.text(*pt(net.stub_end_x + 70, net.y - 8), "TEMP. TURNAROUND\n70' dia. · stub to Phase 2\n(DCC 16.24.070.B)",
+                size=11, bold=True, anchor='left')
+        sh.line([pt(net.stub_end_x + 66, net.y - 8), pt(tc.x + 20, tc.y)], COLORS['ink'], 0.8)
+        sh.poly(P(base.parcel_a), stroke=COLORS['accent'], width=1.4, dash=(10, 6))
+        sh.text(*pt(1085, 22), 'DASHED: FORMER PARCEL A (retention)\nnow lots · basin moves to a\nlater phase, location TBD',
+                size=12, bold=True, color=(30, 70, 40))
     sh.text(*pt(EMERALD_CL_X, JASPER_CL_Y + 70), 'EMERALD\nWAY', size=11, color=COLORS['muted'], bold=True)
     sh.text(*pt(HARVEST_CL_JASPER_X + 276.01, JASPER_CL_Y + 70), 'MOONSTONE\nDR.', size=11, color=COLORS['muted'], bold=True)
 
@@ -1114,8 +1307,11 @@ def render_sheet(base, net, cfg, lots, existing, surfaces, q, storm, checks, sum
     legend = [(COLORS['sf'], 'New single-family lot'), (COLORS['th'], 'New townhome building lot (dashed = unit lots)'),
               (COLORS['existing'], 'Phase 1 Lots 116-118 (prelim Lots 17-19)'), (COLORS['sf_bldg'], 'Single-family footprint'),
               (COLORS['th_bldg'], 'Townhome footprint (A-D units)'), (COLORS['drive'], "Driveway: 27' = three 9x18 stalls"),
-              (COLORS['retention'], 'Parcel A retention basin (kept)'), (COLORS['open'], 'New open space / storm'),
               (COLORS['asphalt'], "41' asphalt (ST-02)"), (COLORS['sidewalk'], "5' sidewalk")]
+    if net.through:
+        legend.insert(6, (COLORS['canal'], 'Parcel C canal buffer (retention moved off site)'))
+    else:
+        legend[6:6] = [(COLORS['retention'], 'Parcel A retention basin (kept)'), (COLORS['open'], 'New open space / storm')]
     for i, (col, label) in enumerate(legend):
         yy = panel_y + 58 + i * 26
         sh.poly(box(col3, yy - 8, col3 + 26, yy + 8), fill=col, stroke=(120, 116, 108), width=0.8)
@@ -1248,10 +1444,18 @@ def main():
             ("Tier depths north / south of Street A", "%.1f' / %.1f'" % (nd, sd)),
             ('Asphalt / curb & gutter / sidewalk', "%s SF / %s LF / %s SF" % (f"{q['asphaltSqFt']:,}", f"{round(q['curbGutterLf']):,}", f"{q['sidewalkSqFt']:,}")),
             ('Off-street stalls (3 per unit, driveways)', '%d' % (3 * units)),
-            ('Open space: Parcel A / new OS-1 / Parcel C', '%s / %s / %s SF' % (f"{PARCEL_A_PLAT_SQFT:,}", f"{round(net.open_space.area):,}", f"{round(base.parcel_c.area):,}")),
-            ('Storm volume to hold (10-yr, 24-hr)', '%s CF (%.2f ac-ft)' % (f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt'])),
-            ('Livable area for sale (est.)', '%s SF' % f"{summary['livableSqFt']:,}"),
         ]
+        if net.through:
+            summary['siteData'] += [
+                ('Open space: Parcel C (Parcel A becomes lots)', '%s SF' % f"{round(base.parcel_c.area):,}"),
+                ('Storm volume to hold in a later-phase basin (TBD)', '%s CF (%.2f ac-ft)' % (f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt'])),
+            ]
+        else:
+            summary['siteData'] += [
+                ('Open space: Parcel A / new OS-1 / Parcel C', '%s / %s / %s SF' % (f"{PARCEL_A_PLAT_SQFT:,}", f"{round(net.open_space.area):,}", f"{round(base.parcel_c.area):,}")),
+                ('Storm volume to hold (10-yr, 24-hr)', '%s CF (%.2f ac-ft)' % (f"{storm['requiredVolumeCf']:,}", storm['requiredVolumeAcFt'])),
+            ]
+        summary['siteData'].append(('Livable area for sale (est.)', '%s SF' % f"{summary['livableSqFt']:,}"))
         summary['notes'] = [
             'Geometry: Phase 1 plat (Nov 2023) + 4.800-ac description (3-8-2024).',
             'Lots 116-118 and Harvest Lane (Phase 1 plat) are carried here',
@@ -1259,26 +1463,37 @@ def main():
             'Street B lines up with Emerald Way, so no new access point on Jasper.',
             "Townhome units are 31' wide: 27' three-stall driveway + 4' walk.",
             'Double-frontage lots on Jasper need LUA approval (16.24.090).',
-            'Parcel A area per plat; drawn outline is from plat bearings.',
+            'Parcel A: plat lists %s SF; its calls close at %s SF.' % (f"{PARCEL_A_PLAT_SQFT:,}", f"{round(base.parcel_a.area):,}"),
             'Verify whether the Parcel C ditch is live before final design.',
         ]
+        if net.through:
+            summary['notes'] += [
+                'Retention moves to a later phase (location TBD): amend the',
+                '  Phase 1 plat and reroute the 30" storm drain out of Parcel A.',
+            ]
         stem = os.path.join(OUT_DIR, 'concept-%s' % cfg['id'])
         render_sheet(base, net, cfg, lots, existing, surfaces, q, storm, checks, summary, stem)
+        streets = {
+            'streetA': {'centerline': [[round(x, 2), round(y, 2)] for x, y in net.cl_a.coords], 'lengthFt': round(net.street_a_len, 1)},
+            'streetB': {'centerline': [[round(x, 2), round(y, 2)] for x, y in net.cl_b.coords], 'lengthFt': round(net.street_b_len, 1)},
+            'rowPolygons': [ring(p) for p in polys(net.row.intersection(net.land.buffer(0.1)))],
+            'blockLengthFt': round(net.block_len, 1),
+            'section': "ST-02 60' local road: 2' + 5' walk + 2.5' C&G + 41' asphalt + 2.5' C&G + 5' walk + 2'",
+        }
+        if net.through:
+            streets['stub'] = {'lengthFt': round(net.stub_len, 1), 'endX': round(net.stub_end_x, 2),
+                               'turnaround': ring(net.turnaround)}
+        summary['retention'] = cfg['retention']
+        summary['remnantSqFt'] = round(sum(p.area for p in net.remnants))
         out['concepts'].append({
-            'id': cfg['id'], 'name': cfg['name'], 'summary': cfg['summary'],
+            'id': cfg['id'], 'name': cfg['name'], 'summary': cfg['summary'], 'retention': cfg['retention'],
             'stats': {k: v for k, v in summary.items() if k not in ('siteData', 'notes', 'generated')},
-            'streets': {
-                'streetA': {'centerline': [[round(x, 2), round(y, 2)] for x, y in net.cl_a.coords], 'lengthFt': round(net.street_a_len, 1)},
-                'streetB': {'centerline': [[round(x, 2), round(y, 2)] for x, y in net.cl_b.coords], 'lengthFt': round(net.street_b_len, 1)},
-                'rowPolygons': [ring(p) for p in polys(net.row.intersection(base.future_phase.buffer(0.1)))],
-                'blockLengthFt': round(net.block_len, 1),
-                'section': "ST-02 60' local road: 2' + 5' walk + 2.5' C&G + 41' asphalt + 2.5' C&G + 5' walk + 2'",
-            },
+            'streets': streets,
             'openSpace': {'os1': [ring(p) for p in polys(net.open_space)], 'os1SqFt': round(net.open_space.area)},
             'surfaces': {key: clipped_rings(surfaces[key], view) for key in ('row', 'sidewalk', 'curb', 'asphalt')},
             'centerlines': [
                 [[round(x, 2), round(y, 2)] for x, y in part.coords]
-                for line in (net.cl, base.harvest_cl.intersection(view), base.jasper_cl.intersection(view))
+                for line in net.centerlines + [base.harvest_cl.intersection(view), base.jasper_cl.intersection(view)]
                 for part in getattr(line, 'geoms', [line])
             ],
             'lots': [lot_json(l) for l in lots],
@@ -1287,8 +1502,8 @@ def main():
             'compliance': checks,
             'sheet': {'svg': 'concept-%s.svg' % cfg['id'], 'png': 'concept-%s.png' % cfg['id']},
         })
-        print('Concept %s (%s): %d units = %d SF + %d TH %s | Street A y=%.1f, tiers %.1f/%.1f | fails: %s' % (
-            cfg['id'], cfg['name'], units, sf_units, th_units, th_buildings, net.y, nd, sd,
+        print('Concept %s (%s): %d units = %d SF + %d TH %s | Street A y=%.1f, tiers %.1f/%.1f | remnants %d SF | fails: %s' % (
+            cfg['id'], cfg['name'], units, sf_units, th_units, th_buildings, net.y, nd, sd, summary['remnantSqFt'],
             [c['id'] for c in checks if c['status'] == 'fail'] or 'none'))
     with open(os.path.join(OUT_DIR, 'concepts.json'), 'w', encoding='utf-8') as f:
         json.dump(out, f, indent=1)

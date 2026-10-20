@@ -86,6 +86,8 @@ function PlanSvg({ data, concept, selectedId, onSelect }) {
   const aLabelAt = streetA[Math.floor(streetA.length * 0.45)];
   const parcelA = data.base.polygons.parcelA;
   const [paX, paY] = centroid(parcelA);
+  const deferred = concept.retention === 'deferred';
+  const stub = concept.streets.stub;
 
   return (
     <svg
@@ -121,8 +123,12 @@ function PlanSvg({ data, concept, selectedId, onSelect }) {
         <polyline key={`cl-${i}`} points={linePoints(line)} className="sp-centerline" />
       ))}
 
-      <path d={ringPath(parcelA)} className="sp-retention" />
-      <path d={ringPath(parcelA)} className="sp-retention-hatch" />
+      {deferred ? null : (
+        <>
+          <path d={ringPath(parcelA)} className="sp-retention" />
+          <path d={ringPath(parcelA)} className="sp-retention-hatch" />
+        </>
+      )}
       {concept.openSpace.os1.map((ring, i) => <path key={`os-${i}`} d={ringPath(ring)} className="sp-open" />)}
       <path d={ringPath(data.base.polygons.parcelC)} className="sp-canal" />
 
@@ -163,6 +169,7 @@ function PlanSvg({ data, concept, selectedId, onSelect }) {
         );
       })}
 
+      {deferred ? <path d={ringPath(parcelA)} className="sp-former-parcel" /> : null}
       {(ctx.projectBoundary || []).map((rings, i) => (
         <path key={`pb-${i}`} d={polygonPath(rings)} className="sp-boundary" />
       ))}
@@ -207,9 +214,25 @@ function PlanSvg({ data, concept, selectedId, onSelect }) {
       <SvgText at={[1080, 70]} size={13} className="sp-muted">
         PHASE 2 / COMMERCIAL
       </SvgText>
-      <SvgText at={[paX - 25, paY - 15]} size={13} className="sp-green-label">
-        PARCEL A · RETENTION
-      </SvgText>
+      {deferred ? (
+        <>
+          <SvgText at={[1085, 30]} size={11} className="sp-green-label">
+            DASHED: FORMER PARCEL A
+          </SvgText>
+          <SvgText at={[1085, 16]} size={11} className="sp-green-label">
+            retention moves to a later phase (TBD)
+          </SvgText>
+          {stub ? (
+            <SvgText at={[stub.endX + 95, concept.stats.streetAY]} size={10.5} className="sp-label">
+              {"70' TEMP. TURNAROUND · STUB"}
+            </SvgText>
+          ) : null}
+        </>
+      ) : (
+        <SvgText at={[paX - 25, paY - 15]} size={13} className="sp-green-label">
+          PARCEL A · RETENTION
+        </SvgText>
+      )}
       <SvgText at={[15, 112]} size={11} className="sp-green-label" rotate={-90}>
         PARCEL C · CANAL BUFFER
       </SvgText>
@@ -340,6 +363,7 @@ export default function SouthPlanPage() {
   const s = concept.stats;
   const q = concept.quantities;
   const storm = concept.stormwater;
+  const deferred = concept.retention === 'deferred';
   const sheetBase = platUrl(`data/south-parcel/${concept.sheet.png.replace('.png', '')}`);
 
   return (
@@ -401,7 +425,7 @@ export default function SouthPlanPage() {
             <strong>{fmt(q.harvestLaneCenterlineFt)} LF</strong>
           </div>
           <div className="metric-card">
-            <span>Storm volume to hold</span>
+            <span>{deferred ? 'Storm volume (later-phase basin)' : 'Storm volume to hold'}</span>
             <strong>{fmt(storm.requiredVolumeCf)} CF</strong>
           </div>
         </div>
@@ -469,8 +493,14 @@ export default function SouthPlanPage() {
                 <tr><td>Asphalt (41&apos; ST-02 section)</td><td>{fmt(q.asphaltSqFt)} SF</td></tr>
                 <tr><td>Curb &amp; gutter</td><td>{fmt(q.curbGutterLf)} LF</td></tr>
                 <tr><td>Sidewalk (5&apos;, both sides)</td><td>{fmt(q.sidewalkSqFt)} SF</td></tr>
+                {deferred ? (
+                  <tr><td>Street A stub to Phase 2 (70&apos; temp. turnaround)</td><td>{fmt(q.stubLengthFt)} LF</td></tr>
+                ) : null}
                 <tr><td>Water / sewer main</td><td>{fmt(q.waterMainLf)} LF each</td></tr>
-                <tr><td>Storm drain to Parcel A</td><td>{fmt(q.stormDrainLf)} LF</td></tr>
+                <tr>
+                  <td>{deferred ? 'Storm drain trunk (outfall to later-phase basin not included)' : 'Storm drain to Parcel A'}</td>
+                  <td>{fmt(q.stormDrainLf)} LF</td>
+                </tr>
                 <tr><td>Sewer / storm manholes</td><td>{q.sewerManholes} / {q.stormManholes}</td></tr>
                 <tr><td>Street lights / fire hydrants</td><td>{q.streetLights} / {q.fireHydrants}</td></tr>
                 <tr><td>Parcel C ditch piping (if live)</td><td>{fmt(q.ditchPipeLf)} LF</td></tr>
@@ -484,7 +514,11 @@ export default function SouthPlanPage() {
                 <tr><td>Impervious</td><td>{fmt(storm.imperviousPct, 1)}%</td></tr>
                 <tr><td>Runoff coefficient</td><td>{fmt(storm.runoffCoefficient, 2)}</td></tr>
                 <tr><td>Volume to hold</td><td>{fmt(storm.requiredVolumeCf)} CF ({fmt(storm.requiredVolumeAcFt, 2)} ac-ft)</td></tr>
-                <tr><td>Added basin depth</td><td>≈ {fmt(storm.addedDepthIn, 1)} in over Parcel A + new open space</td></tr>
+                {deferred ? (
+                  <tr><td>Basin</td><td>{storm.basinLocation} · ≈ {fmt(storm.floorAt2FtSqFt)} SF of floor at 2 ft deep</td></tr>
+                ) : (
+                  <tr><td>Added basin depth</td><td>≈ {fmt(storm.addedDepthIn, 1)} in over Parcel A + new open space</td></tr>
+                )}
               </tbody>
             </table>
           </div>
